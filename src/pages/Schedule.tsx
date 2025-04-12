@@ -26,6 +26,34 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
 
+// Type definitions to match component interface requirements
+interface ScheduledPost {
+  id: string;
+  title: string;
+  content_type: "image" | "video" | "carousel" | "text";
+  platform: string;
+  scheduled_date: Date;
+  status: 'scheduled' | 'published' | 'failed';
+  campaign?: string;
+}
+
+interface QueueItem {
+  id: string;
+  title: string;
+  content_type: "image" | "video" | "carousel" | "text";
+  platform: string;
+  scheduled_date: Date;
+  status: 'scheduled' | 'published' | 'failed';
+  campaign?: string;
+}
+
+interface QueueSlot {
+  id: string;
+  name: string;
+  time: string;
+  items: QueueItem[];
+}
+
 const Schedule = () => {
   const [activeTab, setActiveTab] = useState('calendar');
   const [calendarView, setCalendarView] = useState<'month' | 'week' | 'day'>('month');
@@ -70,20 +98,52 @@ const Schedule = () => {
         ...item,
         scheduled_date: new Date(Date.now() + Math.random() * 30 * 24 * 60 * 60 * 1000),
         platform: ['Instagram', 'Twitter', 'Facebook', 'LinkedIn'][Math.floor(Math.random() * 4)],
-        status: ['scheduled', 'published', 'failed'][Math.floor(Math.random() * 3)],
+        status: ['scheduled', 'published', 'failed'][Math.floor(Math.random() * 3)] as 'scheduled' | 'published' | 'failed',
         campaign: ['Summer Sale', 'Product Launch', 'Brand Awareness'][Math.floor(Math.random() * 3)]
-      })) || [];
+      })) as ScheduledPost[] || [];
       
       return transformedData;
     }
   });
 
   // For demo purposes, create some queue slots based on time of day
-  const queueSlots = [
-    { id: 'morning', name: 'Morning', time: '9:00 AM', items: scheduledPosts?.filter(() => Math.random() > 0.7) || [] },
-    { id: 'midday', name: 'Midday', time: '12:00 PM', items: scheduledPosts?.filter(() => Math.random() > 0.7) || [] },
-    { id: 'afternoon', name: 'Afternoon', time: '3:00 PM', items: scheduledPosts?.filter(() => Math.random() > 0.7) || [] },
-    { id: 'evening', name: 'Evening', time: '7:00 PM', items: scheduledPosts?.filter(() => Math.random() > 0.7) || [] },
+  const queueSlots: QueueSlot[] = [
+    { 
+      id: 'morning', 
+      name: 'Morning', 
+      time: '9:00 AM', 
+      items: scheduledPosts?.filter(() => Math.random() > 0.7).map(post => ({
+        ...post,
+        status: post.status as 'scheduled' | 'published' | 'failed'
+      })) || [] 
+    },
+    { 
+      id: 'midday', 
+      name: 'Midday', 
+      time: '12:00 PM', 
+      items: scheduledPosts?.filter(() => Math.random() > 0.7).map(post => ({
+        ...post,
+        status: post.status as 'scheduled' | 'published' | 'failed'
+      })) || [] 
+    },
+    { 
+      id: 'afternoon', 
+      name: 'Afternoon', 
+      time: '3:00 PM', 
+      items: scheduledPosts?.filter(() => Math.random() > 0.7).map(post => ({
+        ...post,
+        status: post.status as 'scheduled' | 'published' | 'failed'
+      })) || [] 
+    },
+    { 
+      id: 'evening', 
+      name: 'Evening', 
+      time: '7:00 PM', 
+      items: scheduledPosts?.filter(() => Math.random() > 0.7).map(post => ({
+        ...post,
+        status: post.status as 'scheduled' | 'published' | 'failed'
+      })) || [] 
+    },
   ];
 
   const handleDateChange = (date: Date) => {
