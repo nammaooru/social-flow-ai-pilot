@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -87,17 +88,28 @@ interface AudienceInsightsProps {
   timeRange: string;
 }
 
+type RechartsValueType = string | number | Array<string | number>;
+
 const AudienceInsights: React.FC<AudienceInsightsProps> = ({ platform, timeRange }) => {
   const [demographicsTab, setDemographicsTab] = useState('gender');
   const [locationView, setLocationView] = useState('countries');
 
   // Format numbers with commas
-  const formatNumber = (num: string | number): string => {
+  const formatNumber = (num: RechartsValueType): string => {
+    // Handle array case
     if (Array.isArray(num)) {
       num = num[0];
     }
     
+    // Convert to number if it's a string
     const numValue = typeof num === 'string' ? parseFloat(num) : num;
+    
+    // Handle NaN case that might result from parseFloat
+    if (isNaN(numValue)) {
+      return "0";
+    }
+    
+    // Format with commas
     return numValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 

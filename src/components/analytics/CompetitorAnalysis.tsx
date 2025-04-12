@@ -160,6 +160,8 @@ interface CompetitorAnalysisProps {
   timeRange: string;
 }
 
+type RechartsValueType = string | number | Array<string | number>;
+
 const CompetitorAnalysis: React.FC<CompetitorAnalysisProps> = ({ platform, timeRange }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortColumn, setSortColumn] = useState('followers');
@@ -197,12 +199,16 @@ const CompetitorAnalysis: React.FC<CompetitorAnalysisProps> = ({ platform, timeR
     }
   };
 
-  const formatNumber = (num: string | number): string => {
+  const formatNumber = (num: RechartsValueType): string => {
     if (Array.isArray(num)) {
       num = num[0];
     }
     
     const numValue = typeof num === 'string' ? parseFloat(num) : num;
+    if (isNaN(numValue)) {
+      return "0";
+    }
+    
     return numValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
