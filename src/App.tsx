@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import Content from "./pages/Content";
 import NotFound from "./pages/NotFound";
 import DashboardLayout from "./components/DashboardLayout";
 
@@ -26,7 +27,7 @@ const App = () => (
           {/* Dashboard routes with layout */}
           <Route path="/" element={<DashboardLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/content" element={<Dashboard />} /> {/* Placeholder */}
+            <Route path="/content" element={<Content />} />
             <Route path="/schedule" element={<Dashboard />} /> {/* Placeholder */}
             <Route path="/engagement" element={<Dashboard />} /> {/* Placeholder */}
             <Route path="/analytics" element={<Dashboard />} /> {/* Placeholder */}

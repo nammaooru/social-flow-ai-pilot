@@ -9,7 +9,122 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      ai_captions: {
+        Row: {
+          caption: string
+          content_id: string | null
+          created_at: string | null
+          hashtags: string[] | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          caption: string
+          content_id?: string | null
+          created_at?: string | null
+          hashtags?: string[] | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          caption?: string
+          content_id?: string | null
+          created_at?: string | null
+          hashtags?: string[] | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_captions_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_library"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_library: {
+        Row: {
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at: string | null
+          description: string | null
+          file_path: string | null
+          id: string
+          is_template: boolean | null
+          metadata: Json | null
+          tags: string[] | null
+          thumbnail_path: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at?: string | null
+          description?: string | null
+          file_path?: string | null
+          id?: string
+          is_template?: boolean | null
+          metadata?: Json | null
+          tags?: string[] | null
+          thumbnail_path?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content_type?: Database["public"]["Enums"]["content_type"]
+          created_at?: string | null
+          description?: string | null
+          file_path?: string | null
+          id?: string
+          is_template?: boolean | null
+          metadata?: Json | null
+          tags?: string[] | null
+          thumbnail_path?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      content_templates: {
+        Row: {
+          content: string | null
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at: string | null
+          description: string | null
+          id: string
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          content_type?: Database["public"]["Enums"]["content_type"]
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +133,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      content_type: "image" | "video" | "carousel" | "text"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +248,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      content_type: ["image", "video", "carousel", "text"],
+    },
   },
 } as const
