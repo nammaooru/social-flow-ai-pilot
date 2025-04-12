@@ -18,7 +18,6 @@ import {
 } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-// Mock data for competitor analysis
 const competitors = [
   { 
     id: 1, 
@@ -198,7 +197,11 @@ const CompetitorAnalysis: React.FC<CompetitorAnalysisProps> = ({ platform, timeR
     }
   };
 
-  const formatNumber = (num: number | string): string => {
+  const formatNumber = (num: string | number): string => {
+    if (Array.isArray(num)) {
+      num = num[0];
+    }
+    
     const numValue = typeof num === 'string' ? parseFloat(num) : num;
     return numValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -93,7 +92,11 @@ const AudienceInsights: React.FC<AudienceInsightsProps> = ({ platform, timeRange
   const [locationView, setLocationView] = useState('countries');
 
   // Format numbers with commas
-  const formatNumber = (num: number | string): string => {
+  const formatNumber = (num: string | number): string => {
+    if (Array.isArray(num)) {
+      num = num[0];
+    }
+    
     const numValue = typeof num === 'string' ? parseFloat(num) : num;
     return numValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
