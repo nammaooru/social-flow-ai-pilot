@@ -12,6 +12,7 @@ import Content from "./pages/Content";
 import Schedule from "./pages/Schedule";
 import Engagement from "./pages/Engagement";
 import Analytics from "./pages/Analytics";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import DashboardLayout from "./components/DashboardLayout";
 
@@ -34,8 +35,8 @@ const App = () => (
             <Route path="/schedule" element={<Schedule />} /> 
             <Route path="/engagement" element={<Engagement />} />
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/team" element={<Dashboard />} /> {/* Placeholder */}
-            <Route path="/settings" element={<Dashboard />} /> {/* Placeholder */}
           </Route>
           
           <Route path="*" element={<NotFound />} />
