@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Content from "./pages/Content";
+import Schedule from "./pages/Schedule";
 import NotFound from "./pages/NotFound";
 import DashboardLayout from "./components/DashboardLayout";
 
@@ -28,7 +29,7 @@ const App = () => (
           <Route path="/" element={<DashboardLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/content" element={<Content />} />
-            <Route path="/schedule" element={<Dashboard />} /> {/* Placeholder */}
+            <Route path="/schedule" element={<Schedule />} /> 
             <Route path="/engagement" element={<Dashboard />} /> {/* Placeholder */}
             <Route path="/analytics" element={<Dashboard />} /> {/* Placeholder */}
             <Route path="/team" element={<Dashboard />} /> {/* Placeholder */}
