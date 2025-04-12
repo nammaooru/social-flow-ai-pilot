@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -169,7 +168,6 @@ const CompetitorAnalysis: React.FC<CompetitorAnalysisProps> = ({ platform, timeR
   const [trackedCompetitors, setTrackedCompetitors] = useState<number[]>([1, 2, 3]);
   const [comparisonMetric, setComparisonMetric] = useState('followers');
 
-  // Filter and sort competitors
   const filteredCompetitors = competitors.filter(competitor => 
     competitor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     competitor.instagram.toLowerCase().includes(searchQuery.toLowerCase())
@@ -200,9 +198,9 @@ const CompetitorAnalysis: React.FC<CompetitorAnalysisProps> = ({ platform, timeR
     }
   };
 
-  // Format numbers with commas
-  const formatNumber = (num: number) => {
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  const formatNumber = (num: number | string): string => {
+    const numValue = typeof num === 'string' ? parseFloat(num) : num;
+    return numValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
   const renderComparisonChart = () => {

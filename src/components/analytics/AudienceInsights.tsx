@@ -93,8 +93,9 @@ const AudienceInsights: React.FC<AudienceInsightsProps> = ({ platform, timeRange
   const [locationView, setLocationView] = useState('countries');
 
   // Format numbers with commas
-  const formatNumber = (num: number) => {
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  const formatNumber = (num: number | string): string => {
+    const numValue = typeof num === 'string' ? parseFloat(num) : num;
+    return numValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
   // Calculate follower growth
