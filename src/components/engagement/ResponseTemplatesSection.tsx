@@ -20,7 +20,7 @@ const templates = [
   {
     id: '1',
     name: 'Positive Feedback Response',
-    content: 'Thank you so much for your positive feedback! We're thrilled to hear you're enjoying our products. Your support means a lot to us!',
+    content: "Thank you so much for your positive feedback! We're thrilled to hear you're enjoying our products. Your support means a lot to us!",
     type: 'comment',
     triggers: ['thank you', 'love it', 'great', 'amazing'],
     sentiment: 'positive'
@@ -28,7 +28,7 @@ const templates = [
   {
     id: '2',
     name: 'Product Inquiry Response',
-    content: 'Thank you for your interest in our products! We offer a variety of options to suit different needs. Could you please let us know more specifically what you're looking for so we can provide the best information?',
+    content: "Thank you for your interest in our products! We offer a variety of options to suit different needs. Could you please let us know more specifically what you're looking for so we can provide the best information?",
     type: 'message',
     triggers: ['product', 'looking for', 'available', 'have in stock'],
     sentiment: 'neutral'
@@ -36,7 +36,7 @@ const templates = [
   {
     id: '3',
     name: 'Customer Service Complaint',
-    content: 'We sincerely apologize for the inconvenience you've experienced. We take all feedback seriously and would like to make this right. Please DM us with your order details, and a member of our customer service team will assist you promptly.',
+    content: "We sincerely apologize for the inconvenience you've experienced. We take all feedback seriously and would like to make this right. Please DM us with your order details, and a member of our customer service team will assist you promptly.",
     type: 'comment',
     triggers: ['disappointed', 'unhappy', 'issue', 'problem', 'not working'],
     sentiment: 'negative'
@@ -44,7 +44,7 @@ const templates = [
   {
     id: '4',
     name: 'Shipping Query Response',
-    content: 'Thank you for your order! Shipping usually takes 3-5 business days for domestic orders and 7-14 days for international shipments. If you'd like to track your package, please use the tracking number provided in your shipping confirmation email.',
+    content: "Thank you for your order! Shipping usually takes 3-5 business days for domestic orders and 7-14 days for international shipments. If you'd like to track your package, please use the tracking number provided in your shipping confirmation email.",
     type: 'message',
     triggers: ['shipping', 'delivery', 'when will', 'track', 'arrived'],
     sentiment: 'neutral'
@@ -52,7 +52,7 @@ const templates = [
   {
     id: '5',
     name: 'Out of Stock Response',
-    content: 'Thank you for your interest in this item! Unfortunately, it's currently out of stock. We expect to restock within the next 2-3 weeks. Would you like us to notify you when it's available again?',
+    content: "Thank you for your interest in this item! Unfortunately, it's currently out of stock. We expect to restock within the next 2-3 weeks. Would you like us to notify you when it's available again?",
     type: 'message',
     triggers: ['out of stock', 'available', 'when will', 'in stock'],
     sentiment: 'neutral'

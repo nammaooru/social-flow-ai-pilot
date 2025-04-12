@@ -55,7 +55,7 @@ const comments = [
     avatar: 'https://i.pravatar.cc/150?img=4',
     platform: 'LinkedIn',
     post: 'Company Update',
-    comment: 'Interesting to see your company's growth. Would love to discuss potential collaboration.',
+    comment: "Interesting to see your company's growth. Would love to discuss potential collaboration.",
     time: '1 day ago',
     sentiment: 'neutral',
     replied: true
