@@ -21,8 +21,8 @@ const Engagement = () => {
         <p className="text-muted-foreground">Monitor and respond to your audience across all platforms.</p>
       </div>
 
-      <div className="flex items-center justify-between">
-        <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <div className="flex items-center justify-between">
           <TabsList className="grid w-full max-w-[600px] grid-cols-4">
             <TabsTrigger value="comments" className="flex items-center gap-2">
               <MessageCircle size={16} />
@@ -41,103 +41,103 @@ const Engagement = () => {
               <span className="hidden sm:inline">Automation Rules</span>
             </TabsTrigger>
           </TabsList>
-        </Tabs>
-      </div>
+        </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <div>
-            <CardTitle>Auto-Response Status</CardTitle>
-            <CardDescription>Configure AI-powered auto-responses for your accounts</CardDescription>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch id="auto-response" defaultChecked />
-            <Label htmlFor="auto-response">Active</Label>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
-            <Card className="flex-1">
-              <CardHeader className="py-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Bot size={18} />
-                  AI-Powered Responses
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pb-3 pt-0">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="ai-comments" className="text-sm">Comments</Label>
-                    <Switch id="ai-comments" defaultChecked />
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Auto-Response Status</CardTitle>
+              <CardDescription>Configure AI-powered auto-responses for your accounts</CardDescription>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch id="auto-response" defaultChecked />
+              <Label htmlFor="auto-response">Active</Label>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col md:flex-row gap-4">
+              <Card className="flex-1">
+                <CardHeader className="py-2">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Bot size={18} />
+                    AI-Powered Responses
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pb-3 pt-0">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="ai-comments" className="text-sm">Comments</Label>
+                      <Switch id="ai-comments" defaultChecked />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="ai-messages" className="text-sm">Direct Messages</Label>
+                      <Switch id="ai-messages" defaultChecked />
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="ai-messages" className="text-sm">Direct Messages</Label>
-                    <Switch id="ai-messages" defaultChecked />
+                </CardContent>
+              </Card>
+
+              <Card className="flex-1">
+                <CardHeader className="py-2">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Clock size={18} />
+                    Response Times
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pb-3 pt-0">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="instant-comments" className="text-sm">Instant Comments</Label>
+                      <Switch id="instant-comments" defaultChecked />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="instant-messages" className="text-sm">Instant Messages</Label>
+                      <Switch id="instant-messages" defaultChecked />
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <Card className="flex-1">
-              <CardHeader className="py-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Clock size={18} />
-                  Response Times
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pb-3 pt-0">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="instant-comments" className="text-sm">Instant Comments</Label>
-                    <Switch id="instant-comments" defaultChecked />
+              <Card className="flex-1">
+                <CardHeader className="py-2">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Heart size={18} />
+                    Auto-Interactions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pb-3 pt-0">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="auto-like" className="text-sm">Auto-Like Comments</Label>
+                      <Switch id="auto-like" defaultChecked />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="auto-follow" className="text-sm">Auto-Follow Active Users</Label>
+                      <Switch id="auto-follow" />
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="instant-messages" className="text-sm">Instant Messages</Label>
-                    <Switch id="instant-messages" defaultChecked />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-            <Card className="flex-1">
-              <CardHeader className="py-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Heart size={18} />
-                  Auto-Interactions
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pb-3 pt-0">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="auto-like" className="text-sm">Auto-Like Comments</Label>
-                    <Switch id="auto-like" defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="auto-follow" className="text-sm">Auto-Follow Active Users</Label>
-                    <Switch id="auto-follow" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </CardContent>
-      </Card>
+        <TabsContent value="comments" className="mt-0">
+          <CommentsSection />
+        </TabsContent>
 
-      <TabsContent value="comments" className="mt-0">
-        <CommentsSection />
-      </TabsContent>
+        <TabsContent value="messages" className="mt-0">
+          <DirectMessagesSection />
+        </TabsContent>
 
-      <TabsContent value="messages" className="mt-0">
-        <DirectMessagesSection />
-      </TabsContent>
+        <TabsContent value="templates" className="mt-0">
+          <ResponseTemplatesSection />
+        </TabsContent>
 
-      <TabsContent value="templates" className="mt-0">
-        <ResponseTemplatesSection />
-      </TabsContent>
-
-      <TabsContent value="automation" className="mt-0">
-        <AutomationRulesSection />
-      </TabsContent>
+        <TabsContent value="automation" className="mt-0">
+          <AutomationRulesSection />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
