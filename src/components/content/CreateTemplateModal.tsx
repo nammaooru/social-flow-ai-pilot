@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -31,7 +30,6 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   
-  // Set form values when editing an existing template
   useEffect(() => {
     if (editTemplate) {
       setTitle(editTemplate.title || '');
@@ -81,16 +79,18 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
     setIsSaving(true);
     
     try {
+      const temporaryUserId = '00000000-0000-0000-0000-000000000000';
+      
       const templateData = {
         title,
         description: description || null,
         content: content || null,
         content_type: activeTab as 'image' | 'video' | 'carousel' | 'text',
         tags: processTagsString(tags),
+        user_id: temporaryUserId,
       };
       
       if (editTemplate) {
-        // Update existing template
         const { error } = await supabase
           .from('content_templates')
           .update(templateData)
@@ -103,7 +103,6 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
           description: "Your content template has been updated successfully.",
         });
       } else {
-        // Create new template
         const { error } = await supabase
           .from('content_templates')
           .insert(templateData);

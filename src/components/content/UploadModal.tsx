@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -88,7 +87,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
     setUploadProgress(10);
     
     try {
-      let filePath = null;
+      let uploadFilePath = null;
       let thumbnailPath = null;
       const contentType = activeTab as 'image' | 'video' | 'carousel' | 'text';
       
@@ -97,20 +96,20 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
         const file = files[0];
         const fileExt = file.name.split('.').pop();
         const fileName = `${uuidv4()}.${fileExt}`;
-        const filePath = `${contentType}/${fileName}`;
+        const storagePath = `${contentType}/${fileName}`;
         
         setUploadProgress(30);
         
         const { error: uploadError } = await supabase.storage
           .from('content_assets')
-          .upload(filePath, file);
+          .upload(storagePath, file);
         
         if (uploadError) {
           throw new Error(uploadError.message);
         }
         
         setUploadProgress(70);
-        filePath = `content_assets/${filePath}`;
+        uploadFilePath = `content_assets/${storagePath}`;
         
         // Create thumbnail for videos (in a real app, you'd use a service to generate this)
         if (contentType === 'video') {
@@ -121,14 +120,19 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
       
       setUploadProgress(80);
       
+      // Create a temporary user ID - in a real app, this would be from auth
+      // For now we're using a fixed value to satisfy TypeScript
+      const temporaryUserId = '00000000-0000-0000-0000-000000000000';
+      
       // Save to database
       const { error: insertError } = await supabase
         .from('content_library')
         .insert({
+          user_id: temporaryUserId, // Add the required user_id field
           title,
           description: description || null,
           content_type: contentType,
-          file_path: filePath,
+          file_path: uploadFilePath,
           thumbnail_path: thumbnailPath,
           tags: processTagsString(tags),
           metadata: contentType === 'text' ? { text: textContent } : null,

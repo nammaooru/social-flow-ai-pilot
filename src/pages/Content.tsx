@@ -17,6 +17,10 @@ const Content = () => {
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const { toast } = useToast();
 
+  // For demo purposes, we're bypassing authentication
+  // In a real app, you would get the user ID from the authenticated session
+  const demoUserId = '00000000-0000-0000-0000-000000000000';
+
   const { data: contentLibrary, isLoading: contentLoading, refetch: refetchContent } = useQuery({
     queryKey: ['contentLibrary'],
     queryFn: async () => {
