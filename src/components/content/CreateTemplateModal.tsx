@@ -91,7 +91,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
             content_type: activeTab,
             content: content || null,
             tags: processTagsString(tags),
-            updated_at: new Date()
+            updated_at: new Date().toISOString() // Convert Date to ISO string
           })
           .eq('id', editTemplate.id);
         
