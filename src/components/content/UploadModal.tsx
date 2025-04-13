@@ -91,7 +91,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
       let thumbnailPath = null;
       const contentType = activeTab as 'image' | 'video' | 'carousel' | 'text';
       
-      // Handle file upload for non-text content
       if (contentType !== 'text' && files && files.length > 0) {
         const file = files[0];
         const fileExt = file.name.split('.').pop();
@@ -111,7 +110,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
         setUploadProgress(70);
         uploadFilePath = storagePath;
         
-        // Create thumbnail for videos (in a real app, you'd use a service to generate this)
         if (contentType === 'video') {
           // For a real app, implement video thumbnail generation
         }
@@ -119,14 +117,10 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
       
       setUploadProgress(80);
       
-      // In a demo environment, we're bypassing user authentication
-      // Instead, we'll use a null value for user_id since we've updated our RLS policies
-      // to allow operations without requiring specific user ownership
-      
-      // Save to database without requiring a user_id
       const { error: insertError } = await supabase
         .from('content_library')
         .insert({
+          user_id: null,
           title,
           description: description || null,
           content_type: contentType,
@@ -134,8 +128,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
           thumbnail_path: thumbnailPath,
           tags: processTagsString(tags),
           metadata: contentType === 'text' ? { text: textContent } : null,
-          // Remove user_id from the insert operation to avoid foreign key constraint
-          // This works because we've set up permissive RLS policies
         });
       
       if (insertError) {

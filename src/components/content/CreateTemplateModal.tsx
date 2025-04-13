@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -13,37 +14,25 @@ interface CreateTemplateModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onTemplateCreate: () => void;
-  editTemplate?: any;
 }
 
 const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({ 
   open, 
   onOpenChange, 
-  onTemplateCreate,
-  editTemplate 
+  onTemplateCreate 
 }) => {
-  const [activeTab, setActiveTab] = useState('text');
+  const [activeTab, setActiveTab] = useState<'image' | 'video' | 'carousel' | 'text'>('text');
   const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
   const [content, setContent] = useState('');
+  const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
-  
-  useEffect(() => {
-    if (editTemplate) {
-      setTitle(editTemplate.title || '');
-      setDescription(editTemplate.description || '');
-      setContent(editTemplate.content || '');
-      setActiveTab(editTemplate.content_type || 'text');
-      setTags(editTemplate.tags ? editTemplate.tags.join(', ') : '');
-    }
-  }, [editTemplate, open]);
-  
+
   const resetForm = () => {
     setTitle('');
-    setDescription('');
     setContent('');
+    setDescription('');
     setTags('');
     setActiveTab('text');
   };
@@ -79,49 +68,31 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
     setIsSaving(true);
     
     try {
-      const temporaryUserId = '00000000-0000-0000-0000-000000000000';
-      
-      const templateData = {
-        title,
-        description: description || null,
-        content: content || null,
-        content_type: activeTab as 'image' | 'video' | 'carousel' | 'text',
-        tags: processTagsString(tags),
-        user_id: temporaryUserId,
-      };
-      
-      if (editTemplate) {
-        const { error } = await supabase
-          .from('content_templates')
-          .update(templateData)
-          .eq('id', editTemplate.id);
-        
-        if (error) throw error;
-        
-        toast({
-          title: "Template updated",
-          description: "Your content template has been updated successfully.",
+      const { error } = await supabase
+        .from('content_templates')
+        .insert({
+          user_id: null, // Explicitly set to null since we made it nullable
+          title,
+          description: description || null,
+          content_type: activeTab,
+          content: content || null,
+          tags: processTagsString(tags)
         });
-      } else {
-        const { error } = await supabase
-          .from('content_templates')
-          .insert(templateData);
-        
-        if (error) throw error;
-        
-        toast({
-          title: "Template created",
-          description: "Your content template has been created successfully.",
-        });
+      
+      if (error) {
+        throw new Error(error.message);
       }
       
       resetForm();
       onTemplateCreate();
-      onOpenChange(false);
       
+      toast({
+        title: "Template created",
+        description: "Your content template has been saved successfully.",
+      });
     } catch (error: any) {
       toast({
-        title: "Error saving template",
+        title: "Error creating template",
         description: error.message,
         variant: "destructive",
       });
@@ -134,52 +105,51 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {editTemplate ? 'Edit Content Template' : 'Create Content Template'}
-          </DialogTitle>
+          <DialogTitle>Create Content Template</DialogTitle>
         </DialogHeader>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-4 mb-6">
-            <TabsTrigger value="image" className="flex items-center gap-2">
-              <Image className="h-4 w-4" />
-              Image
-            </TabsTrigger>
-            <TabsTrigger value="video" className="flex items-center gap-2">
-              <Video className="h-4 w-4" />
-              Video
-            </TabsTrigger>
-            <TabsTrigger value="carousel" className="flex items-center gap-2">
-              <LayoutGrid className="h-4 w-4" />
-              Carousel
-            </TabsTrigger>
-            <TabsTrigger value="text" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Text
-            </TabsTrigger>
-          </TabsList>
+        <div className="space-y-4 py-2">
+          <div>
+            <Label htmlFor="title">Template Title</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter template title"
+            />
+          </div>
           
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="title">Template Title</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter template title"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="description">Description (optional)</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Enter a description for your template"
-                rows={2}
-              />
-            </div>
+          <div>
+            <Label htmlFor="description">Description (optional)</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter a description for your template"
+              rows={2}
+            />
+          </div>
+          
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
+            <Label>Template Type</Label>
+            <TabsList className="grid grid-cols-4 mt-1 mb-4">
+              <TabsTrigger value="image" className="flex items-center gap-2">
+                <Image className="h-4 w-4" />
+                Image
+              </TabsTrigger>
+              <TabsTrigger value="video" className="flex items-center gap-2">
+                <Video className="h-4 w-4" />
+                Video
+              </TabsTrigger>
+              <TabsTrigger value="carousel" className="flex items-center gap-2">
+                <LayoutGrid className="h-4 w-4" />
+                Carousel
+              </TabsTrigger>
+              <TabsTrigger value="text" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Text
+              </TabsTrigger>
+            </TabsList>
             
             <div>
               <Label htmlFor="content">Template Content</Label>
@@ -187,28 +157,22 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                 id="content"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder={`Enter your ${activeTab} template content...`}
+                placeholder={`Enter template content for ${activeTab} posts...`}
                 rows={6}
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                {activeTab === 'text' && "Enter the text content you want to reuse."}
-                {activeTab === 'image' && "Enter caption templates, instructions, or hashtags for image posts."}
-                {activeTab === 'video' && "Enter video descriptions, call-to-actions, or hashtags for video content."}
-                {activeTab === 'carousel' && "Enter slide descriptions or hashtags for carousel posts."}
-              </p>
             </div>
-            
-            <div>
-              <Label htmlFor="tags">Tags (comma separated)</Label>
-              <Input
-                id="tags"
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
-                placeholder="e.g. promotion, product, announcement"
-              />
-            </div>
+          </Tabs>
+          
+          <div>
+            <Label htmlFor="tags">Tags (comma separated)</Label>
+            <Input
+              id="tags"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="e.g. branding, promotion, product"
+            />
           </div>
-        </Tabs>
+        </div>
         
         <DialogFooter className="mt-6">
           <Button variant="outline" onClick={handleClose} disabled={isSaving}>
@@ -216,7 +180,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
           </Button>
           <Button onClick={handleSubmit} disabled={isSaving} className="gap-2">
             <Save className="h-4 w-4" />
-            {editTemplate ? 'Update Template' : 'Save Template'}
+            Save Template
           </Button>
         </DialogFooter>
       </DialogContent>

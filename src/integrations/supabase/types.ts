@@ -57,7 +57,7 @@ export type Database = {
           thumbnail_path: string | null
           title: string
           updated_at: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           content_type: Database["public"]["Enums"]["content_type"]
@@ -71,7 +71,7 @@ export type Database = {
           thumbnail_path?: string | null
           title: string
           updated_at?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           content_type?: Database["public"]["Enums"]["content_type"]
@@ -85,7 +85,7 @@ export type Database = {
           thumbnail_path?: string | null
           title?: string
           updated_at?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -99,7 +99,7 @@ export type Database = {
           tags: string[] | null
           title: string
           updated_at: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           content?: string | null
@@ -110,7 +110,7 @@ export type Database = {
           tags?: string[] | null
           title: string
           updated_at?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           content?: string | null
@@ -121,7 +121,7 @@ export type Database = {
           tags?: string[] | null
           title?: string
           updated_at?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
