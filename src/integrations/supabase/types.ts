@@ -16,7 +16,7 @@ export type Database = {
           created_at: string | null
           hashtags: string[] | null
           id: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           caption: string
@@ -24,7 +24,7 @@ export type Database = {
           created_at?: string | null
           hashtags?: string[] | null
           id?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           caption?: string
@@ -32,7 +32,7 @@ export type Database = {
           created_at?: string | null
           hashtags?: string[] | null
           id?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {

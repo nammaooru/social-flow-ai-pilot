@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -79,16 +78,14 @@ const GenerateCaptionModal: React.FC<GenerateCaptionModalProps> = ({
     
     try {
       // Save the AI-generated caption to the database
-      // We're using a dummy user ID for now since we don't have authentication set up
-      const dummyUserId = '00000000-0000-0000-0000-000000000000';
-      
+      // We're setting user_id to null since we made it nullable
       const { error } = await supabase
         .from('ai_captions')
         .insert({
           content_id: content.id,
           caption: caption,
           hashtags: hashtags.split(' ').filter(tag => tag.startsWith('#')),
-          user_id: dummyUserId // Demo user ID
+          user_id: null // Now using null instead of dummy ID
         });
       
       if (error) throw error;
