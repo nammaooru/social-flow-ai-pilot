@@ -100,7 +100,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
         
         setUploadProgress(30);
         
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError, data } = await supabase.storage
           .from('content_assets')
           .upload(storagePath, file);
         
@@ -109,7 +109,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
         }
         
         setUploadProgress(70);
-        uploadFilePath = `content_assets/${storagePath}`;
+        uploadFilePath = storagePath;
         
         // Create thumbnail for videos (in a real app, you'd use a service to generate this)
         if (contentType === 'video') {
@@ -128,7 +128,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
       const { error: insertError } = await supabase
         .from('content_library')
         .insert({
-          user_id: temporaryUserId, // Add the required user_id field
+          user_id: temporaryUserId,
           title,
           description: description || null,
           content_type: contentType,

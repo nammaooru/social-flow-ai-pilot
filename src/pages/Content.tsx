@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -60,6 +60,45 @@ const Content = () => {
       return data || [];
     }
   });
+
+  // Setup real-time subscriptions
+  useEffect(() => {
+    // Subscribe to changes in content_library
+    const contentChannel = supabase
+      .channel('content_changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'content_library' 
+        }, 
+        () => {
+          refetchContent();
+        }
+      )
+      .subscribe();
+
+    // Subscribe to changes in content_templates
+    const templateChannel = supabase
+      .channel('template_changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'content_templates' 
+        }, 
+        () => {
+          refetchTemplates();
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(contentChannel);
+      supabase.removeChannel(templateChannel);
+    };
+  }, [refetchContent, refetchTemplates]);
 
   const handleUploadComplete = () => {
     setIsUploadModalOpen(false);

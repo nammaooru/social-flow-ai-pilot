@@ -62,33 +62,38 @@ const ContentLibrary: React.FC<ContentLibraryProps> = ({ content, isLoading, onR
   const confirmDelete = async () => {
     if (!selectedContent) return;
     
-    // First delete the file from storage if it exists
-    if (selectedContent.file_path) {
-      const filePath = selectedContent.file_path.split('/').pop();
-      await supabase.storage.from('content_assets').remove([filePath]);
-    }
-    
-    // Then delete the database entry
-    const { error } = await supabase
-      .from('content_library')
-      .delete()
-      .eq('id', selectedContent.id);
-    
-    if (error) {
+    try {
+      // First delete the file from storage if it exists
+      if (selectedContent.file_path) {
+        await supabase.storage
+          .from('content_assets')
+          .remove([selectedContent.file_path]);
+      }
+      
+      // Then delete the database entry
+      const { error } = await supabase
+        .from('content_library')
+        .delete()
+        .eq('id', selectedContent.id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Content deleted",
+        description: "The content has been removed from your library.",
+      });
+      
+      setIsDeleteModalOpen(false);
+      // No need to call onRefresh here as the real-time subscription will handle it
+    } catch (error: any) {
       toast({
         title: "Error deleting content",
         description: error.message,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Content deleted",
-        description: "The content has been removed from your library.",
-      });
-      onRefresh();
     }
-    
-    setIsDeleteModalOpen(false);
   };
 
   const getContentTypeIcon = (type: string) => {

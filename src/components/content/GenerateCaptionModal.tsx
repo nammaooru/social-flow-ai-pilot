@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, MessageSquare, Save, Copy, RefreshCw } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Sparkles, Copy, Tag, ArrowRight, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface GenerateCaptionModalProps {
   content: any;
@@ -15,251 +16,204 @@ interface GenerateCaptionModalProps {
   onSuccess: () => void;
 }
 
-const GenerateCaptionModal: React.FC<GenerateCaptionModalProps> = ({ content, open, onOpenChange, onSuccess }) => {
+const GenerateCaptionModal: React.FC<GenerateCaptionModalProps> = ({ 
+  content, 
+  open, 
+  onOpenChange,
+  onSuccess
+}) => {
   const [caption, setCaption] = useState('');
   const [hashtags, setHashtags] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [savedCaptions, setSavedCaptions] = useState<any[]>([]);
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (open && content) {
-      loadSavedCaptions();
-    }
-  }, [open, content]);
+  // For demo purposes, generate a basic caption based on content type
+  const handleGenerate = () => {
+    setIsGenerating(true);
+    
+    // Simple demo caption generator based on content type
+    setTimeout(() => {
+      let generatedCaption = '';
+      let generatedHashtags = '';
+      
+      switch(content.content_type) {
+        case 'image':
+          generatedCaption = `Check out this amazing ${content.title} we just captured! 📸 ${content.description || ''}`;
+          generatedHashtags = '#photooftheday #amazing #photography';
+          break;
+        case 'video':
+          generatedCaption = `New video alert! 🎬 ${content.title} - ${content.description || 'Watch now!'}`;
+          generatedHashtags = '#video #trending #viral';
+          break;
+        case 'carousel':
+          generatedCaption = `Swipe through to see all the amazing ${content.title} moments! ➡️ ${content.description || ''}`;
+          generatedHashtags = '#swiperight #carousel #moments';
+          break;
+        case 'text':
+          generatedCaption = `Thoughts on ${content.title}: ${content.description || 'Read more in our blog!'}`;
+          generatedHashtags = '#thoughts #insights #perspective';
+          break;
+        default:
+          generatedCaption = `Check out our latest content: ${content.title}`;
+          generatedHashtags = '#content #social #share';
+      }
+      
+      setCaption(generatedCaption);
+      setHashtags(generatedHashtags);
+      setIsGenerating(false);
+    }, 1500);
+  };
 
-  const loadSavedCaptions = async () => {
-    if (!content) return;
+  const handleCopyToClipboard = () => {
+    const fullText = `${caption}\n\n${hashtags}`;
+    navigator.clipboard.writeText(fullText);
+    toast({
+      title: "Copied to clipboard",
+      description: "Caption and hashtags copied to clipboard.",
+    });
+  };
+
+  const handleSave = async () => {
+    setIsLoading(true);
     
     try {
-      setIsLoading(true);
-      const { data, error } = await supabase
+      // Save the AI-generated caption to the database
+      const { error } = await supabase
         .from('ai_captions')
-        .select('*')
-        .eq('content_id', content.id)
-        .order('created_at', { ascending: false });
+        .insert({
+          content_id: content.id,
+          caption: caption,
+          hashtags: hashtags.split(' ').filter(tag => tag.startsWith('#')),
+          user_id: '00000000-0000-0000-0000-000000000000' // Demo user ID
+        });
       
       if (error) throw error;
-      setSavedCaptions(data || []);
+      
+      // Update the content library with the caption
+      const { error: updateError } = await supabase
+        .from('content_library')
+        .update({
+          metadata: {
+            ...content.metadata,
+            ai_caption: caption,
+            ai_hashtags: hashtags
+          }
+        })
+        .eq('id', content.id);
+      
+      if (updateError) throw updateError;
+      
+      toast({
+        title: "Caption saved",
+        description: "Your AI-generated caption has been saved.",
+      });
+      
+      onSuccess();
+      onOpenChange(false);
     } catch (error: any) {
-      console.error('Error loading captions:', error);
+      toast({
+        title: "Error saving caption",
+        description: error.message,
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const generateCaption = async () => {
-    setIsGenerating(true);
-    
-    try {
-      // In a real app, this would call an AI service
-      // For demo purposes, we'll generate a placeholder caption
-      setTimeout(() => {
-        const demoCaption = `Check out our amazing ${content.content_type === 'image' ? 'photo' : content.content_type}! ${
-          content.description ? content.description : ''
-        }`;
-        
-        const demoHashtags = content.tags 
-          ? content.tags.map((tag: string) => `#${tag.replace(/\s+/g, '')}`).join(' ') 
-          : '#SocialFlow #ContentCreation #SocialMediaMarketing';
-        
-        setCaption(demoCaption);
-        setHashtags(demoHashtags);
-        setIsGenerating(false);
-      }, 2000);
-    } catch (error: any) {
-      toast({
-        title: "Generation failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      setIsGenerating(false);
-    }
-  };
-
-  const saveCaption = async () => {
-    if (!caption.trim()) {
-      toast({
-        title: "Caption required",
-        description: "Please generate or enter a caption first.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    try {
-      // Create a temporary user ID - in a real app, this would be from auth
-      // For now we're using a fixed value to satisfy TypeScript
-      const temporaryUserId = '00000000-0000-0000-0000-000000000000';
-      
-      const { error } = await supabase
-        .from('ai_captions')
-        .insert({
-          user_id: temporaryUserId, // Add the required user_id field
-          content_id: content.id,
-          caption: caption,
-          hashtags: hashtags.split(' ').filter(tag => tag.startsWith('#')),
-        });
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Caption saved",
-        description: "Your caption has been saved successfully.",
-      });
-      
-      loadSavedCaptions();
-      onSuccess();
-    } catch (error: any) {
-      toast({
-        title: "Save failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "Copied to clipboard",
-      description: "The caption has been copied to your clipboard.",
-    });
-  };
-
-  const selectSavedCaption = (savedCaption: any) => {
-    setCaption(savedCaption.caption);
-    setHashtags(savedCaption.hashtags.join(' '));
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            AI Caption Generator
+            <Sparkles className="h-5 w-5 text-primary" />
+            Generate Caption for {content?.title}
           </DialogTitle>
         </DialogHeader>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h3 className="text-sm font-medium mb-3">Generate New Caption</h3>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+            <div className="col-span-2 flex flex-col gap-2">
+              <div className="bg-muted p-4 rounded-lg">
+                <h3 className="font-medium mb-1">{content?.title}</h3>
+                <p className="text-sm text-muted-foreground mb-2 line-clamp-3">{content?.description || 'No description'}</p>
+                <div className="flex flex-wrap gap-1">
+                  {content?.tags?.map((tag: string, i: number) => (
+                    <Badge key={i} variant="outline" className="text-xs">{tag}</Badge>
+                  ))}
+                </div>
+              </div>
+              <Button 
+                onClick={handleGenerate} 
+                disabled={isGenerating} 
+                className="w-full gap-2 mt-2"
+              >
+                <Sparkles className="h-4 w-4" />
+                {isGenerating ? 'Generating...' : 'Generate Caption'}
+              </Button>
+            </div>
             
-            <Button 
-              onClick={generateCaption} 
-              disabled={isGenerating}
-              variant="outline"
-              className="w-full mb-4"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Generate Caption
-                </>
-              )}
-            </Button>
-            
-            <div className="space-y-4">
+            <div className="col-span-3 space-y-4">
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Caption</label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium">Caption</label>
+                  {caption && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-6 px-2 text-xs"
+                      onClick={handleCopyToClipboard}
+                    >
+                      <Copy className="h-3 w-3 mr-1" />
+                      Copy all
+                    </Button>
+                  )}
+                </div>
                 <Textarea
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
-                  placeholder="Your AI-generated caption will appear here"
+                  placeholder="Your caption will appear here..."
                   rows={4}
                 />
               </div>
               
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Hashtags</label>
+                <label className="text-sm font-medium block mb-2">Hashtags</label>
                 <Input
                   value={hashtags}
                   onChange={(e) => setHashtags(e.target.value)}
-                  placeholder="#hashtag1 #hashtag2"
+                  placeholder="#hashtag1 #hashtag2 #hashtag3"
                 />
-              </div>
-              
-              <div className="flex gap-2">
-                <Button 
-                  variant="default" 
-                  className="flex-1 gap-1"
-                  onClick={saveCaption}
-                >
-                  <Save className="h-4 w-4" />
-                  Save
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => copyToClipboard(`${caption}\n\n${hashtags}`)}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
               </div>
             </div>
           </div>
-          
-          <div>
-            <h3 className="text-sm font-medium mb-3">Saved Captions</h3>
-            
-            {isLoading ? (
-              <div className="flex justify-center items-center h-40">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : savedCaptions.length === 0 ? (
-              <div className="text-center py-10 border rounded-lg">
-                <MessageSquare className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">No saved captions yet</p>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
-                {savedCaptions.map((saved, index) => (
-                  <Card 
-                    key={index} 
-                    className="p-3 cursor-pointer hover:border-primary transition-colors"
-                    onClick={() => selectSavedCaption(saved)}
-                  >
-                    <p className="text-sm line-clamp-2 mb-2">{saved.caption}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {saved.hashtags.slice(0, 3).map((tag: string, i: number) => (
-                        <span key={i} className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full">
-                          {tag}
-                        </span>
-                      ))}
-                      {saved.hashtags.length > 3 && (
-                        <span className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded-full">
-                          +{saved.hashtags.length - 3}
-                        </span>
-                      )}
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
+
+          {!caption && !isGenerating && (
+            <div className="bg-muted p-4 rounded-lg flex items-center gap-3 text-sm">
+              <AlertCircle className="h-5 w-5 text-muted-foreground" />
+              <p className="text-muted-foreground">
+                Click "Generate Caption" to create AI-powered caption and hashtags for your content.
+              </p>
+            </div>
+          )}
         </div>
         
-        <DialogFooter className="mt-6">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Close
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSave} 
+            disabled={!caption || isLoading} 
+            className="gap-2"
+          >
+            {isLoading ? 'Saving...' : 'Save Caption'}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-};
-
-// Add back the copyToClipboard and selectSavedCaption functions that were in the original code
-const copyToClipboard = (text: string) => {
-  navigator.clipboard.writeText(text);
-  /* We need to reference toast here, but since we're adding this function outside the component,
-     we'll rely on the component's implementation to handle this part */
 };
 
 export default GenerateCaptionModal;

@@ -35,7 +35,7 @@ const ContentCard: React.FC<ContentCardProps> = ({ content, onView, onDelete, on
       case 'image':
         return (
           <img 
-            src={content.file_path ? baseUrl + content.file_path.split('/').pop() : '/placeholder.svg'} 
+            src={content.file_path ? baseUrl + content.file_path : '/placeholder.svg'} 
             alt={content.title}
             className="object-cover w-full h-48 rounded-t-lg"
           />
@@ -45,7 +45,7 @@ const ContentCard: React.FC<ContentCardProps> = ({ content, onView, onDelete, on
           <div className="relative bg-black h-48 flex items-center justify-center rounded-t-lg">
             {content.thumbnail_path ? (
               <img 
-                src={baseUrl + content.thumbnail_path.split('/').pop()} 
+                src={baseUrl + content.thumbnail_path} 
                 alt={content.title}
                 className="object-cover w-full h-full rounded-t-lg opacity-70"
               />
@@ -90,6 +90,9 @@ const ContentCard: React.FC<ContentCardProps> = ({ content, onView, onDelete, on
     }
   };
 
+  // Check if the content has an AI caption
+  const hasAiCaption = content.metadata && (content.metadata.ai_caption || content.metadata.ai_hashtags);
+
   return (
     <Card className="overflow-hidden flex flex-col">
       {getContentPreview()}
@@ -106,6 +109,13 @@ const ContentCard: React.FC<ContentCardProps> = ({ content, onView, onDelete, on
         <h3 className="font-medium text-base mb-1 truncate">{content.title}</h3>
         {content.description && (
           <p className="text-muted-foreground text-sm mb-1 line-clamp-2">{content.description}</p>
+        )}
+        {hasAiCaption && (
+          <div className="mt-2 bg-primary/5 p-2 rounded-sm">
+            <p className="text-xs text-primary/90 line-clamp-2">
+              {content.metadata.ai_caption || "AI caption available"}
+            </p>
+          </div>
         )}
         {content.tags && content.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
@@ -131,7 +141,12 @@ const ContentCard: React.FC<ContentCardProps> = ({ content, onView, onDelete, on
           View
         </Button>
         <div className="flex gap-1">
-          <Button variant="ghost" size="icon" onClick={onGenerateCaption}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onGenerateCaption}
+            className={hasAiCaption ? "text-primary" : ""}
+          >
             <MessageSquare className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="icon" onClick={onDelete}>
