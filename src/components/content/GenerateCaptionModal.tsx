@@ -79,13 +79,16 @@ const GenerateCaptionModal: React.FC<GenerateCaptionModalProps> = ({
     
     try {
       // Save the AI-generated caption to the database
+      // We're using a dummy user ID for now since we don't have authentication set up
+      const dummyUserId = '00000000-0000-0000-0000-000000000000';
+      
       const { error } = await supabase
         .from('ai_captions')
         .insert({
           content_id: content.id,
           caption: caption,
           hashtags: hashtags.split(' ').filter(tag => tag.startsWith('#')),
-          user_id: '00000000-0000-0000-0000-000000000000' // Demo user ID
+          user_id: dummyUserId // Demo user ID
         });
       
       if (error) throw error;
