@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -14,12 +14,14 @@ interface CreateTemplateModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onTemplateCreate: () => void;
+  editTemplate?: any; // Adding the editTemplate prop
 }
 
 const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({ 
   open, 
   onOpenChange, 
-  onTemplateCreate 
+  onTemplateCreate,
+  editTemplate 
 }) => {
   const [activeTab, setActiveTab] = useState<'image' | 'video' | 'carousel' | 'text'>('text');
   const [title, setTitle] = useState('');
@@ -28,6 +30,17 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
   const [tags, setTags] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+
+  // Load template data when editing an existing template
+  useEffect(() => {
+    if (editTemplate && open) {
+      setTitle(editTemplate.title || '');
+      setContent(editTemplate.content || '');
+      setDescription(editTemplate.description || '');
+      setActiveTab(editTemplate.content_type || 'text');
+      setTags(editTemplate.tags ? editTemplate.tags.join(', ') : '');
+    }
+  }, [editTemplate, open]);
 
   const resetForm = () => {
     setTitle('');
@@ -68,31 +81,56 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
     setIsSaving(true);
     
     try {
-      const { error } = await supabase
-        .from('content_templates')
-        .insert({
-          user_id: null, // Explicitly set to null since we made it nullable
-          title,
-          description: description || null,
-          content_type: activeTab,
-          content: content || null,
-          tags: processTagsString(tags)
+      if (editTemplate) {
+        // Update existing template
+        const { error } = await supabase
+          .from('content_templates')
+          .update({
+            title,
+            description: description || null,
+            content_type: activeTab,
+            content: content || null,
+            tags: processTagsString(tags),
+            updated_at: new Date()
+          })
+          .eq('id', editTemplate.id);
+        
+        if (error) {
+          throw new Error(error.message);
+        }
+        
+        toast({
+          title: "Template updated",
+          description: "Your content template has been updated successfully.",
         });
-      
-      if (error) {
-        throw new Error(error.message);
+      } else {
+        // Create new template
+        const { error } = await supabase
+          .from('content_templates')
+          .insert({
+            user_id: null, // Explicitly set to null since we made it nullable
+            title,
+            description: description || null,
+            content_type: activeTab,
+            content: content || null,
+            tags: processTagsString(tags)
+          });
+        
+        if (error) {
+          throw new Error(error.message);
+        }
+        
+        toast({
+          title: "Template created",
+          description: "Your content template has been saved successfully.",
+        });
       }
       
       resetForm();
       onTemplateCreate();
-      
-      toast({
-        title: "Template created",
-        description: "Your content template has been saved successfully.",
-      });
     } catch (error: any) {
       toast({
-        title: "Error creating template",
+        title: editTemplate ? "Error updating template" : "Error creating template",
         description: error.message,
         variant: "destructive",
       });
@@ -105,7 +143,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create Content Template</DialogTitle>
+          <DialogTitle>{editTemplate ? 'Edit' : 'Create'} Content Template</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4 py-2">
@@ -180,7 +218,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
           </Button>
           <Button onClick={handleSubmit} disabled={isSaving} className="gap-2">
             <Save className="h-4 w-4" />
-            Save Template
+            {editTemplate ? 'Update' : 'Save'} Template
           </Button>
         </DialogFooter>
       </DialogContent>
