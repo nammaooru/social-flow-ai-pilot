@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,10 +15,6 @@ const Content = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const { toast } = useToast();
-
-  // For demo purposes, we're bypassing authentication
-  // In a real app, you would get the user ID from the authenticated session
-  const demoUserId = '00000000-0000-0000-0000-000000000000';
 
   const { data: contentLibrary, isLoading: contentLoading, refetch: refetchContent } = useQuery({
     queryKey: ['contentLibrary'],
@@ -61,9 +56,7 @@ const Content = () => {
     }
   });
 
-  // Setup real-time subscriptions
   useEffect(() => {
-    // Subscribe to changes in content_library
     const contentChannel = supabase
       .channel('content_changes')
       .on('postgres_changes', 
@@ -78,7 +71,6 @@ const Content = () => {
       )
       .subscribe();
 
-    // Subscribe to changes in content_templates
     const templateChannel = supabase
       .channel('template_changes')
       .on('postgres_changes', 
@@ -93,7 +85,6 @@ const Content = () => {
       )
       .subscribe();
 
-    // Cleanup subscription on unmount
     return () => {
       supabase.removeChannel(contentChannel);
       supabase.removeChannel(templateChannel);

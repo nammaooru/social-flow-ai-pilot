@@ -114,21 +114,19 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
         // Create thumbnail for videos (in a real app, you'd use a service to generate this)
         if (contentType === 'video') {
           // For a real app, implement video thumbnail generation
-          // Placeholder: thumbnailPath = `thumbnails/${fileName.replace(fileExt, 'jpg')}`;
         }
       }
       
       setUploadProgress(80);
       
-      // Create a temporary user ID - in a real app, this would be from auth
-      // For now we're using a fixed value to satisfy TypeScript
-      const temporaryUserId = '00000000-0000-0000-0000-000000000000';
+      // In a demo environment, we're bypassing user authentication
+      // Instead, we'll use a null value for user_id since we've updated our RLS policies
+      // to allow operations without requiring specific user ownership
       
-      // Save to database
+      // Save to database without requiring a user_id
       const { error: insertError } = await supabase
         .from('content_library')
         .insert({
-          user_id: temporaryUserId,
           title,
           description: description || null,
           content_type: contentType,
@@ -136,6 +134,8 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
           thumbnail_path: thumbnailPath,
           tags: processTagsString(tags),
           metadata: contentType === 'text' ? { text: textContent } : null,
+          // Remove user_id from the insert operation to avoid foreign key constraint
+          // This works because we've set up permissive RLS policies
         });
       
       if (insertError) {
