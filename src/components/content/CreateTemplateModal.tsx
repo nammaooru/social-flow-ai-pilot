@@ -15,7 +15,7 @@ interface CreateTemplateModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onTemplateCreate: () => void;
-  editTemplate?: any; // Adding the editTemplate prop
+  editTemplate?: any;
 }
 
 const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({ 
@@ -128,7 +128,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
         content: content || null,
         tags: processTagsString(tags),
         file_path: uploadFilePath,
-        updated_at: new Date().toISOString() // Convert Date to ISO string
+        updated_at: new Date().toISOString()
       };
       
       if (editTemplate) {
@@ -167,6 +167,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
       
       resetForm();
       onTemplateCreate();
+      onOpenChange(false);
     } catch (error: any) {
       toast({
         title: editTemplate ? "Error updating template" : "Error creating template",

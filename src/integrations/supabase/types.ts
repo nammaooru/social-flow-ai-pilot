@@ -95,6 +95,7 @@ export type Database = {
           content_type: Database["public"]["Enums"]["content_type"]
           created_at: string | null
           description: string | null
+          file_path: string | null
           id: string
           tags: string[] | null
           title: string
@@ -106,6 +107,7 @@ export type Database = {
           content_type: Database["public"]["Enums"]["content_type"]
           created_at?: string | null
           description?: string | null
+          file_path?: string | null
           id?: string
           tags?: string[] | null
           title: string
@@ -117,6 +119,7 @@ export type Database = {
           content_type?: Database["public"]["Enums"]["content_type"]
           created_at?: string | null
           description?: string | null
+          file_path?: string | null
           id?: string
           tags?: string[] | null
           title?: string
