@@ -1,17 +1,17 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Image, Video, LayoutGrid, FileText, Calendar, Tag, Edit } from 'lucide-react';
+import { Image, Video, LayoutGrid, FileText, Calendar, Tag, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface ContentDetailsModalProps {
   content: any;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onEdit?: () => void; // New prop for edit functionality
+  onEdit?: () => void;
 }
 
 const ContentDetailsModal: React.FC<ContentDetailsModalProps> = ({ 
@@ -20,6 +20,12 @@ const ContentDetailsModal: React.FC<ContentDetailsModalProps> = ({
   onOpenChange,
   onEdit 
 }) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const baseUrl = "https://jjsqtstfjodtaclulwtu.supabase.co/storage/v1/object/public/content_assets/";
+  
+  // For carousel content, we would need an array of images
+  const carouselImages = content.metadata?.carousel_images || [];
+  
   const getContentTypeIcon = () => {
     switch (content.content_type) {
       case 'image':
@@ -35,9 +41,19 @@ const ContentDetailsModal: React.FC<ContentDetailsModalProps> = ({
     }
   };
 
-  const getContentPreview = () => {
-    const baseUrl = "https://jjsqtstfjodtaclulwtu.supabase.co/storage/v1/object/public/content_assets/";
+  const handleNextImage = () => {
+    setCurrentImageIndex((prevIndex) => 
+      prevIndex === carouselImages.length - 1 ? 0 : prevIndex + 1
+    );
+  };
 
+  const handlePrevImage = () => {
+    setCurrentImageIndex((prevIndex) => 
+      prevIndex === 0 ? carouselImages.length - 1 : prevIndex - 1
+    );
+  };
+
+  const getContentPreview = () => {
     switch (content.content_type) {
       case 'image':
         return (
@@ -63,13 +79,53 @@ const ContentDetailsModal: React.FC<ContentDetailsModalProps> = ({
           </div>
         );
       case 'carousel':
-        // In a real app, you'd map through carousel items
-        return (
-          <div className="aspect-video bg-muted rounded-lg mb-6 flex items-center justify-center">
-            <LayoutGrid className="h-16 w-16 text-muted-foreground" />
-            <p className="text-muted-foreground">Carousel preview</p>
-          </div>
-        );
+        if (carouselImages.length > 0) {
+          return (
+            <div className="aspect-video bg-black rounded-lg overflow-hidden mb-6 relative">
+              <img 
+                src={carouselImages[currentImageIndex]?.url || '/placeholder.svg'} 
+                alt={`Slide ${currentImageIndex + 1}`}
+                className="max-h-[400px] w-full h-full object-contain"
+              />
+              {carouselImages.length > 1 && (
+                <>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full"
+                    onClick={handlePrevImage}
+                  >
+                    <ChevronLeft className="h-6 w-6" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full"
+                    onClick={handleNextImage}
+                  >
+                    <ChevronRight className="h-6 w-6" />
+                  </Button>
+                  <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
+                    {carouselImages.map((_, index) => (
+                      <div 
+                        key={index} 
+                        className={`h-2 w-2 rounded-full ${index === currentImageIndex ? 'bg-white' : 'bg-white/50'}`}
+                        onClick={() => setCurrentImageIndex(index)}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        } else {
+          return (
+            <div className="aspect-video bg-muted rounded-lg mb-6 flex items-center justify-center">
+              <LayoutGrid className="h-16 w-16 text-muted-foreground" />
+              <p className="text-muted-foreground ml-2">Carousel preview</p>
+            </div>
+          );
+        }
       case 'text':
         return (
           <Card className="p-6 mb-6 bg-muted/30 max-h-[400px] overflow-y-auto">

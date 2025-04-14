@@ -3,13 +3,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Image, Video, FileText, LayoutGrid, Search, Filter, Trash2, Edit, MessageSquare, Calendar } from 'lucide-react';
+import { Image, Video, FileText, LayoutGrid, Search, Filter } from 'lucide-react';
 import ContentCard from './ContentCard';
 import ContentDetailsModal from './ContentDetailsModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 import GenerateCaptionModal from './GenerateCaptionModal';
 import UploadModal from './UploadModal';
-import ScheduleModal from '../schedule/ScheduleModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -29,7 +28,6 @@ const ContentLibrary: React.FC<ContentLibraryProps> = ({ content, isLoading, onR
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCaptionModalOpen, setIsCaptionModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const { toast } = useToast();
 
   const filteredContent = content.filter(item => {
@@ -65,22 +63,9 @@ const ContentLibrary: React.FC<ContentLibraryProps> = ({ content, isLoading, onR
     setIsEditModalOpen(true);
   };
 
-  const handleSchedule = (item: any) => {
-    setSelectedContent(item);
-    setIsScheduleModalOpen(true);
-  };
-
   const handleEditFromDetails = () => {
     setIsDetailsModalOpen(false);
     setIsEditModalOpen(true);
-  };
-
-  const handleScheduleComplete = () => {
-    setIsScheduleModalOpen(false);
-    toast({
-      title: "Content scheduled",
-      description: "Your content has been scheduled successfully.",
-    });
   };
 
   const confirmDelete = async () => {
@@ -214,7 +199,6 @@ const ContentLibrary: React.FC<ContentLibraryProps> = ({ content, isLoading, onR
               onDelete={() => handleDelete(item)}
               onGenerateCaption={() => handleGenerateCaption(item)}
               onEdit={() => handleEdit(item)}
-              onSchedule={() => handleSchedule(item)}
             />
           ))}
         </div>
@@ -247,14 +231,6 @@ const ContentLibrary: React.FC<ContentLibraryProps> = ({ content, isLoading, onR
             onUploadComplete={handleEditComplete}
             editMode={true}
             contentToEdit={selectedContent}
-          />
-          <ScheduleModal
-            open={isScheduleModalOpen}
-            onOpenChange={setIsScheduleModalOpen}
-            onScheduleComplete={handleScheduleComplete}
-            initialDate={new Date()}
-            selectedContent={selectedContent}
-            contentSource="library"
           />
         </>
       )}

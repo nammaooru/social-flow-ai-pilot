@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eye, Trash2, Edit, MessageSquare, Calendar } from 'lucide-react';
+import { Eye, Trash2, Edit, MessageSquare } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface ContentCardProps {
@@ -19,7 +19,6 @@ interface ContentCardProps {
   onDelete: () => void;
   onGenerateCaption: () => void;
   onEdit: () => void;
-  onSchedule: () => void;
 }
 
 const ContentCard: React.FC<ContentCardProps> = ({ 
@@ -27,8 +26,7 @@ const ContentCard: React.FC<ContentCardProps> = ({
   onView, 
   onDelete, 
   onGenerateCaption, 
-  onEdit,
-  onSchedule
+  onEdit
 }) => {
   const getContentTypeBadge = (type: string) => {
     switch (type) {
@@ -86,9 +84,6 @@ const ContentCard: React.FC<ContentCardProps> = ({
             </Button>
             <Button variant="ghost" size="icon" onClick={onGenerateCaption} title="Generate caption">
               <MessageSquare className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={onSchedule} title="Schedule content">
-              <Calendar className="h-4 w-4" />
             </Button>
             <Button variant="ghost" size="icon" onClick={onDelete} title="Delete content">
               <Trash2 className="h-4 w-4" />
