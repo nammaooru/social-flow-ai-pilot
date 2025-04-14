@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -26,7 +25,6 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
 
-// Type definitions to match component interface requirements
 interface ScheduledPost {
   id: string;
   title: string;
@@ -67,16 +65,11 @@ const Schedule = () => {
   });
   const { toast } = useToast();
 
-  // For demo purposes, we're bypassing authentication
-  // In a real app, you would get the user ID from the authenticated session
   const demoUserId = '00000000-0000-0000-0000-000000000000';
 
-  // Query to fetch scheduled posts
   const { data: scheduledPosts, isLoading, refetch } = useQuery({
     queryKey: ['scheduledPosts', filters],
     queryFn: async () => {
-      // This is a mock query - in a real app, this would fetch from your 'scheduled_posts' table
-      // with proper filtering and date range
       const { data, error } = await supabase
         .from('content_library')
         .select('*')
@@ -92,8 +85,6 @@ const Schedule = () => {
         return [];
       }
       
-      // Transform data to include scheduled_date and platform
-      // In a real app, you'd have actual data from a scheduled_posts table
       const transformedData = data?.map(item => ({
         ...item,
         scheduled_date: new Date(Date.now() + Math.random() * 30 * 24 * 60 * 60 * 1000),
@@ -106,7 +97,6 @@ const Schedule = () => {
     }
   });
 
-  // For demo purposes, create some queue slots based on time of day
   const queueSlots: QueueSlot[] = [
     { 
       id: 'morning', 
@@ -156,7 +146,6 @@ const Schedule = () => {
     } else if (calendarView === 'week') {
       setSelectedDate(direction === 'prev' ? subDays(selectedDate, 7) : addDays(selectedDate, 7));
     } else {
-      // Month view
       setSelectedDate(direction === 'prev' 
         ? new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1)
         : new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1));
@@ -171,7 +160,6 @@ const Schedule = () => {
       const end = endOfWeek(selectedDate);
       return `${format(start, 'MMM d')} - ${format(end, 'MMM d, yyyy')}`;
     } else {
-      // Month view
       return format(selectedDate, 'MMMM yyyy');
     }
   };

@@ -4,12 +4,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Image, Video, FileText, LayoutGrid, Search, Edit, Trash2, Copy } from 'lucide-react';
+import { Image, Video, FileText, LayoutGrid, Search, Edit, Trash2, Copy, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 import CreateTemplateModal from './CreateTemplateModal';
+import ScheduleModal from '../schedule/ScheduleModal';
 
 interface ContentTemplatesProps {
   templates: any[];
@@ -25,6 +26,7 @@ const ContentTemplates: React.FC<ContentTemplatesProps> = ({ templates, isLoadin
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const { toast } = useToast();
 
   const filteredTemplates = templates.filter(item => {
@@ -50,6 +52,19 @@ const ContentTemplates: React.FC<ContentTemplatesProps> = ({ templates, isLoadin
   const handleEdit = (template: any) => {
     setSelectedTemplate(template);
     setIsEditModalOpen(true);
+  };
+
+  const handleSchedule = (template: any) => {
+    setSelectedTemplate(template);
+    setIsScheduleModalOpen(true);
+  };
+
+  const handleScheduleComplete = () => {
+    setIsScheduleModalOpen(false);
+    toast({
+      title: "Content scheduled",
+      description: "Your template has been scheduled successfully.",
+    });
   };
 
   const handleCopy = (template: any) => {
@@ -186,6 +201,9 @@ const ContentTemplates: React.FC<ContentTemplatesProps> = ({ templates, isLoadin
                     <Button variant="ghost" size="icon" onClick={() => handleCopy(template)} title="Copy content">
                       <Copy className="h-4 w-4" />
                     </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleSchedule(template)} title="Schedule template">
+                      <Calendar className="h-4 w-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => handleEdit(template)} title="Edit template">
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -214,6 +232,14 @@ const ContentTemplates: React.FC<ContentTemplatesProps> = ({ templates, isLoadin
             onOpenChange={setIsEditModalOpen}
             onTemplateCreate={onRefresh}
             editTemplate={selectedTemplate}
+          />
+          <ScheduleModal
+            open={isScheduleModalOpen}
+            onOpenChange={setIsScheduleModalOpen}
+            onScheduleComplete={handleScheduleComplete}
+            initialDate={new Date()}
+            selectedContent={selectedTemplate}
+            contentSource="template"
           />
         </>
       )}

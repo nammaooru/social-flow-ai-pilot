@@ -1,180 +1,101 @@
 
 import React from 'react';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eye, Trash2, MessageSquare, Image, Video, FileText, LayoutGrid, Edit } from 'lucide-react';
+import { Eye, Trash2, Edit, MessageSquare, Calendar } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface ContentCardProps {
-  content: any;
+  content: {
+    id: string;
+    title: string;
+    description?: string;
+    content_type: string;
+    thumbnail_path?: string;
+    file_path?: string;
+    created_at?: string;
+  };
   onView: () => void;
   onDelete: () => void;
   onGenerateCaption: () => void;
   onEdit: () => void;
+  onSchedule: () => void;
 }
 
 const ContentCard: React.FC<ContentCardProps> = ({ 
   content, 
   onView, 
   onDelete, 
-  onGenerateCaption,
-  onEdit 
+  onGenerateCaption, 
+  onEdit,
+  onSchedule
 }) => {
-  const getContentTypeIcon = () => {
-    switch (content.content_type) {
+  const getContentTypeBadge = (type: string) => {
+    switch (type) {
       case 'image':
-        return <Image className="h-4 w-4" />;
+        return <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Image</span>;
       case 'video':
-        return <Video className="h-4 w-4" />;
+        return <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded">Video</span>;
       case 'carousel':
-        return <LayoutGrid className="h-4 w-4" />;
+        return <span className="bg-amber-100 text-amber-800 text-xs font-medium px-2.5 py-0.5 rounded">Carousel</span>;
       case 'text':
-        return <FileText className="h-4 w-4" />;
+        return <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">Text</span>;
       default:
-        return <FileText className="h-4 w-4" />;
+        return null;
     }
   };
-
-  const getContentPreview = () => {
-    const baseUrl = "https://jjsqtstfjodtaclulwtu.supabase.co/storage/v1/object/public/content_assets/";
-    
-    switch (content.content_type) {
-      case 'image':
-        return (
-          <img 
-            src={content.file_path ? baseUrl + content.file_path : '/placeholder.svg'} 
-            alt={content.title}
-            className="object-cover w-full h-48 rounded-t-lg"
-          />
-        );
-      case 'video':
-        return (
-          <div className="relative bg-black h-48 flex items-center justify-center rounded-t-lg">
-            {content.thumbnail_path ? (
-              <img 
-                src={baseUrl + content.thumbnail_path} 
-                alt={content.title}
-                className="object-cover w-full h-full rounded-t-lg opacity-70"
-              />
-            ) : (
-              <Video className="h-16 w-16 text-muted" />
-            )}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="rounded-full bg-primary/80 p-3">
-                <Video className="h-6 w-6 text-primary-foreground" />
-              </div>
-            </div>
-          </div>
-        );
-      case 'carousel':
-        return (
-          <div className="bg-muted flex items-center justify-center h-48 rounded-t-lg">
-            <div className="grid grid-cols-2 gap-1 p-4 w-full h-full">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="bg-background rounded"></div>
-              ))}
-            </div>
-            <LayoutGrid className="absolute h-10 w-10 text-foreground opacity-50" />
-          </div>
-        );
-      case 'text':
-        return (
-          <div className="bg-muted flex items-center justify-center h-48 p-6 rounded-t-lg">
-            <div className="text-center">
-              <FileText className="h-10 w-10 text-foreground opacity-50 mx-auto mb-2" />
-              <p className="line-clamp-4 text-sm text-foreground/70">
-                {content.description || "Text content"}
-              </p>
-            </div>
-          </div>
-        );
-      default:
-        return (
-          <div className="bg-muted flex items-center justify-center h-48 rounded-t-lg">
-            <FileText className="h-10 w-10 text-muted-foreground" />
-          </div>
-        );
-    }
-  };
-
-  // Check if the content has an AI caption
-  const hasAiCaption = content.metadata && (content.metadata.ai_caption || content.metadata.ai_hashtags);
-
+  
   return (
     <Card className="overflow-hidden flex flex-col">
-      {getContentPreview()}
-      <CardContent className="p-4 flex-grow">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded-full">
-            {getContentTypeIcon()}
-            <span className="capitalize">{content.content_type}</span>
+      <div className="h-48 bg-muted relative">
+        {content.thumbnail_path || content.file_path ? (
+          <img 
+            src={content.thumbnail_path || content.file_path} 
+            alt={content.title}
+            className="object-cover w-full h-full"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/placeholder.svg';
+            }}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <img src="/placeholder.svg" alt="Placeholder" className="w-16 h-16 opacity-50" />
           </div>
+        )}
+        <div className="absolute top-2 right-2">
+          {getContentTypeBadge(content.content_type)}
+        </div>
+      </div>
+      <CardContent className="p-4 flex-grow flex flex-col">
+        <h3 className="font-medium text-base mb-1 line-clamp-1" title={content.title}>{content.title}</h3>
+        {content.description && (
+          <p className="text-muted-foreground text-sm mb-2 line-clamp-2" title={content.description}>
+            {content.description}
+          </p>
+        )}
+        <div className="flex justify-between items-center mt-auto pt-2">
           <span className="text-xs text-muted-foreground">
             {content.created_at && formatDistanceToNow(new Date(content.created_at), { addSuffix: true })}
           </span>
+          <div className="flex gap-1">
+            <Button variant="ghost" size="icon" onClick={onView} title="View details">
+              <Eye className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onEdit} title="Edit content">
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onGenerateCaption} title="Generate caption">
+              <MessageSquare className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onSchedule} title="Schedule content">
+              <Calendar className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onDelete} title="Delete content">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-        <h3 className="font-medium text-base mb-1 truncate">{content.title}</h3>
-        {content.description && (
-          <p className="text-muted-foreground text-sm mb-1 line-clamp-2">{content.description}</p>
-        )}
-        {hasAiCaption && (
-          <div className="mt-2 bg-primary/5 p-2 rounded-sm">
-            <p className="text-xs text-primary/90 line-clamp-2">
-              {content.metadata.ai_caption || "AI caption available"}
-            </p>
-          </div>
-        )}
-        {content.tags && content.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            {content.tags.slice(0, 3).map((tag: string, index: number) => (
-              <span 
-                key={index} 
-                className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full"
-              >
-                {tag}
-              </span>
-            ))}
-            {content.tags.length > 3 && (
-              <span className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded-full">
-                +{content.tags.length - 3}
-              </span>
-            )}
-          </div>
-        )}
       </CardContent>
-      <CardFooter className="px-4 py-3 bg-muted/20 border-t flex justify-between">
-        <Button variant="ghost" size="sm" onClick={onView}>
-          <Eye className="h-4 w-4 mr-1" />
-          View
-        </Button>
-        <div className="flex gap-1">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={onEdit}
-            title="Edit"
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={onGenerateCaption}
-            className={hasAiCaption ? "text-primary" : ""}
-            title="Generate Caption"
-          >
-            <MessageSquare className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={onDelete}
-            title="Delete"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardFooter>
     </Card>
   );
 };

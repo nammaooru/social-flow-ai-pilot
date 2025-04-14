@@ -1,15 +1,15 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Image, Video, FileText, LayoutGrid, Search, Filter, Trash2, Edit, MessageSquare } from 'lucide-react';
+import { Image, Video, FileText, LayoutGrid, Search, Filter, Trash2, Edit, MessageSquare, Calendar } from 'lucide-react';
 import ContentCard from './ContentCard';
 import ContentDetailsModal from './ContentDetailsModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 import GenerateCaptionModal from './GenerateCaptionModal';
 import UploadModal from './UploadModal';
+import ScheduleModal from '../schedule/ScheduleModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -29,15 +29,14 @@ const ContentLibrary: React.FC<ContentLibraryProps> = ({ content, isLoading, onR
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCaptionModalOpen, setIsCaptionModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const { toast } = useToast();
 
   const filteredContent = content.filter(item => {
-    // Filter by content type
     if (activeType !== 'all' && item.content_type !== activeType) {
       return false;
     }
     
-    // Filter by search term
     if (searchTerm && !item.title.toLowerCase().includes(searchTerm.toLowerCase()) && 
         !item.description?.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
@@ -66,23 +65,34 @@ const ContentLibrary: React.FC<ContentLibraryProps> = ({ content, isLoading, onR
     setIsEditModalOpen(true);
   };
 
+  const handleSchedule = (item: any) => {
+    setSelectedContent(item);
+    setIsScheduleModalOpen(true);
+  };
+
   const handleEditFromDetails = () => {
     setIsDetailsModalOpen(false);
     setIsEditModalOpen(true);
+  };
+
+  const handleScheduleComplete = () => {
+    setIsScheduleModalOpen(false);
+    toast({
+      title: "Content scheduled",
+      description: "Your content has been scheduled successfully.",
+    });
   };
 
   const confirmDelete = async () => {
     if (!selectedContent) return;
     
     try {
-      // First delete the file from storage if it exists
       if (selectedContent.file_path) {
         await supabase.storage
           .from('content_assets')
           .remove([selectedContent.file_path]);
       }
       
-      // Then delete the database entry
       const { error } = await supabase
         .from('content_library')
         .delete()
@@ -98,7 +108,6 @@ const ContentLibrary: React.FC<ContentLibraryProps> = ({ content, isLoading, onR
       });
       
       setIsDeleteModalOpen(false);
-      // No need to call onRefresh here as the real-time subscription will handle it
     } catch (error: any) {
       toast({
         title: "Error deleting content",
@@ -205,6 +214,7 @@ const ContentLibrary: React.FC<ContentLibraryProps> = ({ content, isLoading, onR
               onDelete={() => handleDelete(item)}
               onGenerateCaption={() => handleGenerateCaption(item)}
               onEdit={() => handleEdit(item)}
+              onSchedule={() => handleSchedule(item)}
             />
           ))}
         </div>
@@ -237,6 +247,14 @@ const ContentLibrary: React.FC<ContentLibraryProps> = ({ content, isLoading, onR
             onUploadComplete={handleEditComplete}
             editMode={true}
             contentToEdit={selectedContent}
+          />
+          <ScheduleModal
+            open={isScheduleModalOpen}
+            onOpenChange={setIsScheduleModalOpen}
+            onScheduleComplete={handleScheduleComplete}
+            initialDate={new Date()}
+            selectedContent={selectedContent}
+            contentSource="library"
           />
         </>
       )}
