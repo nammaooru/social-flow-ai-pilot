@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   ColumnDef, 
@@ -32,6 +31,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import DeleteConfirmationModal from "@/components/content/DeleteConfirmationModal";
 
 interface ScheduledPost {
   id: string;
@@ -47,6 +47,10 @@ interface ListScheduleViewProps {
   posts: ScheduledPost[];
   isLoading: boolean;
   onSchedulePost: () => void;
+  onEditPost?: (post: ScheduledPost) => void;
+  onReschedulePost?: (post: ScheduledPost) => void;
+  onClonePost?: (post: ScheduledPost) => void;
+  onDeletePost?: (postId: string) => void;
 }
 
 const platformColors: Record<string, string> = {
@@ -65,9 +69,58 @@ const statusIcons: Record<string, JSX.Element> = {
   failed: <XCircle className="h-4 w-4 text-red-500" />,
 };
 
-const ListScheduleView: React.FC<ListScheduleViewProps> = ({ posts, isLoading, onSchedulePost }) => {
+const ListScheduleView: React.FC<ListScheduleViewProps> = ({ 
+  posts, 
+  isLoading, 
+  onSchedulePost,
+  onEditPost,
+  onReschedulePost,
+  onClonePost,
+  onDeletePost
+}) => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [postToDelete, setPostToDelete] = useState<string | null>(null);
+
+  const handleEdit = (post: ScheduledPost) => {
+    if (onEditPost) {
+      onEditPost(post);
+    } else {
+      console.log("Edit post:", post);
+    }
+  };
+
+  const handleReschedule = (post: ScheduledPost) => {
+    if (onReschedulePost) {
+      onReschedulePost(post);
+    } else {
+      console.log("Reschedule post:", post);
+    }
+  };
+
+  const handleClone = (post: ScheduledPost) => {
+    if (onClonePost) {
+      onClonePost(post);
+    } else {
+      console.log("Clone post:", post);
+    }
+  };
+
+  const handleDeleteClick = (postId: string) => {
+    setPostToDelete(postId);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (postToDelete && onDeletePost) {
+      onDeletePost(postToDelete);
+    } else {
+      console.log("Delete post:", postToDelete);
+    }
+    setDeleteModalOpen(false);
+    setPostToDelete(null);
+  };
 
   const columns: ColumnDef<ScheduledPost>[] = [
     {
@@ -186,11 +239,22 @@ const ListScheduleView: React.FC<ListScheduleViewProps> = ({ posts, isLoading, o
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem>Edit post</DropdownMenuItem>
-              <DropdownMenuItem>Reschedule</DropdownMenuItem>
-              <DropdownMenuItem>Clone</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleEdit(post)}>
+                Edit post
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleReschedule(post)}>
+                Reschedule
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleClone(post)}>
+                Clone
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600">Delete post</DropdownMenuItem>
+              <DropdownMenuItem 
+                className="text-red-600"
+                onClick={() => handleDeleteClick(post.id)}
+              >
+                Delete post
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         );
@@ -198,7 +262,6 @@ const ListScheduleView: React.FC<ListScheduleViewProps> = ({ posts, isLoading, o
     },
   ];
 
-  // Filter posts based on search query
   const filteredPosts = searchQuery.trim() === '' 
     ? posts 
     : posts.filter(post => 
@@ -342,6 +405,14 @@ const ListScheduleView: React.FC<ListScheduleViewProps> = ({ posts, isLoading, o
           Next
         </Button>
       </div>
+      
+      <DeleteConfirmationModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        onConfirm={handleConfirmDelete}
+        title="Delete Scheduled Post"
+        description="Are you sure you want to delete this scheduled post? This action cannot be undone."
+      />
     </div>
   );
 };

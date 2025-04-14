@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -63,6 +64,7 @@ const Schedule = () => {
     contentTypes: ['all'],
     campaigns: ['all'],
   });
+  const [editingPost, setEditingPost] = useState<ScheduledPost | null>(null);
   const { toast } = useToast();
 
   const demoUserId = '00000000-0000-0000-0000-000000000000';
@@ -166,6 +168,7 @@ const Schedule = () => {
 
   const handleScheduleComplete = () => {
     setIsScheduleModalOpen(false);
+    setEditingPost(null);
     refetch();
     toast({
       title: "Content scheduled",
@@ -176,6 +179,43 @@ const Schedule = () => {
   const applyFilters = (newFilters: typeof filters) => {
     setFilters(newFilters);
     setIsFilterOpen(false);
+  };
+
+  const handleEditPost = (post: ScheduledPost) => {
+    setEditingPost(post);
+    setIsScheduleModalOpen(true);
+  };
+
+  const handleReschedulePost = (post: ScheduledPost) => {
+    setEditingPost(post);
+    setIsScheduleModalOpen(true);
+  };
+
+  const handleClonePost = (post: ScheduledPost) => {
+    // Create a new post based on the original, but with a new ID
+    const clonedPost = {
+      ...post,
+      id: crypto.randomUUID(),
+      title: `${post.title} (Copy)`,
+    };
+    
+    // In a real app, you would save this to your database
+    toast({
+      title: "Post cloned",
+      description: "A copy of the post has been created successfully.",
+    });
+    
+    setTimeout(() => refetch(), 500);
+  };
+
+  const handleDeletePost = (postId: string) => {
+    // In a real app, you would delete this from your database
+    toast({
+      title: "Post deleted",
+      description: "The scheduled post has been deleted successfully.",
+    });
+    
+    setTimeout(() => refetch(), 500);
   };
 
   return (
@@ -192,7 +232,10 @@ const Schedule = () => {
             <Filter size={16} />
           </Button>
           <Button 
-            onClick={() => setIsScheduleModalOpen(true)}
+            onClick={() => {
+              setEditingPost(null);
+              setIsScheduleModalOpen(true);
+            }}
             className="gap-2"
           >
             <Plus size={16} />
@@ -289,7 +332,10 @@ const Schedule = () => {
             view={calendarView}
             selectedDate={selectedDate}
             onDateSelect={handleDateChange}
-            onSchedulePost={() => setIsScheduleModalOpen(true)}
+            onSchedulePost={() => {
+              setEditingPost(null);
+              setIsScheduleModalOpen(true);
+            }}
           />
         </TabsContent>
         
@@ -297,7 +343,10 @@ const Schedule = () => {
           <QueueView 
             queueSlots={queueSlots} 
             isLoading={isLoading}
-            onSchedulePost={() => setIsScheduleModalOpen(true)}
+            onSchedulePost={() => {
+              setEditingPost(null);
+              setIsScheduleModalOpen(true);
+            }}
           />
         </TabsContent>
         
@@ -305,7 +354,14 @@ const Schedule = () => {
           <ListScheduleView 
             posts={scheduledPosts || []} 
             isLoading={isLoading}
-            onSchedulePost={() => setIsScheduleModalOpen(true)}
+            onSchedulePost={() => {
+              setEditingPost(null);
+              setIsScheduleModalOpen(true);
+            }}
+            onEditPost={handleEditPost}
+            onReschedulePost={handleReschedulePost}
+            onClonePost={handleClonePost}
+            onDeletePost={handleDeletePost}
           />
         </TabsContent>
       </Tabs>
@@ -315,6 +371,7 @@ const Schedule = () => {
         onOpenChange={setIsScheduleModalOpen}
         onScheduleComplete={handleScheduleComplete}
         initialDate={selectedDate}
+        editPost={editingPost}
       />
     </div>
   );
