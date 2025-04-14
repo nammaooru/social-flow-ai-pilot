@@ -4,16 +4,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Image, Video, LayoutGrid, FileText, Calendar, Tag } from 'lucide-react';
+import { Image, Video, LayoutGrid, FileText, Calendar, Tag, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface ContentDetailsModalProps {
   content: any;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEdit?: () => void; // New prop for edit functionality
 }
 
-const ContentDetailsModal: React.FC<ContentDetailsModalProps> = ({ content, open, onOpenChange }) => {
+const ContentDetailsModal: React.FC<ContentDetailsModalProps> = ({ 
+  content, 
+  open, 
+  onOpenChange,
+  onEdit 
+}) => {
   const getContentTypeIcon = () => {
     switch (content.content_type) {
       case 'image':
@@ -129,10 +135,16 @@ const ContentDetailsModal: React.FC<ContentDetailsModalProps> = ({ content, open
           )}
         </div>
         
-        <div className="flex justify-end mt-4">
+        <div className="flex justify-between mt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Close
           </Button>
+          {onEdit && (
+            <Button onClick={onEdit} className="gap-2">
+              <Edit className="h-4 w-4" />
+              Edit Content
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eye, Trash2, MessageSquare, Image, Video, FileText, LayoutGrid } from 'lucide-react';
+import { Eye, Trash2, MessageSquare, Image, Video, FileText, LayoutGrid, Edit } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface ContentCardProps {
@@ -10,9 +10,16 @@ interface ContentCardProps {
   onView: () => void;
   onDelete: () => void;
   onGenerateCaption: () => void;
+  onEdit: () => void;
 }
 
-const ContentCard: React.FC<ContentCardProps> = ({ content, onView, onDelete, onGenerateCaption }) => {
+const ContentCard: React.FC<ContentCardProps> = ({ 
+  content, 
+  onView, 
+  onDelete, 
+  onGenerateCaption,
+  onEdit 
+}) => {
   const getContentTypeIcon = () => {
     switch (content.content_type) {
       case 'image':
@@ -144,12 +151,26 @@ const ContentCard: React.FC<ContentCardProps> = ({ content, onView, onDelete, on
           <Button 
             variant="ghost" 
             size="icon" 
+            onClick={onEdit}
+            title="Edit"
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
             onClick={onGenerateCaption}
             className={hasAiCaption ? "text-primary" : ""}
+            title="Generate Caption"
           >
             <MessageSquare className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={onDelete}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onDelete}
+            title="Delete"
+          >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>

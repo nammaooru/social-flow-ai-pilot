@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Image, Video, LayoutGrid, FileText, Upload, X } from 'lucide-react';
+import { Image, Video, LayoutGrid, FileText, Upload, X, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
@@ -14,9 +15,17 @@ interface UploadModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUploadComplete: () => void;
+  editMode?: boolean;
+  contentToEdit?: any;
 }
 
-const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadComplete }) => {
+const UploadModal: React.FC<UploadModalProps> = ({ 
+  open, 
+  onOpenChange, 
+  onUploadComplete,
+  editMode = false,
+  contentToEdit
+}) => {
   const [activeTab, setActiveTab] = useState('image');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -25,7 +34,30 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
   const [textContent, setTextContent] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (open && editMode && contentToEdit) {
+      setTitle(contentToEdit.title || '');
+      setDescription(contentToEdit.description || '');
+      setActiveTab(contentToEdit.content_type || 'text');
+      setTags(contentToEdit.tags ? contentToEdit.tags.join(', ') : '');
+      
+      // Set text content if it's a text type
+      if (contentToEdit.content_type === 'text' && contentToEdit.metadata && contentToEdit.metadata.text) {
+        setTextContent(contentToEdit.metadata.text);
+      }
+      
+      // Set file preview URL for image/video/carousel
+      if (contentToEdit.file_path) {
+        const baseUrl = "https://jjsqtstfjodtaclulwtu.supabase.co/storage/v1/object/public/content_assets/";
+        setFilePreviewUrl(baseUrl + contentToEdit.file_path);
+      }
+    } else if (open && !editMode) {
+      resetForm();
+    }
+  }, [open, editMode, contentToEdit]);
 
   const resetForm = () => {
     setTitle('');
@@ -35,6 +67,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
     setTextContent('');
     setUploadProgress(0);
     setActiveTab('image');
+    setFilePreviewUrl(null);
   };
 
   const handleClose = () => {
@@ -54,7 +87,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
       return false;
     }
 
-    if (activeTab !== 'text' && (!files || files.length === 0)) {
+    if (activeTab !== 'text' && !editMode && (!files || files.length === 0) && !filePreviewUrl) {
       toast({
         title: "File required",
         description: "Please select a file to upload.",
@@ -87,10 +120,11 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
     setUploadProgress(10);
     
     try {
-      let uploadFilePath = null;
-      let thumbnailPath = null;
+      let uploadFilePath = contentToEdit?.file_path || null;
+      let thumbnailPath = contentToEdit?.thumbnail_path || null;
       const contentType = activeTab as 'image' | 'video' | 'carousel' | 'text';
       
+      // Only upload a new file if files are selected
       if (contentType !== 'text' && files && files.length > 0) {
         const file = files[0];
         const fileExt = file.name.split('.').pop();
@@ -98,6 +132,13 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
         const storagePath = `${contentType}/${fileName}`;
         
         setUploadProgress(30);
+        
+        // If editing and there's an existing file, remove it first
+        if (editMode && contentToEdit?.file_path) {
+          await supabase.storage
+            .from('content_assets')
+            .remove([contentToEdit.file_path]);
+        }
         
         const { error: uploadError, data } = await supabase.storage
           .from('content_assets')
@@ -117,21 +158,53 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
       
       setUploadProgress(80);
       
-      const { error: insertError } = await supabase
-        .from('content_library')
-        .insert({
-          user_id: null,
-          title,
-          description: description || null,
-          content_type: contentType,
-          file_path: uploadFilePath,
-          thumbnail_path: thumbnailPath,
-          tags: processTagsString(tags),
-          metadata: contentType === 'text' ? { text: textContent } : null,
+      if (editMode && contentToEdit?.id) {
+        // Update existing content
+        const { error: updateError } = await supabase
+          .from('content_library')
+          .update({
+            title,
+            description: description || null,
+            content_type: contentType,
+            file_path: uploadFilePath,
+            thumbnail_path: thumbnailPath,
+            tags: processTagsString(tags),
+            metadata: contentType === 'text' ? { text: textContent } : contentToEdit?.metadata || null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', contentToEdit.id);
+        
+        if (updateError) {
+          throw new Error(updateError.message);
+        }
+        
+        toast({
+          title: "Content updated",
+          description: "Your content has been updated successfully.",
         });
-      
-      if (insertError) {
-        throw new Error(insertError.message);
+      } else {
+        // Create new content
+        const { error: insertError } = await supabase
+          .from('content_library')
+          .insert({
+            user_id: null,
+            title,
+            description: description || null,
+            content_type: contentType,
+            file_path: uploadFilePath,
+            thumbnail_path: thumbnailPath,
+            tags: processTagsString(tags),
+            metadata: contentType === 'text' ? { text: textContent } : null,
+          });
+        
+        if (insertError) {
+          throw new Error(insertError.message);
+        }
+        
+        toast({
+          title: "Upload successful",
+          description: "Your content has been added to the library.",
+        });
       }
       
       setUploadProgress(100);
@@ -140,7 +213,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
       
     } catch (error: any) {
       toast({
-        title: "Upload failed",
+        title: editMode ? "Update failed" : "Upload failed",
         description: error.message,
         variant: "destructive",
       });
@@ -153,7 +226,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Upload New Content</DialogTitle>
+          <DialogTitle>{editMode ? 'Edit Content' : 'Upload New Content'}</DialogTitle>
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -216,6 +289,22 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
+                ) : filePreviewUrl && activeTab === 'image' ? (
+                  <div className="relative">
+                    <img
+                      src={filePreviewUrl}
+                      alt="Current file"
+                      className="max-h-[200px] mx-auto rounded-lg object-contain"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="absolute top-0 right-0 rounded-full h-8 w-8"
+                      onClick={() => setFilePreviewUrl(null)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 ) : (
                   <div className="py-4">
                     <Image className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
@@ -251,6 +340,22 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
                       size="icon"
                       className="absolute top-2 right-2 rounded-full h-8 w-8"
                       onClick={() => setFiles(null)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : filePreviewUrl && activeTab === 'video' ? (
+                  <div className="relative">
+                    <video
+                      src={filePreviewUrl}
+                      controls
+                      className="max-h-[200px] w-full mx-auto rounded-lg"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="absolute top-2 right-2 rounded-full h-8 w-8"
+                      onClick={() => setFilePreviewUrl(null)}
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -298,6 +403,25 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
                     >
                       <X className="h-4 w-4" />
                     </Button>
+                  </div>
+                ) : filePreviewUrl && activeTab === 'carousel' ? (
+                  <div className="relative">
+                    <img
+                      src={filePreviewUrl}
+                      alt="Current file"
+                      className="max-h-[200px] mx-auto rounded-lg object-contain"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="absolute top-0 right-0 rounded-full h-8 w-8"
+                      onClick={() => setFilePreviewUrl(null)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Upload new images to replace current carousel
+                    </p>
                   </div>
                 ) : (
                   <div className="py-4">
@@ -355,7 +479,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
               ></div>
             </div>
             <p className="text-sm text-muted-foreground text-center mt-2">
-              Uploading... {uploadProgress}%
+              {editMode ? 'Updating' : 'Uploading'}... {uploadProgress}%
             </p>
           </div>
         )}
@@ -365,8 +489,17 @@ const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange, onUploadC
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={isUploading} className="gap-2">
-            <Upload className="h-4 w-4" />
-            Upload
+            {editMode ? (
+              <>
+                <Save className="h-4 w-4" />
+                Save Changes
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4" />
+                Upload
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

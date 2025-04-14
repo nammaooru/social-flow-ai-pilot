@@ -9,6 +9,7 @@ import ContentCard from './ContentCard';
 import ContentDetailsModal from './ContentDetailsModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 import GenerateCaptionModal from './GenerateCaptionModal';
+import UploadModal from './UploadModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -27,6 +28,7 @@ const ContentLibrary: React.FC<ContentLibraryProps> = ({ content, isLoading, onR
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCaptionModalOpen, setIsCaptionModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { toast } = useToast();
 
   const filteredContent = content.filter(item => {
@@ -57,6 +59,16 @@ const ContentLibrary: React.FC<ContentLibraryProps> = ({ content, isLoading, onR
   const handleGenerateCaption = (item: any) => {
     setSelectedContent(item);
     setIsCaptionModalOpen(true);
+  };
+
+  const handleEdit = (item: any) => {
+    setSelectedContent(item);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditFromDetails = () => {
+    setIsDetailsModalOpen(false);
+    setIsEditModalOpen(true);
   };
 
   const confirmDelete = async () => {
@@ -109,6 +121,15 @@ const ContentLibrary: React.FC<ContentLibraryProps> = ({ content, isLoading, onR
       default:
         return <FileText className="h-5 w-5" />;
     }
+  };
+
+  const handleEditComplete = () => {
+    setIsEditModalOpen(false);
+    onRefresh();
+    toast({
+      title: "Content updated",
+      description: "Your content has been updated successfully.",
+    });
   };
 
   return (
@@ -183,6 +204,7 @@ const ContentLibrary: React.FC<ContentLibraryProps> = ({ content, isLoading, onR
               onView={() => handleViewDetails(item)}
               onDelete={() => handleDelete(item)}
               onGenerateCaption={() => handleGenerateCaption(item)}
+              onEdit={() => handleEdit(item)}
             />
           ))}
         </div>
@@ -194,6 +216,7 @@ const ContentLibrary: React.FC<ContentLibraryProps> = ({ content, isLoading, onR
             content={selectedContent}
             open={isDetailsModalOpen}
             onOpenChange={setIsDetailsModalOpen}
+            onEdit={handleEditFromDetails}
           />
           <DeleteConfirmationModal
             open={isDeleteModalOpen}
@@ -207,6 +230,13 @@ const ContentLibrary: React.FC<ContentLibraryProps> = ({ content, isLoading, onR
             open={isCaptionModalOpen}
             onOpenChange={setIsCaptionModalOpen}
             onSuccess={onRefresh}
+          />
+          <UploadModal
+            open={isEditModalOpen}
+            onOpenChange={setIsEditModalOpen}
+            onUploadComplete={handleEditComplete}
+            editMode={true}
+            contentToEdit={selectedContent}
           />
         </>
       )}
