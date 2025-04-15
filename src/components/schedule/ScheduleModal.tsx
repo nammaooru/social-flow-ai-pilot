@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -167,6 +168,8 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
         
         setContentStep('schedule');
       } else {
+        // Reset the form completely for new content
+        resetForm();
         setContentStep('select-source');
       }
       
@@ -222,7 +225,9 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
     setContentSourceType('new');
     setSelectedLibraryItem(null);
     setSelectedTemplateItem(null);
-    setContentStep('select-source');
+    setFiles(null);
+    setFilePreviewUrl(null);
+    setContentType(null);
   };
 
   const handleClose = () => {
@@ -301,7 +306,7 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
       } else if (contentType) {
         contentDetails = {
           content_type: contentType,
-          file_path: URL.createObjectURL(files![0]),
+          file_path: files ? URL.createObjectURL(files[0]) : null,
         };
       }
       

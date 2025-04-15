@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -64,6 +65,32 @@ const Schedule = () => {
     campaigns: ['all'],
   });
   const [editingPost, setEditingPost] = useState<ScheduledPost | null>(null);
+  const [queueSlots, setQueueSlots] = useState<QueueSlot[]>([
+    { 
+      id: 'morning', 
+      name: 'Morning', 
+      time: '9:00', 
+      items: [] 
+    },
+    { 
+      id: 'midday', 
+      name: 'Midday', 
+      time: '12:00', 
+      items: [] 
+    },
+    { 
+      id: 'afternoon', 
+      name: 'Afternoon', 
+      time: '3:00', 
+      items: [] 
+    },
+    { 
+      id: 'evening', 
+      name: 'Evening', 
+      time: '7:00', 
+      items: [] 
+    },
+  ]);
   const { toast } = useToast();
 
   const demoUserId = '00000000-0000-0000-0000-000000000000';
@@ -98,44 +125,25 @@ const Schedule = () => {
     }
   });
 
-  const queueSlots: QueueSlot[] = [
-    { 
-      id: 'morning', 
-      name: 'Morning', 
-      time: '9:00 AM', 
-      items: scheduledPosts?.filter(() => Math.random() > 0.7).map(post => ({
-        ...post,
-        status: post.status as 'scheduled' | 'published' | 'failed'
-      })) || [] 
-    },
-    { 
-      id: 'midday', 
-      name: 'Midday', 
-      time: '12:00 PM', 
-      items: scheduledPosts?.filter(() => Math.random() > 0.7).map(post => ({
-        ...post,
-        status: post.status as 'scheduled' | 'published' | 'failed'
-      })) || [] 
-    },
-    { 
-      id: 'afternoon', 
-      name: 'Afternoon', 
-      time: '3:00 PM', 
-      items: scheduledPosts?.filter(() => Math.random() > 0.7).map(post => ({
-        ...post,
-        status: post.status as 'scheduled' | 'published' | 'failed'
-      })) || [] 
-    },
-    { 
-      id: 'evening', 
-      name: 'Evening', 
-      time: '7:00 PM', 
-      items: scheduledPosts?.filter(() => Math.random() > 0.7).map(post => ({
-        ...post,
-        status: post.status as 'scheduled' | 'published' | 'failed'
-      })) || [] 
-    },
-  ];
+  // Populate queue slots with posts
+  React.useEffect(() => {
+    if (scheduledPosts && scheduledPosts.length > 0) {
+      // Group posts by time slot
+      const updatedSlots = queueSlots.map(slot => {
+        // Randomly assign some posts to this slot
+        const items = scheduledPosts
+          .filter(() => Math.random() > 0.7)
+          .map(post => ({
+            ...post,
+            status: post.status as 'scheduled' | 'published' | 'failed'
+          }));
+          
+        return { ...slot, items };
+      });
+      
+      setQueueSlots(updatedSlots);
+    }
+  }, [scheduledPosts]);
 
   const handleDateChange = (date: Date) => {
     setSelectedDate(date);
@@ -212,6 +220,15 @@ const Schedule = () => {
     });
     
     setTimeout(() => refetch(), 500);
+  };
+
+  const handleQueueSlotsUpdate = (newSlots: QueueSlot[]) => {
+    setQueueSlots(newSlots);
+    
+    toast({
+      title: "Queue settings updated",
+      description: "Your queue time slots have been updated successfully.",
+    });
   };
 
   return (
@@ -343,6 +360,10 @@ const Schedule = () => {
               setEditingPost(null);
               setIsScheduleModalOpen(true);
             }}
+            onEditPost={handleEditPost}
+            onReschedulePost={handleReschedulePost}
+            onClonePost={handleClonePost}
+            onDeletePost={handleDeletePost}
           />
         </TabsContent>
         
