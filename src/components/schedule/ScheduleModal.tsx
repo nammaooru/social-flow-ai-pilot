@@ -4,34 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar } from '@/components/ui/calendar';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Calendar as CalendarIcon, 
-  Clock, 
-  RotateCw, 
-  Sparkles, 
-  Calendar as CalendarCheck,
-  Globe,
-  Save,
-  Layers,
-  FileText,
-  CheckCircle,
-  FileImage,
-  Search
-} from 'lucide-react';
+import { Image, Video, LayoutGrid, FileText, Upload, X, Save, Clock, RotateCw, Sparkles, Calendar as CalendarCheck, Globe } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
@@ -109,7 +83,10 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
   const [selectedLibraryItem, setSelectedLibraryItem] = useState<any>(contentSource === 'library' ? selectedContent : null);
   const [selectedTemplateItem, setSelectedTemplateItem] = useState<any>(contentSource === 'template' ? selectedContent : null);
   const [searchTerm, setSearchTerm] = useState('');
-  
+  const [files, setFiles] = useState<FileList | null>(null);
+  const [contentType, setContentType] = useState<'image' | 'video' | 'carousel' | null>(null);
+  const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
+
   const { toast } = useToast();
   
   useEffect(() => {
@@ -277,6 +254,11 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
           template_id: selectedTemplateItem.id,
           content_type: selectedTemplateItem.content_type,
           content: selectedTemplateItem.content,
+        };
+      } else if (contentType) {
+        contentDetails = {
+          content_type: contentType,
+          file_path: URL.createObjectURL(files![0]),
         };
       }
       
@@ -528,6 +510,75 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
     }
     
     return null;
+  };
+
+  const renderFileUpload = () => {
+    if (!contentType) return null;
+
+    return (
+      <div className="border-2 border-dashed rounded-lg p-8 text-center mt-4">
+        {files && files.length > 0 ? (
+          <div className="relative">
+            {contentType === 'video' ? (
+              <video
+                src={filePreviewUrl || ''}
+                controls
+                className="max-h-[200px] w-full mx-auto rounded-lg"
+              />
+            ) : contentType === 'carousel' ? (
+              <div className="grid grid-cols-2 gap-2">
+                {Array.from(files).map((file, index) => (
+                  <img
+                    key={index}
+                    src={URL.createObjectURL(file)}
+                    alt={`Preview ${index + 1}`}
+                    className="h-24 w-full object-cover rounded"
+                  />
+                ))}
+              </div>
+            ) : (
+              <img
+                src={filePreviewUrl || ''}
+                alt="Preview"
+                className="max-h-[200px] mx-auto rounded-lg object-contain"
+              />
+            )}
+            <Button
+              variant="outline"
+              size="icon"
+              className="absolute top-2 right-2 rounded-full"
+              onClick={clearFile}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          <div className="py-4">
+            {contentType === 'video' ? (
+              <Video className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
+            ) : contentType === 'carousel' ? (
+              <LayoutGrid className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
+            ) : (
+              <Image className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
+            )}
+            <Label
+              htmlFor="content-upload"
+              className="text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+            >
+              Click to upload {contentType === 'carousel' ? 'images' : contentType}
+            </Label>
+            <Input
+              id="content-upload"
+              type="file"
+              accept={contentType === 'video' ? "video/*" : "image/*"}
+              multiple={contentType === 'carousel'}
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
