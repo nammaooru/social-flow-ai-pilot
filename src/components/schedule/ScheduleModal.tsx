@@ -41,6 +41,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+interface ScheduledPost {
+  id: string;
+  title: string;
+  content_type: "image" | "video" | "carousel" | "text";
+  platform: string;
+  scheduled_date: Date;
+  status: 'scheduled' | 'published' | 'failed';
+  campaign?: string;
+}
+
 interface ScheduleModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -48,6 +58,7 @@ interface ScheduleModalProps {
   initialDate?: Date;
   selectedContent?: any;
   contentSource?: 'library' | 'template';
+  editPost?: ScheduledPost | null;
 }
 
 const platformOptions = [
@@ -77,7 +88,8 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
   onScheduleComplete,
   initialDate,
   selectedContent,
-  contentSource
+  contentSource,
+  editPost
 }) => {
   const [scheduleType, setScheduleType] = useState<'one-time' | 'recurring' | 'smart'>('one-time');
   const [platforms, setPlatforms] = useState<string[]>([]);
@@ -106,7 +118,22 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
     }
     
     if (open) {
-      if (selectedContent) {
+      if (editPost) {
+        setTitle(editPost.title || '');
+        setDescription('');
+        setPlatforms([editPost.platform]);
+        
+        const scheduledDate = new Date(editPost.scheduled_date);
+        setDate(scheduledDate);
+        
+        const hours = scheduledDate.getHours().toString().padStart(2, '0');
+        const minutes = scheduledDate.getMinutes().toString().padStart(2, '0');
+        setTime(`${hours}:${minutes}`);
+        
+        setCampaign(editPost.campaign || '');
+        setContentStep('schedule');
+        setContentSourceType('new');
+      } else if (selectedContent) {
         setTitle(selectedContent.title || '');
         setDescription(selectedContent.description || '');
         
@@ -127,7 +154,7 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
         fetchContent();
       }
     }
-  }, [initialDate, open, selectedContent, contentSource]);
+  }, [initialDate, open, selectedContent, contentSource, editPost]);
   
   const fetchContent = async () => {
     setIsLoadingContent(true);

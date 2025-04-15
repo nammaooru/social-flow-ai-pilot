@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -192,14 +191,12 @@ const Schedule = () => {
   };
 
   const handleClonePost = (post: ScheduledPost) => {
-    // Create a new post based on the original, but with a new ID
     const clonedPost = {
       ...post,
       id: crypto.randomUUID(),
       title: `${post.title} (Copy)`,
     };
     
-    // In a real app, you would save this to your database
     toast({
       title: "Post cloned",
       description: "A copy of the post has been created successfully.",
@@ -209,7 +206,6 @@ const Schedule = () => {
   };
 
   const handleDeletePost = (postId: string) => {
-    // In a real app, you would delete this from your database
     toast({
       title: "Post deleted",
       description: "The scheduled post has been deleted successfully.",
