@@ -4,8 +4,39 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Image, Video, LayoutGrid, FileText, Upload, X, Save, Clock, RotateCw, Sparkles, Calendar as CalendarCheck, Globe } from 'lucide-react';
+import { 
+  Calendar as CalendarIcon, 
+  Clock, 
+  RotateCw, 
+  Sparkles, 
+  Calendar as CalendarCheck,
+  Globe,
+  Save,
+  FileText,
+  Image,
+  Video,
+  LayoutGrid,
+  Upload,
+  X,
+  Check as CheckCircle,
+  Search,
+  Folder as Layers,
+  FileImage
+} from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
@@ -86,6 +117,18 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
   const [files, setFiles] = useState<FileList | null>(null);
   const [contentType, setContentType] = useState<'image' | 'video' | 'carousel' | null>(null);
   const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFiles(e.target.files);
+      setFilePreviewUrl(URL.createObjectURL(e.target.files[0]));
+    }
+  };
+  
+  const clearFile = () => {
+    setFiles(null);
+    setFilePreviewUrl(null);
+  };
 
   const { toast } = useToast();
   
@@ -660,6 +703,45 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
                     placeholder="e.g. Summer Sale, Product Launch"
                   />
                 </div>
+                
+                {contentSourceType === 'new' && (
+                  <div>
+                    <Label htmlFor="content-type">Content Type</Label>
+                    <div className="grid grid-cols-3 gap-4 mt-2">
+                      <Card 
+                        className={cn("cursor-pointer", contentType === 'image' && "border-primary")}
+                        onClick={() => setContentType('image')}
+                      >
+                        <CardContent className="flex flex-col items-center justify-center py-4">
+                          <Image className="h-8 w-8 mb-2 text-muted-foreground" />
+                          <span className="text-sm font-medium">Image</span>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card 
+                        className={cn("cursor-pointer", contentType === 'video' && "border-primary")}
+                        onClick={() => setContentType('video')}
+                      >
+                        <CardContent className="flex flex-col items-center justify-center py-4">
+                          <Video className="h-8 w-8 mb-2 text-muted-foreground" />
+                          <span className="text-sm font-medium">Video</span>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card 
+                        className={cn("cursor-pointer", contentType === 'carousel' && "border-primary")}
+                        onClick={() => setContentType('carousel')}
+                      >
+                        <CardContent className="flex flex-col items-center justify-center py-4">
+                          <LayoutGrid className="h-8 w-8 mb-2 text-muted-foreground" />
+                          <span className="text-sm font-medium">Carousel</span>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    
+                    {renderFileUpload()}
+                  </div>
+                )}
                 
                 <TabsContent value="one-time" className="mt-4">
                   <div className="grid grid-cols-2 gap-4">
