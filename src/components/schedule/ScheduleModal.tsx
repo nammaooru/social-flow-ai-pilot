@@ -30,7 +30,10 @@ import {
   FileText,
   CheckCircle,
   FileImage,
-  Search
+  Search,
+  Video,
+  LayoutGrid,
+  X
 } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -109,7 +112,10 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
   const [selectedLibraryItem, setSelectedLibraryItem] = useState<any>(contentSource === 'library' ? selectedContent : null);
   const [selectedTemplateItem, setSelectedTemplateItem] = useState<any>(contentSource === 'template' ? selectedContent : null);
   const [searchTerm, setSearchTerm] = useState('');
-  
+  const [files, setFiles] = useState<FileList | null>(null);
+  const [contentType, setContentType] = useState<'image' | 'video' | 'carousel' | 'text'>('image');
+  const [filePreviewUrl, setFilePreviewUrl] = useState<string | string[] | null>(null);
+
   const { toast } = useToast();
   
   useEffect(() => {
@@ -203,6 +209,9 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
     setSelectedLibraryItem(null);
     setSelectedTemplateItem(null);
     setContentStep('select-source');
+    setFiles(null);
+    setFilePreviewUrl(null);
+    setContentType('image');
   };
 
   const handleClose = () => {
@@ -277,6 +286,11 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
           template_id: selectedTemplateItem.id,
           content_type: selectedTemplateItem.content_type,
           content: selectedTemplateItem.content,
+        };
+      } else if (contentSourceType === 'new' && files) {
+        contentDetails = {
+          file_path: files[0].name,
+          content_type: contentType,
         };
       }
       
@@ -530,6 +544,134 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
     return null;
   };
 
+  const renderNewContentUpload = () => {
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-col space-y-2">
+          <Label>Content Type</Label>
+          <div className="grid grid-cols-3 gap-4">
+            <Card 
+              className={cn("cursor-pointer", contentType === 'image' && "border-primary")}
+              onClick={() => setContentType('image')}
+            >
+              <CardContent className="flex flex-col items-center justify-center py-6">
+                <FileImage className="h-10 w-10 mb-2 text-muted-foreground" />
+                <span className="font-medium">Image</span>
+              </CardContent>
+            </Card>
+            
+            <Card 
+              className={cn("cursor-pointer", contentType === 'video' && "border-primary")}
+              onClick={() => setContentType('video')}
+            >
+              <CardContent className="flex flex-col items-center justify-center py-6">
+                <Video className="h-10 w-10 mb-2 text-muted-foreground" />
+                <span className="font-medium">Video</span>
+              </CardContent>
+            </Card>
+            
+            <Card 
+              className={cn("cursor-pointer", contentType === 'carousel' && "border-primary")}
+              onClick={() => setContentType('carousel')}
+            >
+              <CardContent className="flex flex-col items-center justify-center py-6">
+                <LayoutGrid className="h-10 w-10 mb-2 text-muted-foreground" />
+                <span className="font-medium">Carousel</span>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        <div className="border-2 border-dashed rounded-lg p-8 text-center">
+          {filePreviewUrl ? (
+            <div className="relative">
+              {contentType === 'carousel' && Array.isArray(filePreviewUrl) ? (
+                <div className="grid grid-cols-2 gap-2 max-h-[200px] overflow-y-auto">
+                  {filePreviewUrl.map((url, index) => (
+                    <img
+                      key={index}
+                      src={url}
+                      alt={`Image ${index + 1}`}
+                      className="h-24 w-full object-cover rounded"
+                    />
+                  ))}
+                </div>
+              ) : contentType === 'video' ? (
+                <video
+                  src={filePreviewUrl as string}
+                  controls
+                  className="max-h-[200px] w-full mx-auto rounded-lg"
+                />
+              ) : (
+                <img
+                  src={filePreviewUrl as string}
+                  alt="Preview"
+                  className="max-h-[200px] mx-auto rounded-lg object-contain"
+                />
+              )}
+              <Button
+                variant="outline"
+                size="icon"
+                className="absolute top-0 right-0 rounded-full h-8 w-8"
+                onClick={() => {
+                  setFiles(null);
+                  setFilePreviewUrl(null);
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="py-4">
+              {contentType === 'video' ? (
+                <Video className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
+              ) : contentType === 'carousel' ? (
+                <LayoutGrid className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
+              ) : (
+                <FileImage className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
+              )}
+              <Label
+                htmlFor="content-upload"
+                className="text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+              >
+                Click to upload {contentType === 'carousel' ? 'images' : contentType}
+              </Label>
+              <Input
+                id="content-upload"
+                type="file"
+                accept={contentType === 'video' ? "video/*" : "image/*"}
+                multiple={contentType === 'carousel'}
+                className="hidden"
+                onChange={handleFileChange}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end">
+          <Button onClick={() => setContentStep('schedule')} disabled={!files}>
+            Continue
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = e.target.files;
+    if (!selectedFiles) return;
+
+    setFiles(selectedFiles);
+
+    // Create preview URLs
+    if (contentType === 'carousel') {
+      const urls = Array.from(selectedFiles).map(file => URL.createObjectURL(file));
+      setFilePreviewUrl(urls);
+    } else {
+      setFilePreviewUrl(URL.createObjectURL(selectedFiles[0]));
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
@@ -539,6 +681,8 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
         
         {contentStep === 'select-source' || contentStep === 'select-content' ? (
           renderContentSelection()
+        ) : contentSourceType === 'new' && contentStep === 'schedule' ? (
+          renderNewContentUpload()
         ) : (
           <>
             <Tabs value={scheduleType} onValueChange={(value) => setScheduleType(value as any)} className="mt-4">
