@@ -4,8 +4,6 @@ import { Outlet } from 'react-router-dom';
 import MainSidebar from './MainSidebar';
 import Header from './Header';
 import Chatbot from './Chatbot';
-import { Toaster } from '@/components/ui/toaster';
-import { Toaster as Sonner } from '@/components/ui/sonner';
 
 const DashboardLayout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -23,8 +21,6 @@ const DashboardLayout: React.FC = () => {
         </main>
       </div>
       <Chatbot />
-      <Toaster />
-      <Sonner />
     </div>
   );
 };
