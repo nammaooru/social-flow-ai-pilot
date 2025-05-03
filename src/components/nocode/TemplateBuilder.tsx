@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Bot, MessageSquare, Plus, Save, Wand2 } from 'lucide-react';
+import { ArrowLeft, Bot, MessageSquare, Plus, Save, Wand2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface Template {
@@ -159,15 +160,29 @@ const TemplateBuilder = () => {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold mb-1">Template Builder</h1>
-          <p className="text-muted-foreground">
-            Create reusable response templates for consistent engagement
-          </p>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" asChild>
+            <Link to="/nocode">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold mb-1">Template Builder</h1>
+            <p className="text-muted-foreground">
+              Create reusable response templates for consistent engagement
+            </p>
+          </div>
         </div>
-        <Button onClick={() => saveTemplate()}>
-          <Save className="mr-2 h-4 w-4" /> Save Template
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/nocode/documentation">
+              View Documentation
+            </Link>
+          </Button>
+          <Button onClick={() => saveTemplate()}>
+            <Save className="mr-2 h-4 w-4" /> Save Template
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -279,6 +294,7 @@ const TemplateBuilder = () => {
               <TabsTrigger value="edit">Edit Template</TabsTrigger>
               <TabsTrigger value="preview">Preview</TabsTrigger>
               <TabsTrigger value="ai">AI Assist</TabsTrigger>
+              <TabsTrigger value="manage">Manage Templates</TabsTrigger>
             </TabsList>
             
             <TabsContent value="edit">
@@ -439,6 +455,87 @@ const TemplateBuilder = () => {
                       </div>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="manage">
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle>Manage Templates</CardTitle>
+                      <CardDescription>View and manage your saved templates</CardDescription>
+                    </div>
+                    <Button onClick={() => setActiveTab('edit')}>
+                      <Plus className="mr-2 h-4 w-4" /> Create New Template
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {templates.length === 0 ? (
+                    <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
+                      <p className="text-muted-foreground">You haven't created any templates yet.</p>
+                      <Button onClick={() => setActiveTab('edit')} className="mt-4">
+                        <Plus className="mr-2 h-4 w-4" /> Create Your First Template
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {templates.map(template => (
+                        <Card key={template.id}>
+                          <CardContent className="p-4">
+                            <div className="flex flex-col md:flex-row justify-between gap-4">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-semibold">{template.name}</h3>
+                                  <Badge>{categoryOptions.find(c => c.value === template.category)?.label}</Badge>
+                                  {template.isAIEnabled && <Badge variant="outline">AI-Enabled</Badge>}
+                                </div>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {template.content.substring(0, 100)}{template.content.length > 100 ? '...' : ''}
+                                </p>
+                                <div className="mt-2">
+                                  {template.variables.length > 0 && (
+                                    <div className="flex flex-wrap gap-1">
+                                      {template.variables.map((variable, i) => (
+                                        <Badge key={i} variant="outline" className="text-xs">
+                                          {variable}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex flex-wrap gap-2 justify-end">
+                                <Button variant="outline" size="sm" onClick={() => {
+                                  setCurrentTemplate(template);
+                                  setActiveTab('edit');
+                                }}>
+                                  Edit
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => {
+                                  setCurrentTemplate(template);
+                                  setActiveTab('preview');
+                                }}>
+                                  Preview
+                                </Button>
+                                <Button variant="destructive" size="sm" onClick={() => {
+                                  setTemplates(templates.filter(t => t.id !== template.id));
+                                  toast({
+                                    title: "Template Deleted",
+                                    description: "The template has been removed"
+                                  });
+                                }}>
+                                  Delete
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

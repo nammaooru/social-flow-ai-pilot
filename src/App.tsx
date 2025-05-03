@@ -22,6 +22,7 @@ import PostCreator from "./components/nocode/PostCreator";
 import TemplateBuilder from "./components/nocode/TemplateBuilder";
 import RuleEditor from "./components/nocode/RuleEditor";
 import DashboardBuilder from "./components/nocode/DashboardBuilder";
+import Documentation from "./components/nocode/Documentation";
 
 // Create a client
 const queryClient = new QueryClient();
@@ -49,6 +50,7 @@ const App = () => (
               
               {/* No-Code Builder Routes */}
               <Route path="/nocode" element={<NoCodeBuilder />} />
+              <Route path="/nocode/documentation" element={<Documentation />} />
               <Route path="/nocode/workflow" element={<WorkflowBuilder />} />
               <Route path="/nocode/post" element={<PostCreator />} />
               <Route path="/nocode/template" element={<TemplateBuilder />} />
