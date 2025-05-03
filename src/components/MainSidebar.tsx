@@ -12,7 +12,8 @@ import {
   Users, 
   FileText,
   Menu,
-  X
+  X,
+  Code
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -106,6 +107,12 @@ const MainSidebar = ({ collapsed, setCollapsed }: MainSidebarProps) => {
                 icon={<Users size={20} />} 
                 label="Team" 
                 active={currentPath === '/team'} 
+              />
+              <SidebarLink 
+                to="/nocode" 
+                icon={<Code size={20} />} 
+                label="No-Code Builder" 
+                active={currentPath.startsWith('/nocode')} 
               />
               <SidebarLink 
                 to="/settings" 
@@ -204,6 +211,21 @@ const MainSidebar = ({ collapsed, setCollapsed }: MainSidebarProps) => {
                 >
                   <Link to="/team">
                     <Users size={20} />
+                  </Link>
+                </Button>
+              </div>
+              <div className="flex justify-center mb-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
+                    currentPath.startsWith('/nocode') && "bg-sidebar-accent text-sidebar-accent-foreground"
+                  )}
+                  asChild
+                >
+                  <Link to="/nocode">
+                    <Code size={20} />
                   </Link>
                 </Button>
               </div>

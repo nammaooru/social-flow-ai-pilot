@@ -16,6 +16,12 @@ import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import DashboardLayout from "./components/DashboardLayout";
+import NoCodeBuilder from "./pages/NoCodeBuilder";
+import WorkflowBuilder from "./components/nocode/WorkflowBuilder";
+import PostCreator from "./components/nocode/PostCreator";
+import TemplateBuilder from "./components/nocode/TemplateBuilder";
+import RuleEditor from "./components/nocode/RuleEditor";
+import DashboardBuilder from "./components/nocode/DashboardBuilder";
 
 // Create a client
 const queryClient = new QueryClient();
@@ -40,6 +46,14 @@ const App = () => (
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/team" element={<Dashboard />} /> {/* Placeholder */}
+              
+              {/* No-Code Builder Routes */}
+              <Route path="/nocode" element={<NoCodeBuilder />} />
+              <Route path="/nocode/workflow" element={<WorkflowBuilder />} />
+              <Route path="/nocode/post" element={<PostCreator />} />
+              <Route path="/nocode/template" element={<TemplateBuilder />} />
+              <Route path="/nocode/rule" element={<RuleEditor />} />
+              <Route path="/nocode/dashboard" element={<DashboardBuilder />} />
             </Route>
             
             <Route path="*" element={<NotFound />} />
