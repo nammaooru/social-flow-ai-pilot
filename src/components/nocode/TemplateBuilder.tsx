@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Card, 
@@ -507,7 +506,7 @@ const TemplateBuilder = () => {
                       rows={5}
                     />
                     <p className="text-xs text-muted-foreground">
-                      Use double curly braces to define variables, e.g., {{'{{'}}variable_name{{'}}'}}
+                      Use double curly braces to define variables, e.g., {'{{'} variable_name {'}}'}
                     </p>
                   </div>
                   
@@ -527,7 +526,7 @@ const TemplateBuilder = () => {
                     
                     {editingTemplate.variables.length === 0 ? (
                       <div className="py-4 text-center text-sm text-muted-foreground">
-                        No variables defined. Add variables or include {{'{{'}}variable{{'}}'}} in your template.
+                        No variables defined. Add variables or include {'{{'} variable {'}}' } in your template.
                       </div>
                     ) : (
                       <div className="space-y-3">
@@ -652,10 +651,12 @@ const TemplateBuilder = () => {
                 <p className="text-sm font-medium mb-2">Variables Highlighted:</p>
                 <div className="bg-accent/40 border rounded-md p-4 min-h-[100px] whitespace-pre-wrap">
                   {editingTemplate.content ? (
-                    editingTemplate.content.replace(
-                      /\{\{([^}]+)\}\}/g, 
-                      (match, p1) => `<span class="bg-primary/20 text-primary rounded px-1">${match}</span>`
-                    )
+                    <div dangerouslySetInnerHTML={{
+                      __html: editingTemplate.content.replace(
+                        /\{\{([^}]+)\}\}/g, 
+                        (match) => `<span class="bg-primary/20 text-primary rounded px-1">${match}</span>`
+                      )
+                    }} />
                   ) : (
                     <span className="text-muted-foreground">
                       No template content yet
