@@ -1,412 +1,586 @@
+
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { 
+  Copy, CheckCheck, Save, ArrowRight, HelpCircle,
+  Key as KeyIcon
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Key, Copy, Eye, EyeOff, Plus, RefreshCw, Trash2, FileText as FileIcon, HelpCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import FileText from "@/components/settings/FileText";
 import Code from "@/components/settings/Code";
 import BookOpen from "@/components/settings/BookOpen";
 
-// Mock API keys data
-const mockApiKeys = [
-  {
-    id: "key_1",
-    name: "Production API Key",
-    prefix: "pk_live_",
-    lastChars: "3f8g",
-    created: "2023-03-15",
-    lastUsed: "2023-05-02",
-    status: "active"
-  },
-  {
-    id: "key_2",
-    name: "Development API Key",
-    prefix: "pk_test_",
-    lastChars: "9d2h",
-    created: "2023-04-01",
-    lastUsed: "2023-05-01",
-    status: "active"
-  },
-  {
-    id: "key_3",
-    name: "Staging Environment",
-    prefix: "pk_test_",
-    lastChars: "7c4j",
-    created: "2023-02-10",
-    lastUsed: "2023-04-15",
-    status: "inactive"
-  },
-];
-
 export function ApiKeysSettings() {
   const { toast } = useToast();
-  const [apiKeys, setApiKeys] = useState(mockApiKeys);
-  const [newKeyName, setNewKeyName] = useState("");
-  const [newKeyType, setNewKeyType] = useState(true); // true = live, false = test
-  const [isCreateKeyDialogOpen, setIsCreateKeyDialogOpen] = useState(false);
-  const [generatedKey, setGeneratedKey] = useState("");
-  const [showGeneratedKey, setShowGeneratedKey] = useState(false);
+  const [activeTab, setActiveTab] = useState("api-keys");
+  const [showSecret, setShowSecret] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   
-  const handleCopyKey = () => {
-    // In a real app, this would copy the key to clipboard
-    navigator.clipboard.writeText(generatedKey);
+  // Mock data for API keys
+  const [apiKeys, setApiKeys] = useState([
+    { id: "1", name: "Production API Key", key: "sk_prod_a1b2c3d4e5f6g7h8i9j0", createdAt: "2023-04-12", lastUsed: "2023-05-01", enabled: true },
+    { id: "2", name: "Development API Key", key: "sk_dev_9i8h7g6f5e4d3c2b1a0", createdAt: "2023-04-15", lastUsed: "2023-04-30", enabled: true },
+    { id: "3", name: "Testing API Key", key: "sk_test_3k4l5j6h7g8f9d0s1a2", createdAt: "2023-04-18", lastUsed: "2023-04-28", enabled: false },
+  ]);
+  
+  const [webhooks, setWebhooks] = useState([
+    { id: "1", url: "https://example.com/webhook", events: ["post.created", "post.updated"], active: true, secretKey: "whsec_a1b2c3d4e5f6g7h8i9j0" },
+    { id: "2", url: "https://test.example.com/notify", events: ["user.login", "user.logout"], active: false, secretKey: "whsec_9i8h7g6f5e4d3c2b1a0" },
+  ]);
+  
+  const handleCopyKey = (key: string) => {
+    navigator.clipboard.writeText(key);
+    setCopiedKey(key);
+    
     toast({
       title: "API key copied",
       description: "The API key has been copied to your clipboard.",
     });
+    
+    setTimeout(() => {
+      setCopiedKey(null);
+    }, 3000);
   };
   
-  const handleCreateKey = () => {
-    if (!newKeyName.trim()) {
-      toast({
-        title: "Missing information",
-        description: "Please provide a name for your API key.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Generate a fake API key
-    const keyPrefix = newKeyType ? "pk_live_" : "pk_test_";
-    const keyBody = Math.random().toString(36).substring(2, 15) + 
-                    Math.random().toString(36).substring(2, 15);
-    const fullKey = keyPrefix + keyBody;
-    
-    setGeneratedKey(fullKey);
-    
-    // In a real app, this would send the request to an API
-    const newKey = {
-      id: `key_${apiKeys.length + 1}`,
-      name: newKeyName,
-      prefix: keyPrefix,
-      lastChars: keyBody.slice(-4),
-      created: new Date().toISOString().split("T")[0],
-      lastUsed: "Never",
-      status: "active"
-    };
-    
-    setApiKeys([...apiKeys, newKey]);
-    
-    // Reset form
-    setNewKeyName("");
-    setNewKeyType(true);
-  };
-  
-  const handleRevokeKey = (keyId: string) => {
-    // In a real app, this would call an API to revoke the key
-    setApiKeys(apiKeys.map(key => 
-      key.id === keyId ? { ...key, status: "inactive" } : key
-    ));
-    
+  const handleCreateApiKey = () => {
     toast({
-      title: "API key revoked",
-      description: "The API key has been revoked and can no longer be used.",
+      title: "API key created",
+      description: "Your new API key has been created successfully.",
     });
   };
   
-  const handleRegenerateKey = (keyId: string) => {
-    // In a real app, this would call an API to regenerate the key
-    toast({
-      title: "API key regenerated",
-      description: "The API key has been regenerated. Please update your applications.",
-    });
-  };
-  
-  const handleDeleteKey = (keyId: string) => {
-    // In a real app, this would call an API to delete the key
+  const handleRevokeApiKey = (keyId: string) => {
     setApiKeys(apiKeys.filter(key => key.id !== keyId));
     
     toast({
-      title: "API key deleted",
-      description: "The API key has been permanently deleted.",
+      title: "API key revoked",
+      description: "The API key has been revoked and is no longer valid.",
+    });
+  };
+  
+  const toggleApiKeyStatus = (keyId: string) => {
+    setApiKeys(apiKeys.map(key => {
+      if (key.id === keyId) {
+        return { ...key, enabled: !key.enabled };
+      }
+      return key;
+    }));
+    
+    const key = apiKeys.find(k => k.id === keyId);
+    if (key) {
+      toast({
+        title: key.enabled ? "API key disabled" : "API key enabled",
+        description: `The API key "${key.name}" has been ${key.enabled ? "disabled" : "enabled"}.`,
+      });
+    }
+  };
+  
+  const handleCreateWebhook = () => {
+    toast({
+      title: "Webhook created",
+      description: "Your new webhook endpoint has been created successfully.",
+    });
+  };
+  
+  const toggleWebhookStatus = (webhookId: string) => {
+    setWebhooks(webhooks.map(webhook => {
+      if (webhook.id === webhookId) {
+        return { ...webhook, active: !webhook.active };
+      }
+      return webhook;
+    }));
+    
+    const webhook = webhooks.find(w => w.id === webhookId);
+    if (webhook) {
+      toast({
+        title: webhook.active ? "Webhook disabled" : "Webhook enabled",
+        description: `The webhook endpoint has been ${webhook.active ? "disabled" : "enabled"}.`,
+      });
+    }
+  };
+  
+  const handleDeleteWebhook = (webhookId: string) => {
+    setWebhooks(webhooks.filter(webhook => webhook.id !== webhookId));
+    
+    toast({
+      title: "Webhook deleted",
+      description: "The webhook endpoint has been deleted.",
     });
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium">API Keys</h3>
+        <h3 className="text-lg font-medium">API Keys & Webhooks</h3>
         <p className="text-sm text-muted-foreground">
-          Manage API keys for integrating with external applications.
+          Manage API keys and webhook endpoints for integrating with our platform.
         </p>
       </div>
       
-      <div className="flex justify-between items-center">
-        <div>
-          <h4 className="text-md font-medium">Your API Keys</h4>
-          <p className="text-sm text-muted-foreground">
-            Use these keys to authenticate your API requests.
-          </p>
-        </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="api-keys" className="flex items-center gap-2">
+            <KeyIcon className="h-4 w-4" />
+            <span>API Keys</span>
+          </TabsTrigger>
+          <TabsTrigger value="webhooks" className="flex items-center gap-2">
+            <ArrowRight className="h-4 w-4" />
+            <span>Webhooks</span>
+          </TabsTrigger>
+          <TabsTrigger value="documentation" className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4" />
+            <span>Documentation</span>
+          </TabsTrigger>
+        </TabsList>
         
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button onClick={() => setIsCreateKeyDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" /> Create New Key
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Create API Key</DialogTitle>
-              <DialogDescription>
-                Create a new API key to authenticate your applications.
-              </DialogDescription>
-            </DialogHeader>
-            
-            {!generatedKey ? (
-              <div className="space-y-4 py-4">
+        <TabsContent value="api-keys" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Create API Key</CardTitle>
+              <CardDescription>
+                Generate a new API key for accessing our platform.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="api-key-name">API Key Name</Label>
+                <Input id="api-key-name" placeholder="e.g., Production API Key" />
+                <p className="text-xs text-muted-foreground">
+                  Choose a descriptive name to identify this API key later.
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="api-key-expiry">Expiration</Label>
+                <Select defaultValue="never">
+                  <SelectTrigger id="api-key-expiry">
+                    <SelectValue placeholder="Select expiration" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7d">7 days</SelectItem>
+                    <SelectItem value="30d">30 days</SelectItem>
+                    <SelectItem value="90d">90 days</SelectItem>
+                    <SelectItem value="365d">1 year</SelectItem>
+                    <SelectItem value="never">Never</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="api-key-permissions">Permissions</Label>
                 <div className="space-y-2">
-                  <Label htmlFor="key-name">API Key Name</Label>
-                  <Input
-                    id="key-name"
-                    placeholder="e.g., Production Backend"
-                    value={newKeyName}
-                    onChange={(e) => setNewKeyName(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Give your API key a memorable name to identify its use.
-                  </p>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Key Type</Label>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="key-type"
-                      checked={newKeyType}
-                      onCheckedChange={setNewKeyType}
-                    />
-                    <Label htmlFor="key-type">
-                      {newKeyType ? "Live Key" : "Test Key"}
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="permission-read" className="flex items-center gap-2 text-sm">
+                      <span>Read</span>
+                      <span className="text-xs text-muted-foreground">(View data)</span>
                     </Label>
+                    <Switch id="permission-read" defaultChecked />
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Test keys can be used for development without affecting production data.
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="permission-write" className="flex items-center gap-2 text-sm">
+                      <span>Write</span>
+                      <span className="text-xs text-muted-foreground">(Create and update data)</span>
+                    </Label>
+                    <Switch id="permission-write" defaultChecked />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="permission-delete" className="flex items-center gap-2 text-sm">
+                      <span>Delete</span>
+                      <span className="text-xs text-muted-foreground">(Remove data)</span>
+                    </Label>
+                    <Switch id="permission-delete" />
+                  </div>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-4 py-4">
+            </CardContent>
+            <CardFooter>
+              <Button onClick={handleCreateApiKey}>Create API Key</Button>
+            </CardFooter>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Existing API Keys</CardTitle>
+              <CardDescription>
+                Manage your existing API keys.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {apiKeys.map((apiKey) => (
+                <div key={apiKey.id} className="border rounded-lg p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">{apiKey.name}</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Created on {apiKey.createdAt} • Last used {apiKey.lastUsed}
+                      </p>
+                    </div>
+                    <div>
+                      <Switch
+                        checked={apiKey.enabled}
+                        onCheckedChange={() => toggleApiKeyStatus(apiKey.id)}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type={showSecret ? "text" : "password"}
+                      value={apiKey.key}
+                      readOnly
+                      className="font-mono text-xs"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex items-center"
+                      onClick={() => handleCopyKey(apiKey.key)}
+                    >
+                      {copiedKey === apiKey.key ? (
+                        <CheckCheck className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center justify-end space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowSecret(!showSecret)}
+                    >
+                      {showSecret ? "Hide" : "Show"} Key
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleRevokeApiKey(apiKey.id)}
+                    >
+                      Revoke Key
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="webhooks" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Create Webhook</CardTitle>
+              <CardDescription>
+                Configure webhook endpoints to receive events from our platform.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="webhook-url">Endpoint URL</Label>
+                <Input id="webhook-url" placeholder="https://example.com/webhook" />
+                <p className="text-xs text-muted-foreground">
+                  The URL where webhook events will be sent.
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Events to receive</Label>
                 <div className="space-y-2">
-                  <Label htmlFor="generated-key">Your New API Key</Label>
-                  <div className="flex">
-                    <div className="relative flex-1">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="event-post-created" className="text-sm">
+                      Post created
+                    </Label>
+                    <Switch id="event-post-created" defaultChecked />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="event-post-updated" className="text-sm">
+                      Post updated
+                    </Label>
+                    <Switch id="event-post-updated" defaultChecked />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="event-post-deleted" className="text-sm">
+                      Post deleted
+                    </Label>
+                    <Switch id="event-post-deleted" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="event-user-login" className="text-sm">
+                      User login
+                    </Label>
+                    <Switch id="event-user-login" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="event-user-logout" className="text-sm">
+                      User logout
+                    </Label>
+                    <Switch id="event-user-logout" />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={handleCreateWebhook}>Create Webhook</Button>
+            </CardFooter>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Existing Webhooks</CardTitle>
+              <CardDescription>
+                Manage your existing webhook endpoints.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {webhooks.map((webhook) => (
+                <div key={webhook.id} className="border rounded-lg p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">{webhook.url}</h4>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {webhook.events.map((event, index) => (
+                          <span
+                            key={index}
+                            className="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded-full"
+                          >
+                            {event}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <Switch
+                        checked={webhook.active}
+                        onCheckedChange={() => toggleWebhookStatus(webhook.id)}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Webhook Secret</p>
+                    <div className="flex items-center space-x-2">
                       <Input
-                        id="generated-key"
-                        type={showGeneratedKey ? "text" : "password"}
-                        value={generatedKey}
+                        type={showSecret ? "text" : "password"}
+                        value={webhook.secretKey}
                         readOnly
-                        className="pr-10 font-mono"
+                        className="font-mono text-xs"
                       />
                       <Button
                         variant="ghost"
-                        size="icon"
-                        className="absolute right-0 top-0"
-                        onClick={() => setShowGeneratedKey(!showGeneratedKey)}
+                        size="sm"
+                        className="flex items-center"
+                        onClick={() => handleCopyKey(webhook.secretKey)}
                       >
-                        {showGeneratedKey ? (
-                          <EyeOff className="h-4 w-4" />
+                        {copiedKey === webhook.secretKey ? (
+                          <CheckCheck className="h-4 w-4 text-green-500" />
                         ) : (
-                          <Eye className="h-4 w-4" />
+                          <Copy className="h-4 w-4" />
                         )}
                       </Button>
                     </div>
-                    <Button variant="outline" onClick={handleCopyKey} className="ml-2">
-                      <Copy className="h-4 w-4" />
+                  </div>
+                  
+                  <div className="flex items-center justify-end space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowSecret(!showSecret)}
+                    >
+                      {showSecret ? "Hide" : "Show"} Secret
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteWebhook(webhook.id)}
+                    >
+                      Delete Webhook
                     </Button>
                   </div>
-                  <p className="text-sm font-medium text-destructive">
-                    Make sure to copy your API key now. You won't be able to see it again!
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="documentation" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <FileText className="h-5 w-5" />
+                <CardTitle>API Documentation</CardTitle>
+              </div>
+              <CardDescription>
+                Learn how to integrate with our platform using our API.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h4 className="font-medium text-base">Getting Started</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Learn how to authenticate and make your first API request.
                   </p>
+                  <Button variant="outline" className="w-full justify-start">
+                    <ArrowRight className="mr-2 h-4 w-4" />
+                    View Getting Started Guide
+                  </Button>
+                </div>
+                
+                <Separator />
+                
+                <div className="space-y-2">
+                  <h4 className="font-medium text-base">API Reference</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Browse the complete API reference documentation.
+                  </p>
+                  <Button variant="outline" className="w-full justify-start">
+                    <Code className="mr-2 h-4 w-4" />
+                    View API Reference
+                  </Button>
+                </div>
+                
+                <Separator />
+                
+                <div className="space-y-2">
+                  <h4 className="font-medium text-base">Webhook Guide</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Learn how to set up and use webhooks for real-time event notifications.
+                  </p>
+                  <Button variant="outline" className="w-full justify-start">
+                    <ArrowRight className="mr-2 h-4 w-4" />
+                    View Webhook Guide
+                  </Button>
+                </div>
+                
+                <Separator />
+                
+                <div className="space-y-2">
+                  <h4 className="font-medium text-base">Need Help?</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Get in touch with our support team for assistance with API integration.
+                  </p>
+                  <Button variant="outline" className="w-full justify-start">
+                    <HelpCircle className="mr-2 h-4 w-4" />
+                    Contact Support
+                  </Button>
                 </div>
               </div>
-            )}
-            
-            <DialogFooter>
-              {!generatedKey ? (
-                <Button onClick={handleCreateKey}>Create Key</Button>
-              ) : (
-                <Button onClick={() => {
-                  setIsCreateKeyDialogOpen(false);
-                  setGeneratedKey("");
-                  setShowGeneratedKey(false);
-                }}>
-                  Done
-                </Button>
-              )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-      
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Key</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Last Used</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {apiKeys.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-6">
-                    No API keys found.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                apiKeys.map((apiKey) => (
-                  <TableRow key={apiKey.id}>
-                    <TableCell className="font-medium">{apiKey.name}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2 font-mono text-sm">
-                        <Key className="h-3 w-3 text-muted-foreground" />
-                        {apiKey.prefix}•••••••{apiKey.lastChars}
-                      </div>
-                    </TableCell>
-                    <TableCell>{apiKey.created}</TableCell>
-                    <TableCell>{apiKey.lastUsed}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={
-                          apiKey.status === "active"
-                            ? "bg-green-100 text-green-800 hover:bg-green-100"
-                            : "bg-red-100 text-red-800 hover:bg-red-100"
-                        }
-                      >
-                        {apiKey.status === "active" ? "Active" : "Revoked"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        {apiKey.status === "active" ? (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRegenerateKey(apiKey.id)}
-                            >
-                              <RefreshCw className="mr-2 h-3 w-3" />
-                              Regenerate
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRevokeKey(apiKey.id)}
-                            >
-                              <Trash2 className="mr-2 h-3 w-3 text-red-500" />
-                              Revoke
-                            </Button>
-                          </>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteKey(apiKey.id)}
-                          >
-                            <Trash2 className="mr-2 h-3 w-3 text-red-500" />
-                            Delete
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>API Documentation</CardTitle>
-          <CardDescription>
-            Learn how to use our API to integrate with your applications.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p>
-            Our RESTful API allows you to programmatically access and manage your social media content,
-            analytics, and automations. Use the documentation to learn how to make authenticated requests
-            and understand the available endpoints.
-          </p>
+            </CardContent>
+          </Card>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button variant="outline" className="w-full justify-start">
-              <FileIcon className="mr-2 h-4 w-4" />
-              API Reference
-            </Button>
-            
-            <Button variant="outline" className="w-full justify-start">
-              <Code className="mr-2 h-4 w-4" />
-              Code Examples
-            </Button>
-            
-            <Button variant="outline" className="w-full justify-start">
-              <BookOpen className="mr-2 h-4 w-4" />
-              Integration Guides
-            </Button>
-            
-            <Button variant="outline" className="w-full justify-start">
-              <HelpCircle className="mr-2 h-4 w-4" />
-              API Support
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Webhooks</CardTitle>
-          <CardDescription>
-            Configure webhooks to receive real-time notifications for events.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button variant="outline" onClick={() => {
-            toast({
-              title: "Feature coming soon",
-              description: "Webhook configuration will be available soon.",
-            });
-          }}>
-            Configure Webhooks
-          </Button>
-        </CardContent>
-      </Card>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <Code className="h-5 w-5" />
+                <CardTitle>Code Examples</CardTitle>
+              </div>
+              <CardDescription>
+                Ready-to-use code snippets for common API operations.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h4 className="font-medium">Authentication</h4>
+                  <div className="bg-muted p-4 rounded-md overflow-x-auto">
+                    <pre className="text-xs">
+                      <code>{`
+const apiKey = 'sk_test_YOUR_API_KEY';
+
+fetch('https://api.example.com/v1/posts', {
+  method: 'GET',
+  headers: {
+    'Authorization': \`Bearer \${apiKey}\`,
+    'Content-Type': 'application/json'
+  }
+})
+.then(response => response.json())
+.then(data => console.log(data))
+.catch(error => console.error('Error:', error));
+                      `}</code>
+                    </pre>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <h4 className="font-medium">Creating a Post</h4>
+                  <div className="bg-muted p-4 rounded-md overflow-x-auto">
+                    <pre className="text-xs">
+                      <code>{`
+const apiKey = 'sk_test_YOUR_API_KEY';
+
+fetch('https://api.example.com/v1/posts', {
+  method: 'POST',
+  headers: {
+    'Authorization': \`Bearer \${apiKey}\`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    title: 'My New Post',
+    content: 'This is the content of my new post.',
+    platform: 'instagram',
+    scheduleTime: '2023-05-15T10:00:00Z'
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data))
+.catch(error => console.error('Error:', error));
+                      `}</code>
+                    </pre>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <h4 className="font-medium">Handling Webhooks</h4>
+                  <div className="bg-muted p-4 rounded-md overflow-x-auto">
+                    <pre className="text-xs">
+                      <code>{`
+// Example webhook handler in Node.js with Express
+
+const express = require('express');
+const app = express();
+const bodyParser = require('body-parser');
+
+app.use(bodyParser.json());
+
+app.post('/webhook', (req, res) => {
+  const event = req.body;
+  
+  // Handle different event types
+  switch(event.type) {
+    case 'post.created':
+      console.log('Post created:', event.data);
+      break;
+    case 'post.updated':
+      console.log('Post updated:', event.data);
+      break;
+    default:
+      console.log('Unknown event type:', event.type);
+  }
+  
+  // Return a 200 response to acknowledge receipt
+  res.sendStatus(200);
+});
+
+app.listen(3000, () => {
+  console.log('Webhook server listening on port 3000');
+});
+                      `}</code>
+                    </pre>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

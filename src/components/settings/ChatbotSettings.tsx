@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -13,6 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -21,19 +24,30 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "@/components/ui/tabs";
-import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { MessageSquare, Upload, Sparkles, Bot, Languages, Plus } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  MessageSquare,
+  AlertCircle,
+  Edit,
+  Trash2,
+  Save,
+  Clock,
+  Plus
+} from "lucide-react";
 
+// Define props interface
 interface ChatbotSettingsProps {
   role: string;
 }
@@ -41,567 +55,345 @@ interface ChatbotSettingsProps {
 export function ChatbotSettings({ role }: ChatbotSettingsProps) {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("general");
-  const [chatbotEnabled, setChatbotEnabled] = useState(true);
-  const [aiAssistEnabled, setAiAssistEnabled] = useState(true);
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [temperature, setTemperature] = useState(0.7);
+  const [maxTokens, setMaxTokens] = useState(500);
   
-  // Sample responses for the chatbot
-  const [welcomeMessage, setWelcomeMessage] = useState("Hi there! How can I assist you today?");
-  const [fallbackMessage, setFallbackMessage] = useState("I'm sorry, I don't understand. Could you try rephrasing that?");
+  // Sample chat bot response templates
+  const [responseTemplates, setResponseTemplates] = useState([
+    {
+      id: "1",
+      name: "Greeting",
+      content: "Hello! Welcome to our platform. How can I assist you today?",
+      isEnabled: true,
+    },
+    {
+      id: "2",
+      name: "Out of scope",
+      content: "I'm sorry, but that question is beyond my current capabilities. Would you like to speak with a human agent?",
+      isEnabled: true,
+    },
+    {
+      id: "3",
+      name: "Support request",
+      content: "I'll help you with your support request. To better assist you, could you please provide more details about the issue you're experiencing?",
+      isEnabled: true,
+    },
+    {
+      id: "4",
+      name: "Product information",
+      content: "Our platform offers social media management tools including content scheduling, analytics, and engagement tracking. Would you like to know more about any specific feature?",
+      isEnabled: false,
+    },
+  ]);
   
-  const handleSave = () => {
+  // Sample training phrases
+  const [trainingPhrases, setTrainingPhrases] = useState([
+    {
+      id: "1",
+      intent: "Schedule post",
+      phrases: [
+        "How do I schedule a post?",
+        "I want to schedule content",
+        "Can I post something later?",
+        "Schedule my Instagram post"
+      ],
+    },
+    {
+      id: "2",
+      intent: "Analytics help",
+      phrases: [
+        "How do I check analytics?",
+        "Show me my post performance",
+        "Where are the engagement stats?",
+        "How to view report"
+      ],
+    },
+    {
+      id: "3",
+      intent: "Account issues",
+      phrases: [
+        "Can't login to my account",
+        "Password reset not working",
+        "Account locked out",
+        "How to change email"
+      ],
+    },
+  ]);
+  
+  // Sample conversation logs
+  const conversationLogs = [
+    {
+      id: "1",
+      userId: "user123",
+      date: "2023-05-01",
+      duration: "5m 23s",
+      rating: "Positive",
+      messages: 8
+    },
+    {
+      id: "2",
+      userId: "user456",
+      date: "2023-05-01",
+      duration: "2m 12s",
+      rating: "Neutral",
+      messages: 4
+    },
+    {
+      id: "3",
+      userId: "user789",
+      date: "2023-04-30",
+      duration: "8m 45s",
+      rating: "Negative",
+      messages: 12
+    },
+    {
+      id: "4",
+      userId: "user234",
+      date: "2023-04-30",
+      duration: "3m 17s",
+      rating: "Positive",
+      messages: 6
+    },
+    {
+      id: "5",
+      userId: "user567",
+      date: "2023-04-29",
+      duration: "1m 45s",
+      rating: "Neutral",
+      messages: 3
+    }
+  ];
+  
+  const handleSaveGeneral = () => {
     toast({
-      title: "Chatbot settings saved",
+      title: "Settings saved",
       description: "Your chatbot settings have been updated successfully.",
     });
   };
-
+  
+  const handleAddTemplate = () => {
+    // In a real app, this would add a new template to the list
+    toast({
+      title: "Template added",
+      description: "Your new response template has been created.",
+    });
+  };
+  
+  const handleDeleteTemplate = (id: string) => {
+    setResponseTemplates(responseTemplates.filter(template => template.id !== id));
+    
+    toast({
+      title: "Template deleted",
+      description: "The response template has been removed.",
+    });
+  };
+  
+  const toggleTemplateStatus = (id: string) => {
+    setResponseTemplates(responseTemplates.map(template => {
+      if (template.id === id) {
+        return { ...template, isEnabled: !template.isEnabled };
+      }
+      return template;
+    }));
+    
+    const template = responseTemplates.find(t => t.id === id);
+    if (template) {
+      toast({
+        title: template.isEnabled ? "Template disabled" : "Template enabled",
+        description: `The "${template.name}" template has been ${template.isEnabled ? "disabled" : "enabled"}.`,
+      });
+    }
+  };
+  
+  const handleAddTrainingPhrase = () => {
+    toast({
+      title: "Intent created",
+      description: "Your new training intent has been created.",
+    });
+  };
+  
   return (
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium">Chatbot Settings</h3>
         <p className="text-sm text-muted-foreground">
-          Configure your AI assistant and chatbot preferences.
+          Configure your AI assistant's behavior and responses.
         </p>
       </div>
       
-      <Tabs 
-        defaultValue={activeTab} 
-        onValueChange={setActiveTab}
-        className="w-full"
-      >
-        <TabsList className="grid w-full grid-cols-1 md:grid-cols-4 mb-6">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="responses">Responses</TabsTrigger>
-          <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
-          <TabsTrigger value="advanced">Advanced</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="general" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            <span>General</span>
+          </TabsTrigger>
+          <TabsTrigger value="responses" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            <span>Responses</span>
+          </TabsTrigger>
+          <TabsTrigger value="training" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            <span>Training</span>
+          </TabsTrigger>
+          {(role === "Super Admin" || role === "White Label" || role === "Admin") && (
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              <span>Analytics</span>
+            </TabsTrigger>
+          )}
         </TabsList>
         
-        <TabsContent value="general" className="space-y-6">
+        <TabsContent value="general" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bot className="h-5 w-5" /> Basic Configuration
-              </CardTitle>
+              <CardTitle>General Configuration</CardTitle>
               <CardDescription>
-                Configure general chatbot settings.
+                Configure the basic settings for your chatbot.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between space-x-2">
-                <Label htmlFor="chatbot-enabled" className="flex flex-col space-y-1">
-                  <span>Enable Chatbot</span>
-                  <span className="font-normal text-sm text-muted-foreground">
-                    Show the chatbot interface to users.
-                  </span>
-                </Label>
-                <Switch
-                  id="chatbot-enabled"
-                  checked={chatbotEnabled}
-                  onCheckedChange={setChatbotEnabled}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between space-x-2">
-                <Label htmlFor="ai-enabled" className="flex flex-col space-y-1">
-                  <span>AI-Powered Responses</span>
-                  <span className="font-normal text-sm text-muted-foreground">
-                    Use advanced AI to generate responses.
-                  </span>
-                </Label>
-                <Switch
-                  id="ai-enabled"
-                  checked={aiAssistEnabled}
-                  onCheckedChange={setAiAssistEnabled}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between space-x-2">
-                <Label htmlFor="voice-enabled" className="flex flex-col space-y-1">
-                  <span>Voice Commands</span>
-                  <span className="font-normal text-sm text-muted-foreground">
-                    Allow users to speak to the chatbot.
-                  </span>
-                </Label>
-                <Switch
-                  id="voice-enabled"
-                  checked={voiceEnabled}
-                  onCheckedChange={setVoiceEnabled}
-                />
-              </div>
-              
               <div className="space-y-2">
                 <Label htmlFor="chatbot-name">Chatbot Name</Label>
-                <Input
-                  id="chatbot-name"
-                  placeholder="e.g., SocialAssist"
-                  defaultValue="SocialAssist"
-                />
+                <Input id="chatbot-name" defaultValue="Support Assistant" />
+                <p className="text-xs text-muted-foreground">
+                  The name that will be displayed to users when they interact with your chatbot.
+                </p>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="chatbot-avatar">Chatbot Avatar</Label>
-                <div className="flex items-center gap-4">
-                  <div className="h-16 w-16 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                    <Bot className="h-8 w-8" />
-                  </div>
-                  <Button variant="outline">
-                    <Upload className="mr-2 h-4 w-4" /> Upload Image
-                  </Button>
-                </div>
+                <Label htmlFor="welcome-message">Welcome Message</Label>
+                <Textarea 
+                  id="welcome-message" 
+                  rows={3}
+                  defaultValue="Hello! I'm your AI assistant. How can I help you today?"
+                />
+                <p className="text-xs text-muted-foreground">
+                  The initial message users will see when starting a conversation.
+                </p>
+              </div>
+              
+              <div className="flex items-center justify-between space-x-2">
+                <Label htmlFor="chatbot-active" className="flex flex-col space-y-1">
+                  <span>Chatbot Status</span>
+                  <span className="font-normal text-sm text-muted-foreground">
+                    Enable or disable the chatbot for all users.
+                  </span>
+                </Label>
+                <Switch
+                  id="chatbot-active"
+                  defaultChecked={true}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between space-x-2">
+                <Label htmlFor="collect-feedback" className="flex flex-col space-y-1">
+                  <span>Collect User Feedback</span>
+                  <span className="font-normal text-sm text-muted-foreground">
+                    Ask users to rate their experience after each conversation.
+                  </span>
+                </Label>
+                <Switch
+                  id="collect-feedback"
+                  defaultChecked={true}
+                />
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={handleSave}>Save Settings</Button>
+              <Button onClick={handleSaveGeneral}>Save Changes</Button>
             </CardFooter>
           </Card>
           
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Languages className="h-5 w-5" /> Language Settings
-              </CardTitle>
+              <CardTitle>AI Model Configuration</CardTitle>
               <CardDescription>
-                Configure language preferences for your chatbot.
+                Configure the behavior of the AI model powering your chatbot.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="primary-language">Primary Language</Label>
-                <Select defaultValue="en">
-                  <SelectTrigger id="primary-language">
-                    <SelectValue placeholder="Select language" />
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="model-selection">AI Model</Label>
+                  {(role === "Super Admin" || role === "White Label") && (
+                    <Button variant="outline" size="sm">Upgrade</Button>
+                  )}
+                </div>
+                <Select defaultValue="gpt-3.5">
+                  <SelectTrigger id="model-selection">
+                    <SelectValue placeholder="Select AI model" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="es">Spanish</SelectItem>
-                    <SelectItem value="fr">French</SelectItem>
-                    <SelectItem value="de">German</SelectItem>
-                    <SelectItem value="it">Italian</SelectItem>
-                    <SelectItem value="pt">Portuguese</SelectItem>
-                    <SelectItem value="ja">Japanese</SelectItem>
-                    <SelectItem value="zh">Chinese (Simplified)</SelectItem>
+                    <SelectItem value="gpt-3.5">GPT-3.5 Turbo</SelectItem>
+                    <SelectItem value="gpt-4" disabled={role === "User" || role === "Admin"}>GPT-4 (Premium)</SelectItem>
+                    <SelectItem value="custom" disabled={role !== "Super Admin"}>Custom Model</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
-              <div className="flex items-center justify-between space-x-2">
-                <Label htmlFor="auto-translate" className="flex flex-col space-y-1">
-                  <span>Auto-Translate Responses</span>
-                  <span className="font-normal text-sm text-muted-foreground">
-                    Automatically translate responses to the user's language.
-                  </span>
-                </Label>
-                <Switch
-                  id="auto-translate"
-                  defaultChecked={true}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between space-x-2">
-                <Label htmlFor="multi-language" className="flex flex-col space-y-1">
-                  <span>Support Multiple Languages</span>
-                  <span className="font-normal text-sm text-muted-foreground">
-                    Allow users to switch languages in the chatbot interface.
-                  </span>
-                </Label>
-                <Switch
-                  id="multi-language"
-                  defaultChecked={true}
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={handleSave}>Save Language Settings</Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="responses" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" /> Message Templates
-              </CardTitle>
-              <CardDescription>
-                Configure standard responses for common situations.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="welcome-message">Welcome Message</Label>
-                <Textarea
-                  id="welcome-message"
-                  placeholder="Enter your welcome message"
-                  value={welcomeMessage}
-                  onChange={(e) => setWelcomeMessage(e.target.value)}
-                  rows={3}
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="temperature-slider">Temperature: {temperature.toFixed(1)}</Label>
+                </div>
+                <Slider
+                  id="temperature-slider"
+                  min={0}
+                  max={1}
+                  step={0.1}
+                  value={[temperature]}
+                  onValueChange={(value) => setTemperature(value[0])}
                 />
                 <p className="text-xs text-muted-foreground">
-                  This message is shown when a user first opens the chatbot.
+                  Controls randomness: Lower values make responses more deterministic, higher values make responses more creative.
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="max-tokens-slider">Max Tokens: {maxTokens}</Label>
+                </div>
+                <Slider
+                  id="max-tokens-slider"
+                  min={100}
+                  max={2000}
+                  step={50}
+                  value={[maxTokens]}
+                  onValueChange={(value) => setMaxTokens(value[0])}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Maximum length of the chatbot's responses.
                 </p>
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="fallback-message">Fallback Message</Label>
-                <Textarea
-                  id="fallback-message"
-                  placeholder="Enter your fallback message"
-                  value={fallbackMessage}
-                  onChange={(e) => setFallbackMessage(e.target.value)}
-                  rows={3}
+                <Textarea 
+                  id="fallback-message" 
+                  rows={2}
+                  defaultValue="I'm sorry, I don't understand that question. Could you please rephrase it or ask something else?"
                 />
                 <p className="text-xs text-muted-foreground">
-                  This message is shown when the chatbot doesn't understand a user query.
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="conversation-timeout">Away Message</Label>
-                <Textarea
-                  id="away-message"
-                  placeholder="Enter your away message"
-                  defaultValue="Our team is currently unavailable. We'll get back to you as soon as possible."
-                  rows={3}
-                />
-                <p className="text-xs text-muted-foreground">
-                  This message is shown during off-hours or when live support is unavailable.
+                  Message shown when the chatbot cannot understand or process a user query.
                 </p>
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={handleSave}>Save Message Templates</Button>
+              <Button onClick={handleSaveGeneral}>Save Configuration</Button>
             </CardFooter>
           </Card>
           
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5" /> AI Personality
-              </CardTitle>
+              <CardTitle>Advanced Settings</CardTitle>
               <CardDescription>
-                Configure how your AI assistant communicates.
+                Configure advanced settings for your chatbot.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="tone">Conversational Tone</Label>
-                <Select defaultValue="friendly">
-                  <SelectTrigger id="tone">
-                    <SelectValue placeholder="Select tone" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="friendly">Friendly and Casual</SelectItem>
-                    <SelectItem value="professional">Professional and Formal</SelectItem>
-                    <SelectItem value="enthusiastic">Enthusiastic and Energetic</SelectItem>
-                    <SelectItem value="helpful">Helpful and Informative</SelectItem>
-                    <SelectItem value="concise">Brief and Direct</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="response-length">Typical Response Length</Label>
-                <Select defaultValue="balanced">
-                  <SelectTrigger id="response-length">
-                    <SelectValue placeholder="Select length" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="concise">Concise (1-2 sentences)</SelectItem>
-                    <SelectItem value="balanced">Balanced (2-4 sentences)</SelectItem>
-                    <SelectItem value="detailed">Detailed (4+ sentences)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="personality-traits">Personality Traits</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Label className="flex items-center space-x-2 p-2 border rounded-md">
-                    <input type="checkbox" defaultChecked className="rounded border-gray-300" />
-                    <span>Helpful</span>
-                  </Label>
-                  
-                  <Label className="flex items-center space-x-2 p-2 border rounded-md">
-                    <input type="checkbox" defaultChecked className="rounded border-gray-300" />
-                    <span>Friendly</span>
-                  </Label>
-                  
-                  <Label className="flex items-center space-x-2 p-2 border rounded-md">
-                    <input type="checkbox" className="rounded border-gray-300" />
-                    <span>Humorous</span>
-                  </Label>
-                  
-                  <Label className="flex items-center space-x-2 p-2 border rounded-md">
-                    <input type="checkbox" defaultChecked className="rounded border-gray-300" />
-                    <span>Knowledgeable</span>
-                  </Label>
-                  
-                  <Label className="flex items-center space-x-2 p-2 border rounded-md">
-                    <input type="checkbox" className="rounded border-gray-300" />
-                    <span>Creative</span>
-                  </Label>
-                  
-                  <Label className="flex items-center space-x-2 p-2 border rounded-md">
-                    <input type="checkbox" defaultChecked className="rounded border-gray-300" />
-                    <span>Professional</span>
-                  </Label>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={handleSave}>Save AI Personality</Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="knowledge" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Knowledge Base</CardTitle>
-              <CardDescription>
-                Manage the information your chatbot can access and use.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Knowledge Sources</Label>
-                <div className="grid gap-2">
-                  <Label className="flex items-center justify-between p-3 border rounded-md">
-                    <div className="flex items-center space-x-2">
-                      <input type="checkbox" defaultChecked className="rounded border-gray-300" />
-                      <span>Product Documentation</span>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Manage
-                    </Button>
-                  </Label>
-                  
-                  <Label className="flex items-center justify-between p-3 border rounded-md">
-                    <div className="flex items-center space-x-2">
-                      <input type="checkbox" defaultChecked className="rounded border-gray-300" />
-                      <span>FAQ Database</span>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Manage
-                    </Button>
-                  </Label>
-                  
-                  <Label className="flex items-center justify-between p-3 border rounded-md">
-                    <div className="flex items-center space-x-2">
-                      <input type="checkbox" defaultChecked className="rounded border-gray-300" />
-                      <span>Support Articles</span>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Manage
-                    </Button>
-                  </Label>
-                  
-                  <Label className="flex items-center justify-between p-3 border rounded-md">
-                    <div className="flex items-center space-x-2">
-                      <input type="checkbox" className="rounded border-gray-300" />
-                      <span>User Guides</span>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Manage
-                    </Button>
-                  </Label>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="upload-documents">Upload Custom Documents</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="upload-documents"
-                    type="file"
-                    multiple
-                  />
-                  <Button variant="outline">
-                    Upload
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Upload PDF, DOCX, or TXT files to add to your chatbot's knowledge base.
-                </p>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={handleSave}>Save Knowledge Base</Button>
-            </CardFooter>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Custom Answers</CardTitle>
-              <CardDescription>
-                Configure custom responses for specific questions.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="item-1">
-                  <AccordionTrigger className="font-medium">
-                    "What are your business hours?"
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <Textarea
-                      defaultValue="Our business hours are Monday to Friday, 9 AM to 5 PM Eastern Time."
-                      rows={3}
-                    />
-                    <Button size="sm" className="mt-2">Save Answer</Button>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="item-2">
-                  <AccordionTrigger className="font-medium">
-                    "How do I reset my password?"
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <Textarea
-                      defaultValue="You can reset your password by clicking on the 'Forgot Password' link on the login page and following the instructions sent to your email."
-                      rows={3}
-                    />
-                    <Button size="sm" className="mt-2">Save Answer</Button>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="item-3">
-                  <AccordionTrigger className="font-medium">
-                    "How much does your service cost?"
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <Textarea
-                      defaultValue="We offer several pricing tiers starting at $29/month for our Basic plan. You can view all our pricing options on our pricing page."
-                      rows={3}
-                    />
-                    <Button size="sm" className="mt-2">Save Answer</Button>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-              
-              <Button variant="outline" className="w-full">
-                <Plus className="mr-2 h-4 w-4" /> Add New Custom Answer
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="advanced" className="space-y-6">
-          {(role === "Super Admin" || role === "White Label") && (
-            <Card>
-              <CardHeader>
-                <CardTitle>AI Model Configuration</CardTitle>
-                <CardDescription>
-                  Advanced settings for the AI model powering your chatbot.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="model">AI Model</Label>
-                  <Select defaultValue="gpt-4">
-                    <SelectTrigger id="model">
-                      <SelectValue placeholder="Select AI model" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="gpt-4">GPT-4 (Most Advanced)</SelectItem>
-                      <SelectItem value="gpt-3.5">GPT-3.5 (Balanced)</SelectItem>
-                      <SelectItem value="custom">Custom Model</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="temperature">Temperature</Label>
-                  <div className="flex items-center gap-4">
-                    <input 
-                      type="range" 
-                      id="temperature"
-                      min="0" 
-                      max="1" 
-                      step="0.1"
-                      defaultValue="0.7"
-                      className="w-full"
-                    />
-                    <span className="font-mono">0.7</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Controls randomness: Lower values are more deterministic, higher values more creative.
-                  </p>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="max-tokens">Max Response Length</Label>
-                  <Input
-                    id="max-tokens"
-                    type="number"
-                    defaultValue="256"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Maximum number of tokens in the AI's response.
-                  </p>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="system-prompt">System Prompt</Label>
-                  <Textarea
-                    id="system-prompt"
-                    rows={4}
-                    defaultValue="You are a helpful assistant for a social media management platform. You help users with questions about posting content, scheduling, analytics, and engagement strategies."
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Instructions that define how the AI behaves throughout the conversation.
-                  </p>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button onClick={handleSave}>Save AI Configuration</Button>
-              </CardFooter>
-            </Card>
-          )}
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Conversation Settings</CardTitle>
-              <CardDescription>
-                Configure how conversations are handled and stored.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between space-x-2">
-                <Label htmlFor="save-history" className="flex flex-col space-y-1">
-                  <span>Save Conversation History</span>
-                  <span className="font-normal text-sm text-muted-foreground">
-                    Store chat conversations for future reference.
-                  </span>
-                </Label>
-                <Switch
-                  id="save-history"
-                  defaultChecked={true}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="history-retention">History Retention Period</Label>
-                <Select defaultValue="30">
-                  <SelectTrigger id="history-retention">
-                    <SelectValue placeholder="Select period" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="7">7 days</SelectItem>
-                    <SelectItem value="30">30 days</SelectItem>
-                    <SelectItem value="90">90 days</SelectItem>
-                    <SelectItem value="365">1 year</SelectItem>
-                    <SelectItem value="forever">Forever</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
               <div className="flex items-center justify-between space-x-2">
                 <Label htmlFor="human-handoff" className="flex flex-col space-y-1">
-                  <span>Enable Human Handoff</span>
+                  <span>Human Handoff</span>
                   <span className="font-normal text-sm text-muted-foreground">
-                    Allow conversations to be transferred to human agents.
+                    Allow users to request a human agent when needed.
                   </span>
                 </Label>
                 <Switch
@@ -611,71 +403,402 @@ export function ChatbotSettings({ role }: ChatbotSettingsProps) {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="handoff-threshold">Handoff After Failed Responses</Label>
-                <Input
-                  id="handoff-threshold"
-                  type="number"
-                  defaultValue="3"
+                <Label htmlFor="handoff-message">Human Handoff Message</Label>
+                <Textarea 
+                  id="handoff-message" 
+                  rows={2}
+                  defaultValue="I'll connect you with a human agent who can better assist you. Please wait a moment while I transfer your conversation."
                 />
+              </div>
+              
+              <div className="flex items-center justify-between space-x-2">
+                <Label htmlFor="sentiment-analysis" className="flex flex-col space-y-1">
+                  <span>Sentiment Analysis</span>
+                  <span className="font-normal text-sm text-muted-foreground">
+                    Analyze user sentiment to tailor responses.
+                  </span>
+                </Label>
+                <Switch
+                  id="sentiment-analysis"
+                  defaultChecked={true}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between space-x-2">
+                <Label htmlFor="conversation-history" className="flex flex-col space-y-1">
+                  <span>Conversation History</span>
+                  <span className="font-normal text-sm text-muted-foreground">
+                    Use previous conversations to provide personalized responses.
+                  </span>
+                </Label>
+                <Switch
+                  id="conversation-history"
+                  defaultChecked={true}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="session-timeout">Session Timeout (minutes)</Label>
+                <Input id="session-timeout" type="number" defaultValue="30" />
                 <p className="text-xs text-muted-foreground">
-                  Number of consecutive unclear responses before offering human support.
+                  Time of inactivity after which a conversation is considered ended.
                 </p>
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={handleSave}>Save Conversation Settings</Button>
+              <Button onClick={handleSaveGeneral}>Save Advanced Settings</Button>
             </CardFooter>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="responses" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Response Templates</CardTitle>
+                <CardDescription>
+                  Create and manage pre-defined responses for common scenarios.
+                </CardDescription>
+              </div>
+              <Button onClick={handleAddTemplate}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Template
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {responseTemplates.map((template) => (
+                  <div key={template.id} className="border rounded-lg p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium">{template.name}</div>
+                      <div className="flex items-center space-x-2">
+                        <Button variant="ghost" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteTemplate(template.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                        <Switch
+                          checked={template.isEnabled}
+                          onCheckedChange={() => toggleTemplateStatus(template.id)}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="bg-muted p-3 rounded-md text-sm">
+                      {template.content}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
           </Card>
           
           <Card>
             <CardHeader>
-              <CardTitle>Analytics & Reporting</CardTitle>
+              <CardTitle>Context Variables</CardTitle>
               <CardDescription>
-                Configure chatbot analytics and reporting settings.
+                Define variables that can be used in response templates.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Variable</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Example</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-mono text-sm">{"{{user.name}}"}</TableCell>
+                    <TableCell>User's name</TableCell>
+                    <TableCell>"John"</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-mono text-sm">{"{{user.email}}"}</TableCell>
+                    <TableCell>User's email address</TableCell>
+                    <TableCell>"john@example.com"</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-mono text-sm">{"{{current.date}}"}</TableCell>
+                    <TableCell>Current date</TableCell>
+                    <TableCell>"May 1, 2023"</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-mono text-sm">{"{{company.name}}"}</TableCell>
+                    <TableCell>Your company name</TableCell>
+                    <TableCell>"Acme Inc."</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+              
+              <div className="mt-4">
+                <Button variant="outline">
+                  Add Custom Variable
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="training" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Training Data</CardTitle>
+                <CardDescription>
+                  Provide examples to train your chatbot on how to respond to specific intents.
+                </CardDescription>
+              </div>
+              <Button onClick={handleAddTrainingPhrase}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Intent
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <Accordion type="single" collapsible className="w-full">
+                {trainingPhrases.map((training) => (
+                  <AccordionItem key={training.id} value={training.id}>
+                    <AccordionTrigger className="text-lg hover:bg-muted/50 px-4 rounded-md">
+                      {training.intent}
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4">
+                      <div className="space-y-4">
+                        <p className="text-sm text-muted-foreground">
+                          Add example phrases that users might say to express this intent.
+                        </p>
+                        
+                        <div className="space-y-2">
+                          {training.phrases.map((phrase, index) => (
+                            <div key={index} className="flex items-center justify-between">
+                              <div className="bg-muted p-2 rounded-md text-sm flex-1">
+                                {phrase}
+                              </div>
+                              <Button variant="ghost" size="sm" className="ml-2">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Input placeholder="Add a new example phrase..." />
+                          <Button variant="outline">Add</Button>
+                        </div>
+                        
+                        <div className="pt-4">
+                          <Button variant="default">
+                            <Save className="mr-2 h-4 w-4" />
+                            Save Intent
+                          </Button>
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Training Controls</CardTitle>
+              <CardDescription>
+                Manage how and when your chatbot learns from new data.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between space-x-2">
-                <Label htmlFor="collect-analytics" className="flex flex-col space-y-1">
-                  <span>Collect Usage Analytics</span>
+                <Label htmlFor="auto-training" className="flex flex-col space-y-1">
+                  <span>Automatic Training</span>
                   <span className="font-normal text-sm text-muted-foreground">
-                    Gather data on user interactions and chatbot performance.
+                    Automatically train the model with new conversations.
                   </span>
                 </Label>
                 <Switch
-                  id="collect-analytics"
-                  defaultChecked={true}
+                  id="auto-training"
+                  defaultChecked={false}
                 />
               </div>
               
               <div className="flex items-center justify-between space-x-2">
-                <Label htmlFor="weekly-reports" className="flex flex-col space-y-1">
-                  <span>Weekly Performance Reports</span>
+                <Label htmlFor="learn-from-corrections" className="flex flex-col space-y-1">
+                  <span>Learn from Human Corrections</span>
                   <span className="font-normal text-sm text-muted-foreground">
-                    Receive weekly email reports on chatbot performance.
+                    Improve chatbot responses based on human agent corrections.
                   </span>
                 </Label>
                 <Switch
-                  id="weekly-reports"
+                  id="learn-from-corrections"
                   defaultChecked={true}
                 />
               </div>
               
-              <div className="flex items-center justify-between space-x-2">
-                <Label htmlFor="save-unclear" className="flex flex-col space-y-1">
-                  <span>Track Unclear Queries</span>
-                  <span className="font-normal text-sm text-muted-foreground">
-                    Save questions the chatbot couldn't answer for review.
-                  </span>
-                </Label>
-                <Switch
-                  id="save-unclear"
-                  defaultChecked={true}
-                />
+              <div className="space-y-2">
+                <Label htmlFor="training-schedule">Training Schedule</Label>
+                <Select defaultValue="weekly">
+                  <SelectTrigger id="training-schedule">
+                    <SelectValue placeholder="Select schedule" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="manual">Manual Only</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  How often the model should be retrained with new data.
+                </p>
+              </div>
+              
+              <div className="flex justify-start space-x-2 mt-4">
+                <Button variant="outline" className="flex items-center">
+                  <AlertCircle className="mr-2 h-4 w-4" />
+                  Test Model
+                </Button>
+                <Button variant="default" className="flex items-center">
+                  <Clock className="mr-2 h-4 w-4" />
+                  Schedule Training
+                </Button>
               </div>
             </CardContent>
-            <CardFooter>
-              <Button onClick={handleSave}>Save Analytics Settings</Button>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="analytics" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Conversation Metrics</CardTitle>
+              <CardDescription>
+                View metrics and performance data for your chatbot.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Total Conversations</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">1,284</div>
+                    <p className="text-xs text-muted-foreground">+12% from last month</p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Average User Rating</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">4.2/5</div>
+                    <p className="text-xs text-muted-foreground">+0.3 from last month</p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Human Handoff Rate</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">18%</div>
+                    <p className="text-xs text-muted-foreground">-3% from last month</p>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <div className="mt-6">
+                <h4 className="text-sm font-medium mb-4">Common Topics</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-full bg-muted rounded-full h-4">
+                      <div className="bg-blue-500 h-4 rounded-full" style={{ width: "45%" }}></div>
+                    </div>
+                    <span className="text-sm font-medium">Account Issues (45%)</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-full bg-muted rounded-full h-4">
+                      <div className="bg-green-500 h-4 rounded-full" style={{ width: "30%" }}></div>
+                    </div>
+                    <span className="text-sm font-medium">How to Use (30%)</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-full bg-muted rounded-full h-4">
+                      <div className="bg-yellow-500 h-4 rounded-full" style={{ width: "15%" }}></div>
+                    </div>
+                    <span className="text-sm font-medium">Billing (15%)</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-full bg-muted rounded-full h-4">
+                      <div className="bg-purple-500 h-4 rounded-full" style={{ width: "10%" }}></div>
+                    </div>
+                    <span className="text-sm font-medium">Feature Requests (10%)</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Conversations</CardTitle>
+              <CardDescription>
+                Review recent chatbot interactions with users.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User ID</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Duration</TableHead>
+                    <TableHead>Messages</TableHead>
+                    <TableHead>Rating</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {conversationLogs.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell className="font-medium">{log.userId}</TableCell>
+                      <TableCell>{log.date}</TableCell>
+                      <TableCell>{log.duration}</TableCell>
+                      <TableCell>{log.messages}</TableCell>
+                      <TableCell>
+                        <span
+                          className={
+                            log.rating === "Positive"
+                              ? "text-green-600"
+                              : log.rating === "Negative"
+                              ? "text-red-600"
+                              : "text-yellow-600"
+                          }
+                        >
+                          {log.rating}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm">
+                          View
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+            <CardFooter className="flex justify-center">
+              <Button variant="outline">Load More</Button>
             </CardFooter>
           </Card>
         </TabsContent>
