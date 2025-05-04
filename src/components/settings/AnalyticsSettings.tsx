@@ -1,6 +1,7 @@
 
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { CommonSettingsProps } from "./SettingsComponentTypes";
 import {
   Card,
   CardContent,
@@ -26,11 +27,11 @@ import {
   TabsContent,
 } from "@/components/ui/tabs";
 
-interface AnalyticsSettingsProps {
+interface AnalyticsSettingsProps extends CommonSettingsProps {
   role: string;
 }
 
-export function AnalyticsSettings({ role }: AnalyticsSettingsProps) {
+export function AnalyticsSettings({ role, onSettingChange }: AnalyticsSettingsProps) {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("tracking");
   
@@ -42,6 +43,10 @@ export function AnalyticsSettings({ role }: AnalyticsSettingsProps) {
       title: "Settings saved",
       description: "Your analytics settings have been updated.",
     });
+    
+    if (onSettingChange) {
+      onSettingChange();
+    }
   };
 
   return (
@@ -253,47 +258,53 @@ export function AnalyticsSettings({ role }: AnalyticsSettingsProps) {
             <CardHeader>
               <CardTitle>Report Customization</CardTitle>
               <CardDescription>
-                Customize the appearance and content of your reports.
+                Customize the appearance and content of reports.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="report-logo">Report Logo</Label>
-                <Button variant="outline" className="w-full">Upload Logo</Button>
+              <div className="flex items-center justify-between space-x-2">
+                <Label htmlFor="include-logo" className="flex flex-col space-y-1">
+                  <span>Include Logo</span>
+                  <span className="font-normal text-sm text-muted-foreground">
+                    Add your company logo to reports.
+                  </span>
+                </Label>
+                <Switch
+                  id="include-logo"
+                  defaultChecked={true}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between space-x-2">
+                <Label htmlFor="include-executive-summary" className="flex flex-col space-y-1">
+                  <span>Executive Summary</span>
+                  <span className="font-normal text-sm text-muted-foreground">
+                    Include an AI-generated summary of key insights.
+                  </span>
+                </Label>
+                <Switch
+                  id="include-executive-summary"
+                  defaultChecked={true}
+                />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="report-metrics">Key Metrics to Include</Label>
-                <Select defaultValue="all">
-                  <SelectTrigger id="report-metrics">
-                    <SelectValue placeholder="Select metrics" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Metrics</SelectItem>
-                    <SelectItem value="engagement">Engagement Only</SelectItem>
-                    <SelectItem value="growth">Growth Metrics</SelectItem>
-                    <SelectItem value="custom">Custom Selection</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="report-format">Report Format</Label>
+                <Label htmlFor="report-format">Preferred Format</Label>
                 <Select defaultValue="pdf">
                   <SelectTrigger id="report-format">
-                    <SelectValue placeholder="Select format" />
+                    <SelectValue placeholder="Select a format" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pdf">PDF Document</SelectItem>
-                    <SelectItem value="excel">Excel Spreadsheet</SelectItem>
-                    <SelectItem value="csv">CSV File</SelectItem>
-                    <SelectItem value="html">HTML Email</SelectItem>
+                    <SelectItem value="pdf">PDF</SelectItem>
+                    <SelectItem value="excel">Excel</SelectItem>
+                    <SelectItem value="csv">CSV</SelectItem>
+                    <SelectItem value="google-sheets">Google Sheets</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={handleSave}>Save Customization</Button>
+              <Button onClick={handleSave}>Save Customizations</Button>
             </CardFooter>
           </Card>
         </TabsContent>
@@ -302,77 +313,134 @@ export function AnalyticsSettings({ role }: AnalyticsSettingsProps) {
           <TabsContent value="advanced" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Data Retention</CardTitle>
+                <CardTitle>Advanced Settings</CardTitle>
                 <CardDescription>
-                  Configure how long analytics data is stored.
+                  Configure advanced analytics settings.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="retention-period">Data Retention Period</Label>
-                  <Select defaultValue="12">
-                    <SelectTrigger id="retention-period">
-                      <SelectValue placeholder="Select period" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="3">3 months</SelectItem>
-                      <SelectItem value="6">6 months</SelectItem>
-                      <SelectItem value="12">12 months</SelectItem>
-                      <SelectItem value="24">24 months</SelectItem>
-                      <SelectItem value="unlimited">Unlimited</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
                 <div className="flex items-center justify-between space-x-2">
-                  <Label htmlFor="anonymize-data" className="flex flex-col space-y-1">
-                    <span>Anonymize Data After Retention Period</span>
+                  <Label htmlFor="custom-events" className="flex flex-col space-y-1">
+                    <span>Custom Events Tracking</span>
                     <span className="font-normal text-sm text-muted-foreground">
-                      Retain anonymized data for historical trends.
+                      Track custom events and user interactions.
                     </span>
                   </Label>
                   <Switch
-                    id="anonymize-data"
+                    id="custom-events"
+                    defaultChecked={false}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between space-x-2">
+                  <Label htmlFor="enhanced-ecommerce" className="flex flex-col space-y-1">
+                    <span>Enhanced Ecommerce</span>
+                    <span className="font-normal text-sm text-muted-foreground">
+                      Track detailed shopping behavior.
+                    </span>
+                  </Label>
+                  <Switch
+                    id="enhanced-ecommerce"
+                    defaultChecked={false}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between space-x-2">
+                  <Label htmlFor="ip-anonymization" className="flex flex-col space-y-1">
+                    <span>IP Anonymization</span>
+                    <span className="font-normal text-sm text-muted-foreground">
+                      Anonymize user IP addresses for privacy compliance.
+                    </span>
+                  </Label>
+                  <Switch
+                    id="ip-anonymization"
                     defaultChecked={true}
                   />
                 </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="data-retention">Data Retention Period</Label>
+                  <Select defaultValue="26">
+                    <SelectTrigger id="data-retention">
+                      <SelectValue placeholder="Select a period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="14">14 months</SelectItem>
+                      <SelectItem value="26">26 months</SelectItem>
+                      <SelectItem value="38">38 months</SelectItem>
+                      <SelectItem value="50">50 months</SelectItem>
+                      <SelectItem value="do-not-expire">Do not expire</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardContent>
               <CardFooter>
-                <Button onClick={handleSave}>Save Settings</Button>
+                <Button onClick={handleSave}>Save Advanced Settings</Button>
               </CardFooter>
             </Card>
             
             <Card>
               <CardHeader>
-                <CardTitle>Custom Analytics</CardTitle>
+                <CardTitle>Data Export</CardTitle>
                 <CardDescription>
-                  Configure custom analytics tracking and events.
+                  Configure data export options for advanced analysis.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="custom-events">Custom Events</Label>
-                  <textarea
-                    id="custom-events"
-                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    placeholder="Enter custom event JSON configuration"
+                <div className="flex items-center justify-between space-x-2">
+                  <Label htmlFor="automated-export" className="flex flex-col space-y-1">
+                    <span>Automated Data Export</span>
+                    <span className="font-normal text-sm text-muted-foreground">
+                      Automatically export data on a schedule.
+                    </span>
+                  </Label>
+                  <Switch
+                    id="automated-export"
+                    defaultChecked={false}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Use JSON format to define custom events to track.
-                  </p>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="api-endpoint">Custom Analytics API Endpoint</Label>
+                  <Label htmlFor="export-frequency">Export Frequency</Label>
+                  <Select defaultValue="weekly">
+                    <SelectTrigger id="export-frequency">
+                      <SelectValue placeholder="Select frequency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="daily">Daily</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="quarterly">Quarterly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="export-destination">Export Destination</Label>
+                  <Select defaultValue="s3">
+                    <SelectTrigger id="export-destination">
+                      <SelectValue placeholder="Select destination" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="s3">Amazon S3</SelectItem>
+                      <SelectItem value="gcs">Google Cloud Storage</SelectItem>
+                      <SelectItem value="azure">Azure Blob Storage</SelectItem>
+                      <SelectItem value="sftp">SFTP Server</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="destination-path">Destination Path/Bucket</Label>
                   <input
-                    id="api-endpoint"
+                    id="destination-path"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
-                    placeholder="https://analytics-api.example.com/events"
+                    placeholder="analytics-exports/company-name/"
                   />
                 </div>
               </CardContent>
               <CardFooter>
-                <Button onClick={handleSave}>Save Custom Analytics</Button>
+                <Button onClick={handleSave}>Save Export Settings</Button>
               </CardFooter>
             </Card>
           </TabsContent>
