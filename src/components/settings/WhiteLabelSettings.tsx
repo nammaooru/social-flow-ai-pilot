@@ -4,9 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CommonSettingsProps } from "./SettingsComponentTypes";
 import { Button } from "@/components/ui/button";
 
-interface WhiteLabelSettingsProps extends CommonSettingsProps {}
-
-export function WhiteLabelSettings({ onSettingChange }: WhiteLabelSettingsProps) {
+export function WhiteLabelSettings({ onSettingChange }: CommonSettingsProps) {
   const { toast } = useToast();
 
   const handleSave = () => {
