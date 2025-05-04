@@ -19,6 +19,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+interface ProfileSettingsProps {
+  onSettingChange?: () => void;
+}
+
 const profileFormSchema = z.object({
   name: z.string().min(2, {
     message: "Name must be at least 2 characters.",
@@ -40,7 +44,7 @@ const defaultValues: Partial<ProfileFormValues> = {
   location: "San Francisco, CA",
 };
 
-export function ProfileSettings() {
+export function ProfileSettings({ onSettingChange }: ProfileSettingsProps) {
   const { toast } = useToast();
   
   const form = useForm<ProfileFormValues>({
@@ -49,12 +53,23 @@ export function ProfileSettings() {
     mode: "onChange",
   });
 
+  // Notify parent component when form changes
+  React.useEffect(() => {
+    const subscription = form.watch(() => {
+      if (onSettingChange && form.formState.isDirty) {
+        onSettingChange();
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form, onSettingChange]);
+
   function onSubmit(data: ProfileFormValues) {
     toast({
       title: "Profile updated",
       description: "Your profile has been updated successfully.",
     });
     console.log(data);
+    form.reset(data);
   }
 
   return (
@@ -71,7 +86,13 @@ export function ProfileSettings() {
           <AvatarImage src="/placeholder.svg" alt="Profile" />
           <AvatarFallback>JD</AvatarFallback>
         </Avatar>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" onClick={() => {
+          if (onSettingChange) onSettingChange();
+          toast({
+            title: "Upload initiated",
+            description: "Image upload functionality will be implemented soon.",
+          });
+        }}>
           Change avatar
         </Button>
       </div>
