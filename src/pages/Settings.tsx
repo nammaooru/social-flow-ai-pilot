@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileSettings } from "@/components/settings/ProfileSettings";
 import { AccountSettings } from "@/components/settings/AccountSettings";
@@ -32,7 +32,6 @@ type UserRole = "Super Admin" | "White Label" | "Admin" | "User";
 const Settings = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const [selectedRole, setSelectedRole] = useState<UserRole>("User");
-  const [hasChanges, setHasChanges] = useState(false);
   const { toast } = useToast();
   
   // Define which settings are available to which roles
@@ -55,45 +54,17 @@ const Settings = () => {
     ]
   };
 
-  // Save all settings (demo function)
-  const handleSaveAll = () => {
-    setHasChanges(false);
-    toast({
-      title: "Settings saved",
-      description: `All ${selectedRole.toLowerCase()} settings have been saved successfully.`,
-    });
-  };
-
   // Function to switch roles (demo only)
   const handleRoleChange = (role: UserRole) => {
-    // Check if there are unsaved changes
-    if (hasChanges) {
-      const confirmed = window.confirm("You have unsaved changes. Are you sure you want to switch roles?");
-      if (!confirmed) return;
-    }
-    
     setSelectedRole(role);
     // Reset to first available tab for this role
     setActiveTab(roleAccess[role][0]);
-    setHasChanges(false);
     
     toast({
       title: "View changed",
       description: `Now viewing as ${role}`,
     });
   };
-
-  // Handler for when any setting is changed
-  const handleSettingChange = () => {
-    setHasChanges(true);
-  };
-
-  // Effect to check if we need to reset the active tab when changing roles
-  useEffect(() => {
-    if (!roleAccess[selectedRole].includes(activeTab)) {
-      setActiveTab(roleAccess[selectedRole][0]);
-    }
-  }, [selectedRole, activeTab]);
 
   const settingsMenu = [
     { id: "profile", label: "Profile", icon: <User size={18} /> },
@@ -154,16 +125,6 @@ const Settings = () => {
               User
             </Button>
           </div>
-          
-          {hasChanges && (
-            <Button 
-              size="sm"
-              className="mt-2"
-              onClick={handleSaveAll}
-            >
-              Save All Changes
-            </Button>
-          )}
         </div>
       </div>
       
@@ -188,61 +149,61 @@ const Settings = () => {
         </div>
         
         <div className="md:w-3/4 bg-card rounded-lg border shadow-sm p-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsContent value="profile">
-              <ProfileSettings onSettingChange={handleSettingChange} />
+              <ProfileSettings />
             </TabsContent>
             
             <TabsContent value="users">
-              <UsersSettings role={selectedRole} onSettingChange={handleSettingChange} />
+              <UsersSettings role={selectedRole} />
             </TabsContent>
             
             <TabsContent value="white-label">
-              <WhiteLabelSettings onSettingChange={handleSettingChange} />
+              <WhiteLabelSettings />
             </TabsContent>
             
             <TabsContent value="billing">
-              <BillingSettings role={selectedRole} onSettingChange={handleSettingChange} />
+              <BillingSettings role={selectedRole} />
             </TabsContent>
             
             <TabsContent value="appearance">
-              <AppearanceSettings onSettingChange={handleSettingChange} />
+              <AppearanceSettings />
             </TabsContent>
             
             <TabsContent value="analytics">
-              <AnalyticsSettings role={selectedRole} onSettingChange={handleSettingChange} />
+              <AnalyticsSettings role={selectedRole} />
             </TabsContent>
             
             <TabsContent value="global-settings">
-              <GlobalSettings onSettingChange={handleSettingChange} />
+              <GlobalSettings />
             </TabsContent>
             
             <TabsContent value="security">
-              <SecuritySettings role={selectedRole} onSettingChange={handleSettingChange} />
+              <SecuritySettings role={selectedRole} />
             </TabsContent>
             
             <TabsContent value="social-accounts">
-              <SocialAccountsSettings onSettingChange={handleSettingChange} />
+              <SocialAccountsSettings />
             </TabsContent>
             
             <TabsContent value="notifications">
-              <NotificationSettings onSettingChange={handleSettingChange} />
+              <NotificationSettings />
             </TabsContent>
             
             <TabsContent value="support">
-              <SupportSettings role={selectedRole} onSettingChange={handleSettingChange} />
+              <SupportSettings role={selectedRole} />
             </TabsContent>
             
             <TabsContent value="api-keys">
-              <ApiKeysSettings onSettingChange={handleSettingChange} />
+              <ApiKeysSettings />
             </TabsContent>
             
             <TabsContent value="chatbot">
-              <ChatbotSettings role={selectedRole} onSettingChange={handleSettingChange} />
+              <ChatbotSettings role={selectedRole} />
             </TabsContent>
             
             <TabsContent value="integrations">
-              <IntegrationSettings onSettingChange={handleSettingChange} />
+              <IntegrationSettings />
             </TabsContent>
           </Tabs>
         </div>

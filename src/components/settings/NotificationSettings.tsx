@@ -6,24 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-interface NotificationSettingsProps {
-  onSettingChange?: () => void;
-}
-
-export function NotificationSettings({ onSettingChange }: NotificationSettingsProps) {
+export function NotificationSettings() {
   const { toast } = useToast();
   const [emailNotifications, setEmailNotifications] = React.useState(true);
   const [pushNotifications, setPushNotifications] = React.useState(false);
   const [weeklyDigest, setWeeklyDigest] = React.useState(true);
   const [commentNotifications, setCommentNotifications] = React.useState(true);
   const [mentionNotifications, setMentionNotifications] = React.useState(true);
-  
-  const handleSettingChange = (setter: React.Dispatch<React.SetStateAction<boolean>>, value: boolean) => {
-    setter(value);
-    if (onSettingChange) {
-      onSettingChange();
-    }
-  };
   
   const handleSave = () => {
     toast({
@@ -52,7 +41,7 @@ export function NotificationSettings({ onSettingChange }: NotificationSettingsPr
           <Switch
             id="email-notifications"
             checked={emailNotifications}
-            onCheckedChange={(checked) => handleSettingChange(setEmailNotifications, checked)}
+            onCheckedChange={setEmailNotifications}
           />
         </div>
         
@@ -66,7 +55,7 @@ export function NotificationSettings({ onSettingChange }: NotificationSettingsPr
           <Switch
             id="push-notifications"
             checked={pushNotifications}
-            onCheckedChange={(checked) => handleSettingChange(setPushNotifications, checked)}
+            onCheckedChange={setPushNotifications}
           />
         </div>
         
@@ -80,7 +69,7 @@ export function NotificationSettings({ onSettingChange }: NotificationSettingsPr
           <Switch
             id="weekly-digest"
             checked={weeklyDigest}
-            onCheckedChange={(checked) => handleSettingChange(setWeeklyDigest, checked)}
+            onCheckedChange={setWeeklyDigest}
           />
         </div>
 
@@ -94,7 +83,7 @@ export function NotificationSettings({ onSettingChange }: NotificationSettingsPr
           <Switch
             id="comment-notifications"
             checked={commentNotifications}
-            onCheckedChange={(checked) => handleSettingChange(setCommentNotifications, checked)}
+            onCheckedChange={setCommentNotifications}
           />
         </div>
 
@@ -108,7 +97,7 @@ export function NotificationSettings({ onSettingChange }: NotificationSettingsPr
           <Switch
             id="mention-notifications"
             checked={mentionNotifications}
-            onCheckedChange={(checked) => handleSettingChange(setMentionNotifications, checked)}
+            onCheckedChange={setMentionNotifications}
           />
         </div>
       </div>

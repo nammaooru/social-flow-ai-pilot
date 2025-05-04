@@ -8,20 +8,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-interface AppearanceSettingsProps {
-  onSettingChange?: () => void;
-}
-
-export function AppearanceSettings({ onSettingChange }: AppearanceSettingsProps) {
+export function AppearanceSettings() {
   const { toast } = useToast();
   const [theme, setTheme] = React.useState("system");
-  
-  const handleThemeChange = (newTheme: string) => {
-    setTheme(newTheme);
-    if (onSettingChange) {
-      onSettingChange();
-    }
-  };
   
   const handleSave = () => {
     toast({
@@ -47,7 +36,7 @@ export function AppearanceSettings({ onSettingChange }: AppearanceSettingsProps)
         <CardContent>
           <RadioGroup
             defaultValue={theme}
-            onValueChange={handleThemeChange}
+            onValueChange={setTheme}
             className="grid grid-cols-1 md:grid-cols-3 gap-4"
           >
             <div>

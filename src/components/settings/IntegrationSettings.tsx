@@ -7,10 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-interface IntegrationSettingsProps {
-  onSettingChange?: () => void;
-}
-
 interface IntegrationCardProps {
   name: string;
   description: string;
@@ -60,7 +56,7 @@ function IntegrationCard({
   );
 }
 
-export function IntegrationSettings({ onSettingChange }: IntegrationSettingsProps) {
+export function IntegrationSettings() {
   const { toast } = useToast();
   const [integrations, setIntegrations] = React.useState({
     instagram: false,
@@ -74,10 +70,6 @@ export function IntegrationSettings({ onSettingChange }: IntegrationSettingsProp
       [platform]: true,
     });
     
-    if (onSettingChange) {
-      onSettingChange();
-    }
-    
     toast({
       title: "Integration connected",
       description: `Your ${platform} account has been successfully connected.`,
@@ -90,24 +82,9 @@ export function IntegrationSettings({ onSettingChange }: IntegrationSettingsProp
       [platform]: false,
     });
     
-    if (onSettingChange) {
-      onSettingChange();
-    }
-    
     toast({
       title: "Integration disconnected",
       description: `Your ${platform} account has been disconnected.`,
-    });
-  };
-
-  const handleGenerateApiKey = () => {
-    if (onSettingChange) {
-      onSettingChange();
-    }
-    
-    toast({
-      title: "Feature coming soon",
-      description: "API key generation will be available soon.",
     });
   };
 
@@ -173,7 +150,12 @@ export function IntegrationSettings({ onSettingChange }: IntegrationSettingsProp
               <Button
                 variant="outline"
                 className="flex items-center"
-                onClick={handleGenerateApiKey}
+                onClick={() => 
+                  toast({
+                    title: "Feature coming soon",
+                    description: "API key generation will be available soon.",
+                  })
+                }
               >
                 <Link className="mr-2 h-4 w-4" />
                 Generate key
