@@ -4,9 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CommonSettingsProps } from "./SettingsComponentTypes";
 import { Button } from "@/components/ui/button";
 
-interface GlobalSettingsProps extends CommonSettingsProps {}
-
-export function GlobalSettings({ onSettingChange }: GlobalSettingsProps) {
+export function GlobalSettings({ onSettingChange }: CommonSettingsProps) {
   const { toast } = useToast();
 
   const handleSave = () => {
