@@ -1,6 +1,6 @@
-
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
+import { CommonSettingsProps } from "./SettingsComponentTypes";
 import {
   Card,
   CardContent,
@@ -31,7 +31,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Shield, Key, AlertTriangle, LockKeyhole, Laptop, Smartphone, LogOut } from "lucide-react";
 
-interface SecuritySettingsProps {
+interface SecuritySettingsProps extends CommonSettingsProps {
   role: string;
 }
 
@@ -91,7 +91,7 @@ const mockLoginHistory = [
   },
 ];
 
-export function SecuritySettings({ role }: SecuritySettingsProps) {
+export function SecuritySettings({ role, onSettingChange }: SecuritySettingsProps) {
   const { toast } = useToast();
   
   const handleSave = () => {
@@ -99,6 +99,10 @@ export function SecuritySettings({ role }: SecuritySettingsProps) {
       title: "Security settings saved",
       description: "Your security settings have been updated successfully.",
     });
+    
+    if (onSettingChange) {
+      onSettingChange();
+    }
   };
 
   const handleLogout = (sessionId: string) => {

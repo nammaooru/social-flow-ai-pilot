@@ -1,6 +1,6 @@
-
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { CommonSettingsProps } from "./SettingsComponentTypes";
 import {
   Card,
   CardContent,
@@ -37,7 +37,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { HelpCircle, MessageSquare, FileText, ExternalLink } from "lucide-react";
 
-interface SupportSettingsProps {
+interface SupportSettingsProps extends CommonSettingsProps {
   role: string;
 }
 
@@ -124,7 +124,7 @@ const documentationLinks = [
   },
 ];
 
-export function SupportSettings({ role }: SupportSettingsProps) {
+export function SupportSettings({ role, onSettingChange }: SupportSettingsProps) {
   const { toast } = useToast();
   const [ticketSubject, setTicketSubject] = useState("");
   const [ticketMessage, setTicketMessage] = useState("");

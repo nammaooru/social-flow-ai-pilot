@@ -1,6 +1,6 @@
-
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
+import { CommonSettingsProps } from "./SettingsComponentTypes";
 import {
   Card,
   CardContent,
@@ -27,7 +27,9 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
-export function GlobalSettings() {
+interface GlobalSettingsProps extends CommonSettingsProps {}
+
+export function GlobalSettings({ onSettingChange }: GlobalSettingsProps) {
   const { toast } = useToast();
   
   const handleSave = () => {
@@ -35,6 +37,10 @@ export function GlobalSettings() {
       title: "Global settings saved",
       description: "Your global settings have been updated successfully.",
     });
+    
+    if (onSettingChange) {
+      onSettingChange();
+    }
   };
 
   return (

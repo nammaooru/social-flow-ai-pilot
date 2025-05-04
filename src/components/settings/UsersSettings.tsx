@@ -1,6 +1,6 @@
-
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { CommonSettingsProps } from "./SettingsComponentTypes";
 import {
   Table,
   TableBody,
@@ -42,7 +42,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-interface UsersSettingsProps {
+interface UsersSettingsProps extends CommonSettingsProps {
   role: string;
 }
 
@@ -62,7 +62,7 @@ const userFormSchema = z.object({
 
 type UserFormValues = z.infer<typeof userFormSchema>;
 
-export function UsersSettings({ role }: UsersSettingsProps) {
+export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
   const { toast } = useToast();
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");

@@ -1,16 +1,14 @@
-
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Moon, Sun, Monitor } from "lucide-react";
+import { CommonSettingsProps } from "./SettingsComponentTypes";
 
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-interface AppearanceSettingsProps {
-  onSettingChange?: () => void;
-}
+interface AppearanceSettingsProps extends CommonSettingsProps {}
 
 export function AppearanceSettings({ onSettingChange }: AppearanceSettingsProps) {
   const { toast } = useToast();

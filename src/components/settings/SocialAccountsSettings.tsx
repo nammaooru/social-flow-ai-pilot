@@ -1,6 +1,6 @@
-
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { CommonSettingsProps } from "./SettingsComponentTypes";
 import {
   Card,
   CardContent,
@@ -87,7 +87,9 @@ const mockAccounts = [
   }
 ];
 
-export function SocialAccountsSettings() {
+interface SocialAccountsSettingsProps extends CommonSettingsProps {}
+
+export function SocialAccountsSettings({ onSettingChange }: SocialAccountsSettingsProps) {
   const { toast } = useToast();
   const [accounts, setAccounts] = useState(mockAccounts);
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
