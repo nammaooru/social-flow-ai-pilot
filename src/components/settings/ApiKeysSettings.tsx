@@ -2,12 +2,9 @@
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { CommonSettingsProps } from "@/pages/Settings";
 
-interface ApiKeysSettingsProps {
-  onSettingChange?: () => void;
-}
-
-export function ApiKeysSettings({ onSettingChange }: ApiKeysSettingsProps) {
+export function ApiKeysSettings({ onSettingChange }: CommonSettingsProps) {
   const { toast } = useToast();
   
   const handleSave = () => {

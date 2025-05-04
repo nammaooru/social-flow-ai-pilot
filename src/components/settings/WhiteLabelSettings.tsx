@@ -1,12 +1,10 @@
+
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { CommonSettingsProps } from "@/pages/Settings";
 
-interface WhiteLabelSettingsProps {
-  onSettingChange?: () => void;
-}
-
-export function WhiteLabelSettings({ onSettingChange }: WhiteLabelSettingsProps) {
+export function WhiteLabelSettings({ onSettingChange }: CommonSettingsProps) {
   const { toast } = useToast();
   
   const handleSave = () => {

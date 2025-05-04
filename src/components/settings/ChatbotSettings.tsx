@@ -2,10 +2,10 @@
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { CommonSettingsProps } from "@/pages/Settings";
 
-interface ChatbotSettingsProps {
+interface ChatbotSettingsProps extends CommonSettingsProps {
   role?: string;
-  onSettingChange?: () => void;
 }
 
 export function ChatbotSettings({ role, onSettingChange }: ChatbotSettingsProps) {

@@ -2,12 +2,9 @@
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { CommonSettingsProps } from "@/pages/Settings";
 
-interface IntegrationSettingsProps {
-  onSettingChange?: () => void;
-}
-
-export function IntegrationSettings({ onSettingChange }: IntegrationSettingsProps) {
+export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
   const { toast } = useToast();
   
   const handleSave = () => {

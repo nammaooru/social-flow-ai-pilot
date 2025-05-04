@@ -2,10 +2,10 @@
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { CommonSettingsProps } from "@/pages/Settings";
 
-interface SupportSettingsProps {
+interface SupportSettingsProps extends CommonSettingsProps {
   role?: string;
-  onSettingChange?: () => void;
 }
 
 export function SupportSettings({ role, onSettingChange }: SupportSettingsProps) {
