@@ -1,13 +1,15 @@
+
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
-import { CommonSettingsProps } from "./SettingsComponentTypes";
 import { Instagram, Twitter, Facebook, Link, CheckCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-interface IntegrationSettingsProps extends CommonSettingsProps {}
+interface IntegrationSettingsProps {
+  onSettingChange?: () => void;
+}
 
 interface IntegrationCardProps {
   name: string;

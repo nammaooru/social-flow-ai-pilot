@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileSettings } from "@/components/settings/ProfileSettings";
@@ -96,7 +97,6 @@ const Settings = () => {
 
   const settingsMenu = [
     { id: "profile", label: "Profile", icon: <User size={18} /> },
-    { id: "account", label: "Account", icon: <User size={18} /> },
     { id: "users", label: "Users", icon: <Users size={18} /> },
     { id: "white-label", label: "White Label", icon: <WhiteLabel size={18} /> },
     { id: "billing", label: "Billing", icon: <CreditCard size={18} /> },
@@ -191,10 +191,6 @@ const Settings = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsContent value="profile">
               <ProfileSettings onSettingChange={handleSettingChange} />
-            </TabsContent>
-            
-            <TabsContent value="account">
-              <AccountSettings onSettingChange={handleSettingChange} />
             </TabsContent>
             
             <TabsContent value="users">

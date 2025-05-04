@@ -1,12 +1,14 @@
+
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
-import { CommonSettingsProps } from "./SettingsComponentTypes";
 
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-interface NotificationSettingsProps extends CommonSettingsProps {}
+interface NotificationSettingsProps {
+  onSettingChange?: () => void;
+}
 
 export function NotificationSettings({ onSettingChange }: NotificationSettingsProps) {
   const { toast } = useToast();
