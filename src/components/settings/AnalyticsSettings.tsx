@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -27,10 +26,11 @@ import {
 } from "@/components/ui/tabs";
 
 interface AnalyticsSettingsProps {
-  role: string;
+  role?: string;
+  onSettingChange?: () => void;
 }
 
-export function AnalyticsSettings({ role }: AnalyticsSettingsProps) {
+export function AnalyticsSettings({ role, onSettingChange }: AnalyticsSettingsProps) {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("tracking");
   
@@ -42,6 +42,10 @@ export function AnalyticsSettings({ role }: AnalyticsSettingsProps) {
       title: "Settings saved",
       description: "Your analytics settings have been updated.",
     });
+    
+    if (onSettingChange) {
+      onSettingChange();
+    }
   };
 
   return (

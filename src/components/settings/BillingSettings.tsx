@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -37,7 +36,8 @@ import { Badge } from "@/components/ui/badge";
 import { CreditCard, DollarSign, Calendar, Download } from "lucide-react";
 
 interface BillingSettingsProps {
-  role: string;
+  role?: string;
+  onSettingChange?: () => void;
 }
 
 // Mock data for billing and plans
@@ -110,7 +110,7 @@ const mockInvoices = [
   }
 ];
 
-export function BillingSettings({ role }: BillingSettingsProps) {
+export function BillingSettings({ role, onSettingChange }: BillingSettingsProps) {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("subscription");
   const [billingInterval, setBillingInterval] = useState("month");
@@ -120,6 +120,10 @@ export function BillingSettings({ role }: BillingSettingsProps) {
       title: "Plan changed",
       description: `Your subscription has been changed to the ${planId} plan.`,
     });
+    
+    if (onSettingChange) {
+      onSettingChange();
+    }
   };
 
   // Super Admin can create and manage plans, others can only subscribe
