@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -31,7 +30,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Key, Copy, Eye, EyeOff, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Key, Copy, Eye, EyeOff, Plus, RefreshCw, Trash2, FileText as FileIcon, HelpCircle } from "lucide-react";
+import Code from "@/components/settings/Code";
+import BookOpen from "@/components/settings/BookOpen";
 
 // Mock API keys data
 const mockApiKeys = [
@@ -366,7 +367,7 @@ export function ApiKeysSettings() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Button variant="outline" className="w-full justify-start">
-              <FileText className="mr-2 h-4 w-4" />
+              <FileIcon className="mr-2 h-4 w-4" />
               API Reference
             </Button>
             

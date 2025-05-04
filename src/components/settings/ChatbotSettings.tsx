@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -33,7 +32,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { MessageSquare, Upload, Sparkles, Bot, Languages } from "lucide-react";
+import { MessageSquare, Upload, Sparkles, Bot, Languages, Plus } from "lucide-react";
 
 interface ChatbotSettingsProps {
   role: string;

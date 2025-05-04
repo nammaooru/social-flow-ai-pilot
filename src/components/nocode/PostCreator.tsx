@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,6 +28,7 @@ interface Post {
   scheduledFor: string | null;
   createdAt: Date;
   isDraft: boolean;
+  settings?: Record<string, any>; // Add settings property to Post interface
 }
 
 const PostCreator = () => {

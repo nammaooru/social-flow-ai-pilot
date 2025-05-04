@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileSettings } from "@/components/settings/ProfileSettings";
@@ -19,10 +18,12 @@ import { ChatbotSettings } from "@/components/settings/ChatbotSettings";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  User, Users, WhiteLabel, CreditCard, Paintbrush, BarChart3, 
+  User, Users, CreditCard, Paintbrush, BarChart3, 
   Globe, Shield, Share2, Bell, HelpCircle, Key, MessageSquare, 
   Link
 } from "lucide-react";
+// Import custom WhiteLabel icon instead of using it from lucide-react
+import WhiteLabel from "@/components/settings/WhiteLabel";
 
 // Role types for view switching
 type UserRole = "Super Admin" | "White Label" | "Admin" | "User";
