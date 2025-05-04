@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileSettings } from "@/components/settings/ProfileSettings";
@@ -148,61 +149,63 @@ const Settings = () => {
         </div>
         
         <div className="md:w-3/4 bg-card rounded-lg border shadow-sm p-6">
-          <TabsContent value="profile" className="mt-0" hidden={activeTab !== "profile"}>
-            <ProfileSettings />
-          </TabsContent>
-          
-          <TabsContent value="users" className="mt-0" hidden={activeTab !== "users"}>
-            <UsersSettings role={selectedRole} />
-          </TabsContent>
-          
-          <TabsContent value="white-label" className="mt-0" hidden={activeTab !== "white-label"}>
-            <WhiteLabelSettings />
-          </TabsContent>
-          
-          <TabsContent value="billing" className="mt-0" hidden={activeTab !== "billing"}>
-            <BillingSettings role={selectedRole} />
-          </TabsContent>
-          
-          <TabsContent value="appearance" className="mt-0" hidden={activeTab !== "appearance"}>
-            <AppearanceSettings />
-          </TabsContent>
-          
-          <TabsContent value="analytics" className="mt-0" hidden={activeTab !== "analytics"}>
-            <AnalyticsSettings role={selectedRole} />
-          </TabsContent>
-          
-          <TabsContent value="global-settings" className="mt-0" hidden={activeTab !== "global-settings"}>
-            <GlobalSettings />
-          </TabsContent>
-          
-          <TabsContent value="security" className="mt-0" hidden={activeTab !== "security"}>
-            <SecuritySettings role={selectedRole} />
-          </TabsContent>
-          
-          <TabsContent value="social-accounts" className="mt-0" hidden={activeTab !== "social-accounts"}>
-            <SocialAccountsSettings />
-          </TabsContent>
-          
-          <TabsContent value="notifications" className="mt-0" hidden={activeTab !== "notifications"}>
-            <NotificationSettings />
-          </TabsContent>
-          
-          <TabsContent value="support" className="mt-0" hidden={activeTab !== "support"}>
-            <SupportSettings role={selectedRole} />
-          </TabsContent>
-          
-          <TabsContent value="api-keys" className="mt-0" hidden={activeTab !== "api-keys"}>
-            <ApiKeysSettings />
-          </TabsContent>
-          
-          <TabsContent value="chatbot" className="mt-0" hidden={activeTab !== "chatbot"}>
-            <ChatbotSettings role={selectedRole} />
-          </TabsContent>
-          
-          <TabsContent value="integrations" className="mt-0" hidden={activeTab !== "integrations"}>
-            <IntegrationSettings />
-          </TabsContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsContent value="profile">
+              <ProfileSettings />
+            </TabsContent>
+            
+            <TabsContent value="users">
+              <UsersSettings role={selectedRole} />
+            </TabsContent>
+            
+            <TabsContent value="white-label">
+              <WhiteLabelSettings />
+            </TabsContent>
+            
+            <TabsContent value="billing">
+              <BillingSettings role={selectedRole} />
+            </TabsContent>
+            
+            <TabsContent value="appearance">
+              <AppearanceSettings />
+            </TabsContent>
+            
+            <TabsContent value="analytics">
+              <AnalyticsSettings role={selectedRole} />
+            </TabsContent>
+            
+            <TabsContent value="global-settings">
+              <GlobalSettings />
+            </TabsContent>
+            
+            <TabsContent value="security">
+              <SecuritySettings role={selectedRole} />
+            </TabsContent>
+            
+            <TabsContent value="social-accounts">
+              <SocialAccountsSettings />
+            </TabsContent>
+            
+            <TabsContent value="notifications">
+              <NotificationSettings />
+            </TabsContent>
+            
+            <TabsContent value="support">
+              <SupportSettings role={selectedRole} />
+            </TabsContent>
+            
+            <TabsContent value="api-keys">
+              <ApiKeysSettings />
+            </TabsContent>
+            
+            <TabsContent value="chatbot">
+              <ChatbotSettings role={selectedRole} />
+            </TabsContent>
+            
+            <TabsContent value="integrations">
+              <IntegrationSettings />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
