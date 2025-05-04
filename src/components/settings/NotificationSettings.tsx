@@ -6,7 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-export function NotificationSettings() {
+interface NotificationSettingsProps {
+  onSettingChange?: () => void;
+}
+
+export function NotificationSettings({ onSettingChange }: NotificationSettingsProps) {
   const { toast } = useToast();
   const [emailNotifications, setEmailNotifications] = React.useState(true);
   const [pushNotifications, setPushNotifications] = React.useState(false);
@@ -19,6 +23,11 @@ export function NotificationSettings() {
       title: "Notification preferences saved",
       description: "Your notification settings have been updated successfully.",
     });
+    
+    // Call onSettingChange if it exists
+    if (onSettingChange) {
+      onSettingChange();
+    }
   };
 
   return (

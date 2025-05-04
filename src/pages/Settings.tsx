@@ -29,6 +29,12 @@ import WhiteLabel from "@/components/settings/WhiteLabel";
 // Role types for view switching
 type UserRole = "Super Admin" | "White Label" | "Admin" | "User";
 
+// Common interface for all settings components
+export interface CommonSettingsProps {
+  onSettingChange?: () => void;
+  role?: UserRole;
+}
+
 const Settings = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const [selectedRole, setSelectedRole] = useState<UserRole>("User");
@@ -52,6 +58,12 @@ const Settings = () => {
     "User": [
       "profile", "appearance", "security", "social-accounts", "notifications"
     ]
+  };
+  
+  // Function for handling settings changes - can be used to track analytics or sync to backend
+  const handleSettingChange = () => {
+    console.log(`Setting changed by ${selectedRole} role`);
+    // In a real app, you might want to sync settings to a backend or perform other operations
   };
 
   // Function to switch roles (demo only)
@@ -151,59 +163,59 @@ const Settings = () => {
         <div className="md:w-3/4 bg-card rounded-lg border shadow-sm p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsContent value="profile">
-              <ProfileSettings />
+              <ProfileSettings onSettingChange={handleSettingChange} />
             </TabsContent>
             
             <TabsContent value="users">
-              <UsersSettings role={selectedRole} />
+              <UsersSettings role={selectedRole} onSettingChange={handleSettingChange} />
             </TabsContent>
             
             <TabsContent value="white-label">
-              <WhiteLabelSettings />
+              <WhiteLabelSettings onSettingChange={handleSettingChange} />
             </TabsContent>
             
             <TabsContent value="billing">
-              <BillingSettings role={selectedRole} />
+              <BillingSettings role={selectedRole} onSettingChange={handleSettingChange} />
             </TabsContent>
             
             <TabsContent value="appearance">
-              <AppearanceSettings />
+              <AppearanceSettings onSettingChange={handleSettingChange} />
             </TabsContent>
             
             <TabsContent value="analytics">
-              <AnalyticsSettings role={selectedRole} />
+              <AnalyticsSettings role={selectedRole} onSettingChange={handleSettingChange} />
             </TabsContent>
             
             <TabsContent value="global-settings">
-              <GlobalSettings />
+              <GlobalSettings onSettingChange={handleSettingChange} />
             </TabsContent>
             
             <TabsContent value="security">
-              <SecuritySettings role={selectedRole} />
+              <SecuritySettings role={selectedRole} onSettingChange={handleSettingChange} />
             </TabsContent>
             
             <TabsContent value="social-accounts">
-              <SocialAccountsSettings />
+              <SocialAccountsSettings onSettingChange={handleSettingChange} />
             </TabsContent>
             
             <TabsContent value="notifications">
-              <NotificationSettings />
+              <NotificationSettings onSettingChange={handleSettingChange} />
             </TabsContent>
             
             <TabsContent value="support">
-              <SupportSettings role={selectedRole} />
+              <SupportSettings role={selectedRole} onSettingChange={handleSettingChange} />
             </TabsContent>
             
             <TabsContent value="api-keys">
-              <ApiKeysSettings />
+              <ApiKeysSettings onSettingChange={handleSettingChange} />
             </TabsContent>
             
             <TabsContent value="chatbot">
-              <ChatbotSettings role={selectedRole} />
+              <ChatbotSettings role={selectedRole} onSettingChange={handleSettingChange} />
             </TabsContent>
             
             <TabsContent value="integrations">
-              <IntegrationSettings />
+              <IntegrationSettings onSettingChange={handleSettingChange} />
             </TabsContent>
           </Tabs>
         </div>

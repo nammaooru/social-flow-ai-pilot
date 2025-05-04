@@ -58,7 +58,12 @@ const mockWhitelabelAccounts = [
   },
 ];
 
-export function WhiteLabelSettings() {
+// Add interface to accept onSettingChange prop
+interface WhiteLabelSettingsProps {
+  onSettingChange?: () => void;
+}
+
+export function WhiteLabelSettings({ onSettingChange }: WhiteLabelSettingsProps) {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("appearance");
   const [searchQuery, setSearchQuery] = useState("");
@@ -79,6 +84,10 @@ export function WhiteLabelSettings() {
         title: "Logo uploaded",
         description: "Your logo has been successfully uploaded.",
       });
+      // Call onSettingChange if it exists
+      if (onSettingChange) {
+        onSettingChange();
+      }
     }, 1500);
   };
 
@@ -89,6 +98,47 @@ export function WhiteLabelSettings() {
       title: "Account deleted",
       description: "The white label account has been successfully deleted.",
     });
+    
+    // Call onSettingChange if it exists
+    if (onSettingChange) {
+      onSettingChange();
+    }
+  };
+
+  const handleSaveSettings = () => {
+    toast({
+      title: "Settings saved",
+      description: "Your white label settings have been saved.",
+    });
+    
+    // Call onSettingChange if it exists
+    if (onSettingChange) {
+      onSettingChange();
+    }
+  };
+
+  const handleAddAccount = () => {
+    toast({
+      title: "Feature active",
+      description: "Add new white label account functionality is now available.",
+    });
+    
+    // Create a new account with mock data
+    const newAccount = {
+      id: `${accounts.length + 1}`,
+      name: "New Agency",
+      domain: "newagency.com",
+      logo: "/placeholder.svg",
+      status: "Active",
+      clientCount: 0
+    };
+    
+    setAccounts([...accounts, newAccount]);
+    
+    // Call onSettingChange if it exists
+    if (onSettingChange) {
+      onSettingChange();
+    }
   };
 
   return (
@@ -183,12 +233,7 @@ export function WhiteLabelSettings() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={() => {
-                toast({
-                  title: "Settings saved",
-                  description: "Your white label settings have been saved.",
-                });
-              }}>
+              <Button onClick={handleSaveSettings}>
                 Save Changes
               </Button>
             </CardFooter>
@@ -219,12 +264,7 @@ export function WhiteLabelSettings() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={() => {
-                toast({
-                  title: "Email settings saved",
-                  description: "Your email customization settings have been saved.",
-                });
-              }}>
+              <Button onClick={handleSaveSettings}>
                 Save Changes
               </Button>
             </CardFooter>
@@ -243,12 +283,7 @@ export function WhiteLabelSettings() {
               />
             </div>
             
-            <Button onClick={() => {
-              toast({
-                title: "Feature coming soon",
-                description: "Add new white label account functionality is coming soon.",
-              });
-            }}>
+            <Button onClick={handleAddAccount}>
               <Plus className="mr-2 h-4 w-4" /> Add Account
             </Button>
           </div>

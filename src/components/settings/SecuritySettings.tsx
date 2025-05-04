@@ -33,6 +33,7 @@ import { Shield, Key, AlertTriangle, LockKeyhole, Laptop, Smartphone, LogOut } f
 
 interface SecuritySettingsProps {
   role: string;
+  onSettingChange?: () => void;
 }
 
 // Mock data for active sessions
@@ -91,7 +92,7 @@ const mockLoginHistory = [
   },
 ];
 
-export function SecuritySettings({ role }: SecuritySettingsProps) {
+export function SecuritySettings({ role, onSettingChange }: SecuritySettingsProps) {
   const { toast } = useToast();
   
   const handleSave = () => {
@@ -99,6 +100,11 @@ export function SecuritySettings({ role }: SecuritySettingsProps) {
       title: "Security settings saved",
       description: "Your security settings have been updated successfully.",
     });
+    
+    // Call onSettingChange if it exists
+    if (onSettingChange) {
+      onSettingChange();
+    }
   };
 
   const handleLogout = (sessionId: string) => {
@@ -106,6 +112,10 @@ export function SecuritySettings({ role }: SecuritySettingsProps) {
       title: "Session terminated",
       description: "The selected session has been logged out.",
     });
+    
+    if (onSettingChange) {
+      onSettingChange();
+    }
   };
 
   const handleEnableTwoFactor = () => {
@@ -113,6 +123,10 @@ export function SecuritySettings({ role }: SecuritySettingsProps) {
       title: "Two-factor authentication",
       description: "Setup wizard will be available soon.",
     });
+    
+    if (onSettingChange) {
+      onSettingChange();
+    }
   };
 
   return (
