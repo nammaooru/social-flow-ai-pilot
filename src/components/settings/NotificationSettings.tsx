@@ -1,117 +1,37 @@
 
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
-
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { CommonSettingsProps } from "@/pages/Settings";
 
-interface NotificationSettingsProps {
-  onSettingChange?: () => void;
-}
-
-export function NotificationSettings({ onSettingChange }: NotificationSettingsProps) {
+export function NotificationSettings({ onSettingChange }: CommonSettingsProps) {
   const { toast } = useToast();
-  const [emailNotifications, setEmailNotifications] = React.useState(true);
-  const [pushNotifications, setPushNotifications] = React.useState(false);
-  const [weeklyDigest, setWeeklyDigest] = React.useState(true);
-  const [commentNotifications, setCommentNotifications] = React.useState(true);
-  const [mentionNotifications, setMentionNotifications] = React.useState(true);
   
   const handleSave = () => {
     toast({
-      title: "Notification preferences saved",
+      title: "Notification settings saved",
       description: "Your notification settings have been updated successfully.",
     });
     
-    // Call onSettingChange if it exists
     if (onSettingChange) {
       onSettingChange();
     }
   };
-
+  
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium">Notification Preferences</h3>
+        <h3 className="text-lg font-medium">Notifications</h3>
         <p className="text-sm text-muted-foreground">
-          Configure how you'll receive notifications and updates.
+          Configure your notification preferences.
         </p>
       </div>
       
       <div className="space-y-4">
-        <div className="flex items-center justify-between space-x-2">
-          <Label htmlFor="email-notifications" className="flex flex-col space-y-1">
-            <span>Email notifications</span>
-            <span className="font-normal text-sm text-muted-foreground">
-              Receive important updates via email
-            </span>
-          </Label>
-          <Switch
-            id="email-notifications"
-            checked={emailNotifications}
-            onCheckedChange={setEmailNotifications}
-          />
-        </div>
-        
-        <div className="flex items-center justify-between space-x-2">
-          <Label htmlFor="push-notifications" className="flex flex-col space-y-1">
-            <span>Push notifications</span>
-            <span className="font-normal text-sm text-muted-foreground">
-              Receive notifications on your device
-            </span>
-          </Label>
-          <Switch
-            id="push-notifications"
-            checked={pushNotifications}
-            onCheckedChange={setPushNotifications}
-          />
-        </div>
-        
-        <div className="flex items-center justify-between space-x-2">
-          <Label htmlFor="weekly-digest" className="flex flex-col space-y-1">
-            <span>Weekly digest</span>
-            <span className="font-normal text-sm text-muted-foreground">
-              Get a summary of your account activity
-            </span>
-          </Label>
-          <Switch
-            id="weekly-digest"
-            checked={weeklyDigest}
-            onCheckedChange={setWeeklyDigest}
-          />
-        </div>
-
-        <div className="flex items-center justify-between space-x-2">
-          <Label htmlFor="comment-notifications" className="flex flex-col space-y-1">
-            <span>Comments</span>
-            <span className="font-normal text-sm text-muted-foreground">
-              Get notified when someone comments on your posts
-            </span>
-          </Label>
-          <Switch
-            id="comment-notifications"
-            checked={commentNotifications}
-            onCheckedChange={setCommentNotifications}
-          />
-        </div>
-
-        <div className="flex items-center justify-between space-x-2">
-          <Label htmlFor="mention-notifications" className="flex flex-col space-y-1">
-            <span>Mentions</span>
-            <span className="font-normal text-sm text-muted-foreground">
-              Get notified when someone mentions you
-            </span>
-          </Label>
-          <Switch
-            id="mention-notifications"
-            checked={mentionNotifications}
-            onCheckedChange={setMentionNotifications}
-          />
-        </div>
+        <p>Notification settings content will go here.</p>
       </div>
       
-      <Button onClick={handleSave}>Save preferences</Button>
+      <Button onClick={handleSave}>Save settings</Button>
     </div>
   );
 }

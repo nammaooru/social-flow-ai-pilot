@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CommonSettingsProps } from "@/pages/Settings";
 
 interface SecuritySettingsProps extends CommonSettingsProps {
-  role?: string;
+  // No need to redefine role as it's already in CommonSettingsProps with the correct type
 }
 
 export function SecuritySettings({ role, onSettingChange }: SecuritySettingsProps) {

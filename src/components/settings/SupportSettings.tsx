@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CommonSettingsProps } from "@/pages/Settings";
 
 interface SupportSettingsProps extends CommonSettingsProps {
-  role?: string;
+  // No need to redefine role as it's already in CommonSettingsProps with the correct type
 }
 
 export function SupportSettings({ role, onSettingChange }: SupportSettingsProps) {
