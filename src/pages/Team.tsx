@@ -3,10 +3,10 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Users, MessageSquare, UserCog, BarChart3, Calendar, Share2, BriefcaseBusiness } from 'lucide-react';
+import { Users, MessageSquare, UserCog, Calendar, Share2, BriefcaseBusiness, Building } from 'lucide-react';
 import TeamOrganization from '@/components/team/TeamOrganization';
 import RolesAssignment from '@/components/team/RolesAssignment';
-import PerformanceTracking from '@/components/team/PerformanceTracking';
+import DepartmentManagement from '@/components/team/DepartmentManagement';
 import TeamAvailability from '@/components/team/TeamAvailability';
 import TeamChat from '@/components/team/TeamChat';
 import WorkloadDistribution from '@/components/team/WorkloadDistribution';
@@ -64,9 +64,9 @@ const Team = () => {
                   <UserCog size={16} />
                   <span className="hidden sm:inline">Roles</span>
                 </TabsTrigger>
-                <TabsTrigger value="performance" className="flex items-center gap-2">
-                  <BarChart3 size={16} />
-                  <span className="hidden sm:inline">Performance</span>
+                <TabsTrigger value="departments" className="flex items-center gap-2">
+                  <Building size={16} />
+                  <span className="hidden sm:inline">Departments</span>
                 </TabsTrigger>
                 <TabsTrigger value="availability" className="flex items-center gap-2">
                   <Calendar size={16} />
@@ -95,8 +95,8 @@ const Team = () => {
               <TabsContent value="roles">
                 <RolesAssignment />
               </TabsContent>
-              <TabsContent value="performance">
-                <PerformanceTracking />
+              <TabsContent value="departments">
+                <DepartmentManagement />
               </TabsContent>
               <TabsContent value="availability">
                 <TeamAvailability />
