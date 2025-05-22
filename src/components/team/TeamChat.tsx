@@ -34,8 +34,39 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+// Attachment interface
+interface Attachment {
+  type: 'image' | 'video' | 'document' | 'audio';
+  name: string;
+  size: string;
+  url?: string;
+}
+
+// Message interface
+interface Message {
+  id: string;
+  sender: string;
+  avatar?: string;
+  text: string;
+  time: string;
+  status?: 'sent' | 'delivered' | 'read';
+  attachments?: Attachment[];
+}
+
+// Chat interface
+interface Chat {
+  id: string;
+  name: string;
+  lastMessage: string;
+  timestamp: string;
+  unread: number;
+  isGroup: boolean;
+  members?: { id: string; name: string; avatarUrl: string; status: string }[];
+  messages: Message[];
+}
+
 // Mock chat data
-const initialChats = [
+const initialChats: Chat[] = [
   {
     id: '1',
     name: 'Marketing Team',
@@ -220,37 +251,6 @@ const initialChats = [
     ]
   }
 ];
-
-// Attachment interface
-interface Attachment {
-  type: 'image' | 'video' | 'document' | 'audio';
-  name: string;
-  size: string;
-  url?: string;
-}
-
-// Message interface
-interface Message {
-  id: string;
-  sender: string;
-  avatar?: string;
-  text: string;
-  time: string;
-  status?: 'sent' | 'delivered' | 'read';
-  attachments?: Attachment[];
-}
-
-// Chat interface
-interface Chat {
-  id: string;
-  name: string;
-  lastMessage: string;
-  timestamp: string;
-  unread: number;
-  isGroup: boolean;
-  members?: { id: string; name: string; avatarUrl: string; status: string }[];
-  messages: Message[];
-}
 
 const TeamChat = () => {
   const [chats, setChats] = useState<Chat[]>(initialChats);
