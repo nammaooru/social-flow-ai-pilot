@@ -54,7 +54,7 @@ const Team = () => {
 
         <Card className="flex-1">
           <CardHeader className="pb-2">
-            <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 mb-4">
                 <TabsTrigger value="organization" className="flex items-center gap-2">
                   <Users size={16} />
@@ -88,27 +88,29 @@ const Team = () => {
             </Tabs>
           </CardHeader>
           <CardContent className="p-2">
-            <TabsContent value="organization" className="mt-0">
-              <TeamOrganization />
-            </TabsContent>
-            <TabsContent value="roles" className="mt-0">
-              <RolesAssignment />
-            </TabsContent>
-            <TabsContent value="performance" className="mt-0">
-              <PerformanceTracking />
-            </TabsContent>
-            <TabsContent value="availability" className="mt-0">
-              <TeamAvailability />
-            </TabsContent>
-            <TabsContent value="chat" className="mt-0">
-              <TeamChat />
-            </TabsContent>
-            <TabsContent value="workload" className="mt-0">
-              <WorkloadDistribution />
-            </TabsContent>
-            <TabsContent value="collaboration" className="mt-0">
-              <CollaborationTools />
-            </TabsContent>
+            <Tabs value={activeTab}>
+              <TabsContent value="organization">
+                <TeamOrganization />
+              </TabsContent>
+              <TabsContent value="roles">
+                <RolesAssignment />
+              </TabsContent>
+              <TabsContent value="performance">
+                <PerformanceTracking />
+              </TabsContent>
+              <TabsContent value="availability">
+                <TeamAvailability />
+              </TabsContent>
+              <TabsContent value="chat">
+                <TeamChat />
+              </TabsContent>
+              <TabsContent value="workload">
+                <WorkloadDistribution />
+              </TabsContent>
+              <TabsContent value="collaboration">
+                <CollaborationTools />
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>
