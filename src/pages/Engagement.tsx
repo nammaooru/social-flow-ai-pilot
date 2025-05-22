@@ -24,6 +24,7 @@ const Engagement = () => {
   const [instantMessages, setInstantMessages] = useState(true);
   const [autoLike, setAutoLike] = useState(true);
   const [autoFollow, setAutoFollow] = useState(false);
+  const [showAiSuggestions, setShowAiSuggestions] = useState(true);
 
   const handleAutoResponseChange = (checked: boolean) => {
     setAutoResponseActive(checked);
@@ -80,6 +81,14 @@ const Engagement = () => {
     toast({
       title: checked ? "Auto-follow enabled" : "Auto-follow disabled",
       description: `Automatic following of active users has been ${checked ? 'enabled' : 'disabled'}`,
+    });
+  };
+
+  const handleShowAiSuggestionsChange = (checked: boolean) => {
+    setShowAiSuggestions(checked);
+    toast({
+      title: checked ? "AI suggestions enabled" : "AI suggestions disabled",
+      description: `AI suggestions for responses have been ${checked ? 'enabled' : 'disabled'}`,
     });
   };
 
@@ -153,6 +162,15 @@ const Engagement = () => {
                         id="ai-messages" 
                         checked={aiMessages}
                         onCheckedChange={handleAiMessagesChange}
+                        disabled={!autoResponseActive}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="ai-suggestions" className="text-sm">Show AI Suggestions</Label>
+                      <Switch 
+                        id="ai-suggestions" 
+                        checked={showAiSuggestions}
+                        onCheckedChange={handleShowAiSuggestionsChange}
                         disabled={!autoResponseActive}
                       />
                     </div>
@@ -230,7 +248,7 @@ const Engagement = () => {
         </TabsContent>
 
         <TabsContent value="messages" className="mt-0">
-          <DirectMessagesSection />
+          <DirectMessagesSection showAiSuggestions={showAiSuggestions} />
         </TabsContent>
 
         <TabsContent value="templates" className="mt-0">

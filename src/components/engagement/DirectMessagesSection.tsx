@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { 
   MessageSquare, Search, Filter, MoreHorizontal, Send, Bot, Sparkles,
-  Paperclip, Image, Video, File, Reply as ReplyIcon, Forward, Smile,
+  Paperclip, Reply as ReplyIcon, Forward, Smile,
   X as XIcon
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -139,7 +138,11 @@ const platformColors = {
   LinkedIn: 'bg-blue-800'
 };
 
-const DirectMessagesSection = () => {
+interface DirectMessagesSectionProps {
+  showAiSuggestions?: boolean;
+}
+
+const DirectMessagesSection = ({ showAiSuggestions = true }: DirectMessagesSectionProps) => {
   const [selectedContact, setSelectedContact] = useState(contacts[0].id);
   const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -177,7 +180,7 @@ const DirectMessagesSection = () => {
       sender: 'me',
       text: messageText,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      attachments: attachments.length > 0 ? attachments : undefined
+      attachments: attachments.length > 0 ? [...attachments] : undefined
     };
     
     // Add message to conversation
@@ -197,14 +200,14 @@ const DirectMessagesSection = () => {
     setMessageText(aiSuggestion);
   };
   
-  const handleForwardMessage = (messageId) => {
+  const handleForwardMessage = (messageId: string) => {
     toast({
       title: "Forward message",
       description: "Message forwarding functionality triggered",
     });
   };
   
-  const handleReplyMessage = (messageId) => {
+  const handleReplyMessage = (messageId: string) => {
     const message = messages.find(m => m.id === messageId);
     if (message) {
       setMessageText(`Replying to: "${message.text.substring(0, 20)}${message.text.length > 20 ? '...' : ''}" \n\n`);
@@ -212,6 +215,13 @@ const DirectMessagesSection = () => {
   };
   
   const handleAttachment = (type: AttachmentType) => {
+    if (type === 'emoji') {
+      // For emoji, just toggle the picker without opening the file dialog
+      setShowEmojiPicker(!showEmojiPicker);
+      return;
+    }
+    
+    // For other types, create a file input and trigger it
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     
@@ -226,41 +236,40 @@ const DirectMessagesSection = () => {
       case 'document':
         fileInput.accept = '.pdf,.doc,.docx,.txt';
         break;
-      default:
-        break;
     }
     
-    // If not emoji, open file dialog
-    if (type !== 'emoji') {
-      fileInput.onchange = (e: Event) => {
-        const target = e.target as HTMLInputElement;
-        if (target.files && target.files[0]) {
-          const file = target.files[0];
-          const reader = new FileReader();
-          
-          reader.onload = (event) => {
+    fileInput.onchange = (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      if (target.files && target.files[0]) {
+        const file = target.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = (event) => {
+          if (event.target?.result) {
             const newAttachment: Attachment = {
               type,
               name: file.name,
               url: URL.createObjectURL(file),
-              preview: type === 'image' ? event.target?.result as string : undefined
+              preview: type === 'image' ? event.target.result as string : undefined
             };
             
             setAttachments([...attachments, newAttachment]);
-          };
-          
-          if (type === 'image') {
-            reader.readAsDataURL(file);
-          } else {
-            reader.readAsArrayBuffer(file);
+            
+            toast({
+              title: "Attachment added",
+              description: `${type} has been attached successfully`,
+            });
           }
+        };
+        
+        if (type === 'image') {
+          reader.readAsDataURL(file);
+        } else {
+          reader.readAsArrayBuffer(file);
         }
-      };
-      fileInput.click();
-    } else {
-      // For emoji, we'll just toggle the emoji picker
-      setShowEmojiPicker(!showEmojiPicker);
-    }
+      }
+    };
+    fileInput.click();
   };
 
   const handleAddEmoji = (emoji: string) => {
@@ -271,12 +280,22 @@ const DirectMessagesSection = () => {
     };
     setAttachments([...attachments, newAttachment]);
     setShowEmojiPicker(false);
+    
+    toast({
+      title: "Emoji added",
+      description: "Emoji has been added to your message",
+    });
   };
   
   const removeAttachment = (index: number) => {
     const newAttachments = [...attachments];
     newAttachments.splice(index, 1);
     setAttachments(newAttachments);
+    
+    toast({
+      title: "Attachment removed",
+      description: "Attachment has been removed from your message",
+    });
   };
 
   const emojis = ['😊', '👍', '❤️', '🎉', '😂', '🔥', '👏', '🙏', '😍', '🤩', '😎', '🤔', '👋', '✨', '💯', '🚀'];
@@ -406,7 +425,7 @@ const DirectMessagesSection = () => {
                 <div>
                   <CardTitle>{currentContact.name}</CardTitle>
                   <div className="flex items-center text-sm text-muted-foreground">
-                    <div className={`h-2 w-2 rounded-full mr-2 ${platformColors[currentContact.platform]}`}></div>
+                    <div className={`h-2 w-2 rounded-full mr-2 ${platformColors[currentContact.platform as keyof typeof platformColors]}`}></div>
                     <span>{currentContact.platform}</span>
                     <span className="mx-2">•</span>
                     <span className={`flex items-center ${currentContact.status === 'online' ? 'text-green-500' : 'text-gray-400'}`}>
@@ -463,8 +482,8 @@ const DirectMessagesSection = () => {
                           {(attachment.type === 'video' || attachment.type === 'document') && (
                             <div className="flex items-center bg-background/10 p-2 rounded-md">
                               {attachment.type === 'video' ? 
-                                <Video className="h-4 w-4 mr-2" /> : 
-                                <File className="h-4 w-4 mr-2" />
+                                <span className="h-4 w-4 mr-2">🎥</span> : 
+                                <span className="h-4 w-4 mr-2">📄</span>
                               }
                               <span className="text-xs truncate">{attachment.name}</span>
                             </div>
@@ -509,8 +528,8 @@ const DirectMessagesSection = () => {
               </div>
             </ScrollArea>
             
-            {/* AI suggestion */}
-            {aiSuggestion && (
+            {/* AI suggestion - only show if enabled */}
+            {showAiSuggestions && aiSuggestion && (
               <div className="mb-2 flex items-center">
                 <Card className="w-full bg-muted/50">
                   <CardContent className="p-3 flex justify-between items-center">
@@ -568,8 +587,8 @@ const DirectMessagesSection = () => {
                     {(attachment.type === 'video' || attachment.type === 'document') && (
                       <div className="relative bg-muted p-2 rounded-md flex items-center">
                         {attachment.type === 'video' ? 
-                          <Video className="h-4 w-4 mr-2" /> : 
-                          <File className="h-4 w-4 mr-2" />
+                          <span className="mr-2">🎥</span> : 
+                          <span className="mr-2">📄</span>
                         }
                         <span className="text-xs truncate max-w-[80px]">{attachment.name}</span>
                         <Button 
@@ -589,7 +608,7 @@ const DirectMessagesSection = () => {
             
             <div className="flex items-center gap-2 mt-2">
               <div className="flex gap-1">
-                <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+                <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="icon" className="h-10 w-10">
                       <Paperclip className="h-4 w-4" />
@@ -598,15 +617,15 @@ const DirectMessagesSection = () => {
                   <PopoverContent className="w-48 p-2">
                     <div className="grid grid-cols-2 gap-1">
                       <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('image')}>
-                        <Image className="h-4 w-4" />
+                        <span>🖼️</span>
                         <span>Image</span>
                       </Button>
                       <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('video')}>
-                        <Video className="h-4 w-4" />
+                        <span>🎥</span>
                         <span>Video</span>
                       </Button>
                       <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('document')}>
-                        <File className="h-4 w-4" />
+                        <span>📄</span>
                         <span>Document</span>
                       </Button>
                       <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('emoji')}>
