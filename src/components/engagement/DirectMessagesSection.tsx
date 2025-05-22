@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,27 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+
+// Types for attachments
+type AttachmentType = 'image' | 'video' | 'document' | 'emoji';
+
+interface Attachment {
+  type: AttachmentType;
+  name: string;
+  url?: string;
+  preview?: string;
+  content?: string;
+}
+
+// Define the Message interface to include attachments
+interface Message {
+  id: string;
+  sender: string;
+  text: string;
+  time: string;
+  isAI?: boolean;
+  attachments?: Attachment[];
+}
 
 // Mock data for direct messages
 const contacts = [
@@ -76,7 +98,7 @@ const contacts = [
 ];
 
 // Sample conversation
-const conversation = [
+const conversation: Message[] = [
   {
     id: '1',
     sender: 'user',
@@ -117,24 +139,13 @@ const platformColors = {
   LinkedIn: 'bg-blue-800'
 };
 
-// Types for attachments
-type AttachmentType = 'image' | 'video' | 'document' | 'emoji';
-
-interface Attachment {
-  type: AttachmentType;
-  name: string;
-  url?: string;
-  preview?: string;
-  content?: string;
-}
-
 const DirectMessagesSection = () => {
   const [selectedContact, setSelectedContact] = useState(contacts[0].id);
   const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [messageText, setMessageText] = useState('');
   const [aiSuggestion, setAiSuggestion] = useState('Yes, you can pick it up tomorrow at any of our store locations. Do you have a preferred location?');
-  const [messages, setMessages] = useState(conversation);
+  const [messages, setMessages] = useState<Message[]>(conversation);
   const { toast } = useToast();
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -161,7 +172,7 @@ const DirectMessagesSection = () => {
     if (!messageText.trim() && attachments.length === 0) return;
     
     // Create a new message
-    const newMessage = {
+    const newMessage: Message = {
       id: (messages.length + 1).toString(),
       sender: 'me',
       text: messageText,
