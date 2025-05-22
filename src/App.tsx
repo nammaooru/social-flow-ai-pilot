@@ -14,6 +14,7 @@ import Schedule from "./pages/Schedule";
 import Engagement from "./pages/Engagement";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
+import Team from "./pages/Team";
 import NotFound from "./pages/NotFound";
 import DashboardLayout from "./components/DashboardLayout";
 import NoCodeBuilder from "./pages/NoCodeBuilder";
@@ -46,7 +47,7 @@ const App = () => (
               <Route path="/engagement" element={<Engagement />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="/team" element={<Dashboard />} /> {/* Placeholder */}
+              <Route path="/team" element={<Team />} />
               
               {/* No-Code Builder Routes */}
               <Route path="/nocode" element={<NoCodeBuilder />} />
