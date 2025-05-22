@@ -91,6 +91,22 @@ const teamMembers = [
   { value: "Morgan Patel", label: "Morgan Patel" },
 ];
 
+const departments = [
+  { value: "Marketing", label: "Marketing" },
+  { value: "Design", label: "Design" },
+  { value: "Development", label: "Development" },
+  { value: "Content", label: "Content" },
+  { value: "Management", label: "Management" },
+];
+
+const levels = [
+  { value: "Executive", label: "Executive" },
+  { value: "Manager", label: "Manager" },
+  { value: "Senior", label: "Senior" },
+  { value: "Mid-level", label: "Mid-level" },
+  { value: "Junior", label: "Junior" },
+];
+
 const RolesAssignment = () => {
   const [roles, setRoles] = useState(initialRoles);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -170,11 +186,11 @@ const RolesAssignment = () => {
                       <SelectValue placeholder="Select department" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Marketing">Marketing</SelectItem>
-                      <SelectItem value="Design">Design</SelectItem>
-                      <SelectItem value="Development">Development</SelectItem>
-                      <SelectItem value="Content">Content</SelectItem>
-                      <SelectItem value="Management">Management</SelectItem>
+                      {departments.map((dept) => (
+                        <SelectItem key={dept.value} value={dept.value}>
+                          {dept.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -188,11 +204,11 @@ const RolesAssignment = () => {
                       <SelectValue placeholder="Select level" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Executive">Executive</SelectItem>
-                      <SelectItem value="Manager">Manager</SelectItem>
-                      <SelectItem value="Senior">Senior</SelectItem>
-                      <SelectItem value="Mid-level">Mid-level</SelectItem>
-                      <SelectItem value="Junior">Junior</SelectItem>
+                      {levels.map((level) => (
+                        <SelectItem key={level.value} value={level.value}>
+                          {level.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -295,11 +311,11 @@ const RolesAssignment = () => {
                                 <SelectValue placeholder="Select department" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="Marketing">Marketing</SelectItem>
-                                <SelectItem value="Design">Design</SelectItem>
-                                <SelectItem value="Development">Development</SelectItem>
-                                <SelectItem value="Content">Content</SelectItem>
-                                <SelectItem value="Management">Management</SelectItem>
+                                {departments.map((dept) => (
+                                  <SelectItem key={dept.value} value={dept.value}>
+                                    {dept.label}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
@@ -313,11 +329,11 @@ const RolesAssignment = () => {
                                 <SelectValue placeholder="Select level" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="Executive">Executive</SelectItem>
-                                <SelectItem value="Manager">Manager</SelectItem>
-                                <SelectItem value="Senior">Senior</SelectItem>
-                                <SelectItem value="Mid-level">Mid-level</SelectItem>
-                                <SelectItem value="Junior">Junior</SelectItem>
+                                {levels.map((level) => (
+                                  <SelectItem key={level.value} value={level.value}>
+                                    {level.label}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>

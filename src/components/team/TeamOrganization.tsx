@@ -74,6 +74,14 @@ const teamMembers = [
   },
 ];
 
+const departments = [
+  { value: "Marketing", label: "Marketing" },
+  { value: "Design", label: "Design" },
+  { value: "Development", label: "Development" },
+  { value: "Content", label: "Content" },
+  { value: "Management", label: "Management" },
+];
+
 const TeamOrganization = () => {
   const [members, setMembers] = useState(teamMembers);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -144,11 +152,11 @@ const TeamOrganization = () => {
                       <SelectValue placeholder="Select department" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Marketing">Marketing</SelectItem>
-                      <SelectItem value="Design">Design</SelectItem>
-                      <SelectItem value="Development">Development</SelectItem>
-                      <SelectItem value="Content">Content</SelectItem>
-                      <SelectItem value="Management">Management</SelectItem>
+                      {departments.map((dept) => (
+                        <SelectItem key={dept.value} value={dept.value}>
+                          {dept.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
