@@ -288,7 +288,7 @@ const RolesAssignment = () => {
                           <div className="grid gap-2">
                             <Label htmlFor="edit-department">Department</Label>
                             <Select 
-                              value={currentRole?.department}
+                              value={currentRole?.department || undefined}
                               onValueChange={(value) => setCurrentRole({...currentRole, department: value})}
                             >
                               <SelectTrigger>
@@ -306,7 +306,7 @@ const RolesAssignment = () => {
                           <div className="grid gap-2">
                             <Label htmlFor="edit-level">Level</Label>
                             <Select 
-                              value={currentRole?.level}
+                              value={currentRole?.level || undefined}
                               onValueChange={(value) => setCurrentRole({...currentRole, level: value})}
                             >
                               <SelectTrigger>
@@ -333,7 +333,7 @@ const RolesAssignment = () => {
                           <div className="grid gap-2">
                             <Label htmlFor="edit-assignedTo">Assign To</Label>
                             <Select 
-                              value={currentRole?.assignedTo}
+                              value={currentRole?.assignedTo || undefined}
                               onValueChange={(value) => setCurrentRole({...currentRole, assignedTo: value})}
                             >
                               <SelectTrigger>
