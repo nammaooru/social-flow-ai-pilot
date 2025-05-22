@@ -93,6 +93,11 @@ const TeamOrganization = () => {
   });
 
   const handleAddMember = () => {
+    // Ensure department is not empty before adding
+    if (!newMember.department) {
+      return;
+    }
+    
     const id = (members.length + 1).toString();
     const newMemberWithId = {
       ...newMember, 
@@ -171,7 +176,12 @@ const TeamOrganization = () => {
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleAddMember}>Add Member</Button>
+                <Button 
+                  onClick={handleAddMember}
+                  disabled={!newMember.name || !newMember.email || !newMember.department || !newMember.role}
+                >
+                  Add Member
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

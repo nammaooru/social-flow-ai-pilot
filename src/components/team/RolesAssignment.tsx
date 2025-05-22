@@ -121,6 +121,11 @@ const RolesAssignment = () => {
   };
   
   const handleAddRole = () => {
+    // Ensure required fields are present
+    if (!currentRole?.title || !currentRole?.department || !currentRole?.level || !currentRole?.assignedTo) {
+      return;
+    }
+    
     const newId = (roles.length + 1).toString();
     setRoles([...roles, {...currentRole, id: newId}]);
     setCurrentRole(null);
@@ -128,6 +133,11 @@ const RolesAssignment = () => {
   };
   
   const handleEditRole = () => {
+    // Ensure required fields are present
+    if (!currentRole?.title || !currentRole?.department || !currentRole?.level || !currentRole?.assignedTo) {
+      return;
+    }
+    
     const updatedRoles = roles.map(role => 
       role.id === editingRoleId ? {...currentRole} : role
     );
@@ -243,7 +253,12 @@ const RolesAssignment = () => {
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleAddRole}>Create Role</Button>
+                <Button 
+                  onClick={handleAddRole}
+                  disabled={!currentRole?.title || !currentRole?.department || !currentRole?.level || !currentRole?.assignedTo}
+                >
+                  Create Role
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -370,7 +385,12 @@ const RolesAssignment = () => {
                             setIsEditDialogOpen(false);
                             setEditingRoleId(null);
                           }}>Cancel</Button>
-                          <Button onClick={handleEditRole}>Save Changes</Button>
+                          <Button 
+                            onClick={handleEditRole}
+                            disabled={!currentRole?.title || !currentRole?.department || !currentRole?.level || !currentRole?.assignedTo}
+                          >
+                            Save Changes
+                          </Button>
                         </DialogFooter>
                       </DialogContent>
                     </Dialog>
