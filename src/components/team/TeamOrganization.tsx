@@ -138,6 +138,7 @@ const TeamOrganization = () => {
                   <Label htmlFor="department">Department</Label>
                   <Select 
                     onValueChange={(value) => setNewMember({...newMember, department: value})}
+                    value={newMember.department || undefined}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select department" />

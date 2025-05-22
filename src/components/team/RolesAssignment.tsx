@@ -164,6 +164,7 @@ const RolesAssignment = () => {
                   <Label htmlFor="department">Department</Label>
                   <Select 
                     onValueChange={(value) => setCurrentRole({...currentRole, department: value})}
+                    value={currentRole?.department || undefined}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select department" />
@@ -181,6 +182,7 @@ const RolesAssignment = () => {
                   <Label htmlFor="level">Level</Label>
                   <Select 
                     onValueChange={(value) => setCurrentRole({...currentRole, level: value})}
+                    value={currentRole?.level || undefined}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select level" />
@@ -208,6 +210,7 @@ const RolesAssignment = () => {
                   <Label htmlFor="assignedTo">Assign To</Label>
                   <Select 
                     onValueChange={(value) => setCurrentRole({...currentRole, assignedTo: value})}
+                    value={currentRole?.assignedTo || undefined}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select team member" />
@@ -289,7 +292,7 @@ const RolesAssignment = () => {
                               onValueChange={(value) => setCurrentRole({...currentRole, department: value})}
                             >
                               <SelectTrigger>
-                                <SelectValue />
+                                <SelectValue placeholder="Select department" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="Marketing">Marketing</SelectItem>
@@ -307,7 +310,7 @@ const RolesAssignment = () => {
                               onValueChange={(value) => setCurrentRole({...currentRole, level: value})}
                             >
                               <SelectTrigger>
-                                <SelectValue />
+                                <SelectValue placeholder="Select level" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="Executive">Executive</SelectItem>
@@ -334,7 +337,7 @@ const RolesAssignment = () => {
                               onValueChange={(value) => setCurrentRole({...currentRole, assignedTo: value})}
                             >
                               <SelectTrigger>
-                                <SelectValue />
+                                <SelectValue placeholder="Select team member" />
                               </SelectTrigger>
                               <SelectContent>
                                 {teamMembers.map((member) => (
