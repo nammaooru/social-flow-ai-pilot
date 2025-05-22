@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,8 +27,26 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
 
+// Define a proper type for rule trigger values
+type TriggerValue = string | string[];
+
+// Interface for automation rules
+interface AutomationRule {
+  id: string;
+  name: string;
+  description: string;
+  platform: string;
+  contentType: string;
+  trigger: string;
+  triggerValue: TriggerValue;
+  action: string;
+  responseTemplate: string | null;
+  schedule: string | null;
+  isActive: boolean;
+}
+
 // Mock data for automation rules
-const automationRules = [
+const automationRules: AutomationRule[] = [
   {
     id: '1',
     name: 'Auto-Response to Product Questions',
@@ -111,8 +128,21 @@ const contentTypes = {
   message: 'Direct Messages'
 };
 
+// Define type for activity records
+interface ActivityRecord {
+  id: string;
+  ruleId: string;
+  date: string;
+  platform: string;
+  contentType: string;
+  trigger: string;
+  action: string;
+  user: string;
+  status: 'success' | 'error';
+}
+
 // Mock data for rule activity
-const mockActivities = [
+const mockActivities: ActivityRecord[] = [
   {
     id: '1',
     ruleId: '1',
@@ -171,7 +201,7 @@ const mockActivities = [
 ];
 
 const AutomationRulesSection = () => {
-  const [rules, setRules] = useState(automationRules);
+  const [rules, setRules] = useState<AutomationRule[]>(automationRules);
   const [showForm, setShowForm] = useState(false);
   const [editingRule, setEditingRule] = useState<string | null>(null);
   const [showActivity, setShowActivity] = useState(false);
@@ -252,7 +282,7 @@ const AutomationRulesSection = () => {
       return;
     }
     
-    let triggerValue: string | string[] = formData.triggerValue;
+    let triggerValue: TriggerValue = formData.triggerValue;
     if (formData.trigger === 'keyword') {
       triggerValue = formData.triggerValue
         .split(',')
@@ -260,7 +290,7 @@ const AutomationRulesSection = () => {
         .filter(t => t.length > 0);
     }
     
-    const newRule = {
+    const newRule: AutomationRule = {
       id: editingRule || (rules.length + 1).toString(),
       name: formData.name,
       description: formData.description,
@@ -276,8 +306,8 @@ const AutomationRulesSection = () => {
     
     if (editingRule) {
       // Update existing rule
-      setRules(rules => 
-        rules.map(r => 
+      setRules(prevRules => 
+        prevRules.map(r => 
           r.id === editingRule ? newRule : r
         )
       );
@@ -288,7 +318,7 @@ const AutomationRulesSection = () => {
       });
     } else {
       // Add new rule
-      setRules(rules => [...rules, newRule]);
+      setRules(prevRules => [...prevRules, newRule]);
       
       toast({
         title: "Rule created",
@@ -311,7 +341,7 @@ const AutomationRulesSection = () => {
   };
   
   const handleDeleteRule = (id: string) => {
-    setRules(rules => rules.filter(r => r.id !== id));
+    setRules(prevRules => prevRules.filter(r => r.id !== id));
     
     toast({
       title: "Rule deleted",
