@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -62,7 +61,7 @@ const initialChats = [
         id: '2',
         sender: 'Sam Smith',
         avatar: 'https://i.pravatar.cc/150?img=2',
-        text: 'I'll take a look at it in about an hour.',
+        text: "I'll take a look at it in about an hour.",
         time: '10:34 AM',
         status: 'read'
       },
@@ -137,7 +136,7 @@ const initialChats = [
         id: '1',
         sender: 'Taylor Wong',
         avatar: 'https://i.pravatar.cc/150?img=3',
-        text: 'The API is now ready for testing. Here's the documentation:',
+        text: "The API is now ready for testing. Here's the documentation:",
         time: 'Yesterday, 4:30 PM',
         status: 'read',
         attachments: [
@@ -148,7 +147,7 @@ const initialChats = [
         id: '2',
         sender: 'Jordan Lee',
         avatar: 'https://i.pravatar.cc/150?img=4',
-        text: 'Great work! I'll start integrating it tomorrow morning.',
+        text: "Great work! I'll start integrating it tomorrow morning.",
         time: 'Yesterday, 4:45 PM',
         status: 'read'
       },
@@ -173,7 +172,7 @@ const initialChats = [
       {
         id: '2',
         sender: 'You',
-        text: 'Sure! I'm free for the next hour.',
+        text: "Sure! I'm free for the next hour.",
         time: 'Monday, 2:35 PM',
         status: 'read'
       },
@@ -206,7 +205,7 @@ const initialChats = [
       {
         id: '2',
         sender: 'You',
-        text: 'I agree. I have some ideas I'd like to share.',
+        text: "I agree. I have some ideas I'd like to share.",
         time: 'Tuesday, 10:30 AM',
         status: 'read'
       },
@@ -214,7 +213,7 @@ const initialChats = [
         id: '3',
         sender: 'Alex Johnson',
         avatar: 'https://i.pravatar.cc/150?img=1',
-        text: 'Let's meet at 3 PM to discuss the strategy in detail.',
+        text: "Let's meet at 3 PM to discuss the strategy in detail.",
         time: 'Tuesday, 10:45 AM',
         status: 'read'
       },
