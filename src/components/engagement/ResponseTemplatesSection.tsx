@@ -8,12 +8,18 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
 } from '@/components/ui/select';
 import { 
-  Plus, Pencil, Trash, Copy, Reply, MessageCircle, MessageSquare, 
-  FileText, Smile, Frown, Search, Filter
+  Plus, Pencil, Trash, Copy, MessageCircle, MessageSquare, 
+  Smile, Frown, Search, Filter
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  AlertDialog, AlertDialogAction, AlertDialogCancel, 
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter, 
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger 
+} from '@/components/ui/alert-dialog';
 
 // Mock data for response templates
 const templates = [
@@ -75,6 +81,10 @@ const ResponseTemplatesSection = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
+  const [templatesData, setTemplatesData] = useState(templates);
+  const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
+  const { toast } = useToast();
+  
   const [templateData, setTemplateData] = useState({
     name: '',
     content: '',
@@ -83,7 +93,7 @@ const ResponseTemplatesSection = () => {
     sentiment: 'neutral'
   });
 
-  const filteredTemplates = templates.filter(template => {
+  const filteredTemplates = templatesData.filter(template => {
     if (activeTab !== 'all' && template.type !== activeTab) {
       return false;
     }
@@ -108,7 +118,7 @@ const ResponseTemplatesSection = () => {
   };
 
   const handleEditTemplate = (id: string) => {
-    const template = templates.find(t => t.id === id);
+    const template = templatesData.find(t => t.id === id);
     if (template) {
       setSelectedTemplate(id);
       setEditMode(true);
@@ -123,14 +133,86 @@ const ResponseTemplatesSection = () => {
   };
 
   const handleSaveTemplate = () => {
-    // In a real implementation, this would save to an API
-    console.log('Saving template:', templateData);
+    if (!templateData.name || !templateData.content) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const triggersArray = templateData.triggers
+      .split(',')
+      .map(t => t.trim())
+      .filter(t => t.length > 0);
+    
+    const newTemplate = {
+      id: selectedTemplate || (templatesData.length + 1).toString(),
+      name: templateData.name,
+      content: templateData.content,
+      type: templateData.type,
+      triggers: triggersArray,
+      sentiment: templateData.sentiment
+    };
+    
+    if (selectedTemplate) {
+      // Update existing template
+      setTemplatesData(templates => 
+        templates.map(t => 
+          t.id === selectedTemplate ? newTemplate : t
+        )
+      );
+      
+      toast({
+        title: "Template updated",
+        description: "Your template has been updated successfully",
+      });
+    } else {
+      // Add new template
+      setTemplatesData(templates => [...templates, newTemplate]);
+      
+      toast({
+        title: "Template created",
+        description: "Your new template has been created successfully",
+      });
+    }
+    
     setEditMode(false);
     setSelectedTemplate(null);
   };
 
   const handleCancelEdit = () => {
     setEditMode(false);
+    setSelectedTemplate(null);
+  };
+  
+  const handleDuplicateTemplate = (id: string) => {
+    const template = templatesData.find(t => t.id === id);
+    if (template) {
+      const duplicateTemplate = {
+        ...template,
+        id: (templatesData.length + 1).toString(),
+        name: `${template.name} (Copy)`
+      };
+      
+      setTemplatesData([...templatesData, duplicateTemplate]);
+      
+      toast({
+        title: "Template duplicated",
+        description: "A copy of the template has been created",
+      });
+    }
+  };
+  
+  const handleDeleteTemplate = (id: string) => {
+    setTemplatesData(templates => templates.filter(t => t.id !== id));
+    setTemplateToDelete(null);
+    
+    toast({
+      title: "Template deleted",
+      description: "The template has been deleted successfully",
+    });
   };
 
   return (
@@ -172,7 +254,7 @@ const ResponseTemplatesSection = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredTemplates.map((template) => (
-                <Card key={template.id} className="border hover:border-primary/50 cursor-pointer">
+                <Card key={template.id} className="border hover:border-primary/50">
                   <CardHeader className="p-4 pb-0">
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-2">
@@ -198,12 +280,38 @@ const ResponseTemplatesSection = () => {
                         Edit
                       </Button>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDuplicateTemplate(template.id)}
+                        >
                           <Copy className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                          <Trash className="h-4 w-4" />
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete the template "{template.name}".
+                                This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteTemplate(template.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
                   </CardContent>
@@ -223,7 +331,10 @@ const ResponseTemplatesSection = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={(e) => {
+              e.preventDefault();
+              handleSaveTemplate();
+            }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="template-name">Template Name</Label>
@@ -293,8 +404,8 @@ const ResponseTemplatesSection = () => {
               </div>
               
               <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={handleCancelEdit}>Cancel</Button>
-                <Button onClick={handleSaveTemplate}>Save Template</Button>
+                <Button type="button" variant="outline" onClick={handleCancelEdit}>Cancel</Button>
+                <Button type="submit">Save Template</Button>
               </div>
             </form>
           </CardContent>

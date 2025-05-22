@@ -8,12 +8,17 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { 
-  MessageSquare, Search, Filter, MoreHorizontal, Send, Bot, Sparkles
+  MessageSquare, Search, Filter, MoreHorizontal, Send, Bot, Sparkles,
+  Paperclip, Image, Video, File, Reply as ReplyIcon, Forward, Smile
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useToast } from '@/hooks/use-toast';
 
 // Mock data for direct messages
 const contacts = [
@@ -117,6 +122,8 @@ const DirectMessagesSection = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [messageText, setMessageText] = useState('');
   const [aiSuggestion, setAiSuggestion] = useState('Yes, you can pick it up tomorrow at any of our store locations. Do you have a preferred location?');
+  const [messages, setMessages] = useState(conversation);
+  const { toast } = useToast();
 
   const filteredContacts = contacts.filter(contact => {
     if (filter !== 'all' && contact.platform.toLowerCase() !== filter) {
@@ -134,13 +141,50 @@ const DirectMessagesSection = () => {
 
   const handleSendMessage = () => {
     if (!messageText.trim()) return;
-    // In a real implementation, this would send the message to the API
-    console.log(`Sending message to ${selectedContact}: ${messageText}`);
+    
+    // Create a new message
+    const newMessage = {
+      id: (messages.length + 1).toString(),
+      sender: 'me',
+      text: messageText,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    
+    // Add message to conversation
+    setMessages([...messages, newMessage]);
+    
+    // Clear the input
     setMessageText('');
+    
+    toast({
+      title: "Message sent",
+      description: "Your message has been sent successfully",
+    });
   };
 
   const useAiSuggestion = () => {
     setMessageText(aiSuggestion);
+  };
+  
+  const handleForwardMessage = (messageId) => {
+    toast({
+      title: "Forward message",
+      description: "Message forwarding functionality triggered",
+    });
+  };
+  
+  const handleReplyMessage = (messageId) => {
+    const message = messages.find(m => m.id === messageId);
+    if (message) {
+      setMessageText(`Replying to: "${message.text.substring(0, 20)}${message.text.length > 20 ? '...' : ''}" \n\n`);
+    }
+  };
+  
+  const handleAttachment = (type) => {
+    toast({
+      title: `Attach ${type}`,
+      description: `${type} attachment functionality triggered`,
+    });
   };
 
   return (
@@ -293,13 +337,13 @@ const DirectMessagesSection = () => {
           <div className="flex flex-col h-[60vh]">
             <ScrollArea className="flex-1 pr-4">
               <div className="space-y-4">
-                {conversation.map((message) => (
+                {messages.map((message) => (
                   <div 
                     key={message.id} 
                     className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div 
-                      className={`max-w-[80%] p-3 rounded-lg ${
+                      className={`max-w-[80%] p-3 rounded-lg relative ${
                         message.sender === 'me' 
                           ? 'bg-primary text-primary-foreground' 
                           : 'bg-muted text-muted-foreground'
@@ -312,6 +356,28 @@ const DirectMessagesSection = () => {
                           <Bot className="ml-1 h-3 w-3" />
                         )}
                       </div>
+
+                      {/* Message actions */}
+                      {message.sender !== 'me' && (
+                        <div className="absolute opacity-0 hover:opacity-100 right-0 bottom-0 transform translate-y-full flex gap-1 pt-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6" 
+                            onClick={() => handleReplyMessage(message.id)}
+                          >
+                            <ReplyIcon className="h-3 w-3" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6" 
+                            onClick={() => handleForwardMessage(message.id)}
+                          >
+                            <Forward className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -336,7 +402,37 @@ const DirectMessagesSection = () => {
               </div>
             )}
             
-            <div className="flex gap-2 mt-2">
+            <div className="flex items-center gap-2 mt-2">
+              <div className="flex gap-1">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="icon" className="h-10 w-10">
+                      <Paperclip className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-48 p-2">
+                    <div className="grid grid-cols-2 gap-1">
+                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('Image')}>
+                        <Image className="h-4 w-4" />
+                        <span>Image</span>
+                      </Button>
+                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('Video')}>
+                        <Video className="h-4 w-4" />
+                        <span>Video</span>
+                      </Button>
+                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('Document')}>
+                        <File className="h-4 w-4" />
+                        <span>Document</span>
+                      </Button>
+                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('Emoji')}>
+                        <Smile className="h-4 w-4" />
+                        <span>Emoji</span>
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
               <Input 
                 placeholder="Type a message..." 
                 value={messageText}

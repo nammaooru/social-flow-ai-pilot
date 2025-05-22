@@ -9,10 +9,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { 
   Filter, Search, MessageCircle, ThumbsUp, Reply, MoreHorizontal, 
-  Calendar, ArrowUpDown, CheckCircle, Clock, AlertCircle 
+  Calendar, ArrowUpDown, CheckCircle, Clock, AlertCircle, Eye, Flag, Trash
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 
 // Mock data for comments
 const comments = [
@@ -25,7 +29,8 @@ const comments = [
     comment: 'Love the new designs! When will they be available in stores?',
     time: '10 minutes ago',
     sentiment: 'positive',
-    replied: false
+    replied: false,
+    liked: false
   },
   {
     id: '2',
@@ -36,7 +41,8 @@ const comments = [
     comment: 'Had a bad experience with your customer service yesterday. Still waiting for a resolution.',
     time: '45 minutes ago',
     sentiment: 'negative',
-    replied: true
+    replied: true,
+    liked: false
   },
   {
     id: '3',
@@ -47,7 +53,8 @@ const comments = [
     comment: 'This was so helpful! Could you do a tutorial on the other features as well?',
     time: '2 hours ago',
     sentiment: 'positive',
-    replied: false
+    replied: false,
+    liked: true
   },
   {
     id: '4',
@@ -58,7 +65,8 @@ const comments = [
     comment: "Interesting to see your company's growth. Would love to discuss potential collaboration.",
     time: '1 day ago',
     sentiment: 'neutral',
-    replied: true
+    replied: true,
+    liked: true
   },
   {
     id: '5',
@@ -69,7 +77,8 @@ const comments = [
     comment: 'Such a great team! The energy really shows in your products.',
     time: '3 days ago',
     sentiment: 'positive',
-    replied: false
+    replied: false,
+    liked: false
   }
 ];
 
@@ -91,8 +100,10 @@ const CommentsSection = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedComment, setSelectedComment] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
+  const [commentsData, setCommentsData] = useState(comments);
+  const { toast } = useToast();
 
-  const filteredComments = comments.filter(comment => {
+  const filteredComments = commentsData.filter(comment => {
     if (filter !== 'all' && comment.platform.toLowerCase() !== filter) {
       return false;
     }
@@ -107,7 +118,7 @@ const CommentsSection = () => {
   const handleReply = (id: string) => {
     if (selectedComment !== id) {
       setSelectedComment(id);
-      const suggestedReply = comments.find(c => c.id === id)?.sentiment === 'positive' 
+      const suggestedReply = commentsData.find(c => c.id === id)?.sentiment === 'positive' 
         ? "Thank you for your positive feedback! We appreciate your support."
         : "Thank you for reaching out. We'd like to address your concerns.";
       setReplyText(suggestedReply);
@@ -118,10 +129,64 @@ const CommentsSection = () => {
   };
 
   const sendReply = () => {
-    // In a real implementation, this would send the reply to the API
-    console.log(`Sending reply to comment ${selectedComment}: ${replyText}`);
+    if (!replyText.trim()) return;
+    
+    setCommentsData(comments => 
+      comments.map(c => 
+        c.id === selectedComment 
+          ? {...c, replied: true} 
+          : c
+      )
+    );
+    
+    toast({
+      title: "Reply sent",
+      description: "Your reply has been sent successfully",
+    });
+    
     setSelectedComment(null);
     setReplyText('');
+  };
+  
+  const handleLike = (id: string) => {
+    setCommentsData(comments => 
+      comments.map(c => 
+        c.id === id 
+          ? {...c, liked: !c.liked} 
+          : c
+      )
+    );
+    
+    const comment = commentsData.find(c => c.id === id);
+    const action = comment && !comment.liked ? 'liked' : 'unliked';
+    
+    toast({
+      title: `Comment ${action}`,
+      description: `You have ${action} the comment`,
+    });
+  };
+  
+  const handleViewProfile = (id: string) => {
+    toast({
+      title: "View profile",
+      description: "Viewing user profile functionality triggered",
+    });
+  };
+  
+  const handleFlag = (id: string) => {
+    toast({
+      title: "Flag comment",
+      description: "Comment flagged for review",
+    });
+  };
+  
+  const handleDelete = (id: string) => {
+    setCommentsData(comments => comments.filter(c => c.id !== id));
+    
+    toast({
+      title: "Comment deleted",
+      description: "The comment has been deleted successfully",
+    });
   };
 
   return (
@@ -189,9 +254,14 @@ const CommentsSection = () => {
                   
                   <div className="flex justify-between items-center mt-3">
                     <div className="flex space-x-2">
-                      <Button variant="ghost" size="sm" className="h-8">
+                      <Button 
+                        variant={comment.liked ? "default" : "ghost"} 
+                        size="sm" 
+                        className="h-8"
+                        onClick={() => handleLike(comment.id)}
+                      >
                         <ThumbsUp className="h-4 w-4 mr-1" />
-                        Like
+                        {comment.liked ? 'Liked' : 'Like'}
                       </Button>
                       <Button 
                         variant={selectedComment === comment.id ? "default" : "ghost"} 
@@ -211,9 +281,31 @@ const CommentsSection = () => {
                           Replied
                         </Badge>
                       )}
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleViewProfile(comment.id)}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Profile
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleFlag(comment.id)}>
+                            <Flag className="h-4 w-4 mr-2" />
+                            Flag Comment
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            className="text-destructive" 
+                            onClick={() => handleDelete(comment.id)}
+                          >
+                            <Trash className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                   

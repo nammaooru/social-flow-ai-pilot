@@ -11,11 +11,22 @@ import {
 } from '@/components/ui/select';
 import { 
   Plus, Zap, AlertTriangle, Check, Settings, Clock, Edit, Trash, 
-  MessageCircle, Timer, Eye, MoreHorizontal, Filter
+  MessageCircle, Timer, Eye, MoreHorizontal, Filter, Activity
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { 
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, 
+  DialogHeader, DialogTitle, DialogTrigger
+} from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
+} from '@/components/ui/alert-dialog';
 
 // Mock data for automation rules
 const automationRules = [
@@ -100,10 +111,73 @@ const contentTypes = {
   message: 'Direct Messages'
 };
 
+// Mock data for rule activity
+const mockActivities = [
+  {
+    id: '1',
+    ruleId: '1',
+    date: '2023-06-10T09:32:00Z',
+    platform: 'Instagram',
+    contentType: 'comment',
+    trigger: 'keyword match: "in stock"',
+    action: 'Replied with Product Inquiry Response',
+    user: 'Sarah Johnson',
+    status: 'success'
+  },
+  {
+    id: '2',
+    ruleId: '1',
+    date: '2023-06-09T14:15:00Z',
+    platform: 'Facebook',
+    contentType: 'comment',
+    trigger: 'keyword match: "available"',
+    action: 'Replied with Product Inquiry Response',
+    user: 'John Miller',
+    status: 'success'
+  },
+  {
+    id: '3',
+    ruleId: '1',
+    date: '2023-06-08T11:23:00Z',
+    platform: 'Twitter',
+    contentType: 'comment',
+    trigger: 'keyword match: "when will"',
+    action: 'Replied with Product Inquiry Response',
+    user: 'Alex Williams',
+    status: 'error'
+  },
+  {
+    id: '4',
+    ruleId: '2',
+    date: '2023-06-10T16:45:00Z',
+    platform: 'Instagram',
+    contentType: 'comment',
+    trigger: 'sentiment: positive',
+    action: 'Replied with Positive Feedback Response',
+    user: 'Emily Carter',
+    status: 'success'
+  },
+  {
+    id: '5',
+    ruleId: '3',
+    date: '2023-06-09T10:30:00Z',
+    platform: 'LinkedIn',
+    contentType: 'message',
+    trigger: 'sentiment: negative',
+    action: 'Flagged for review',
+    user: 'Robert Davis',
+    status: 'success'
+  }
+];
+
 const AutomationRulesSection = () => {
   const [rules, setRules] = useState(automationRules);
   const [showForm, setShowForm] = useState(false);
   const [editingRule, setEditingRule] = useState<string | null>(null);
+  const [showActivity, setShowActivity] = useState(false);
+  const [selectedRuleActivity, setSelectedRuleActivity] = useState<string | null>(null);
+  const { toast } = useToast();
+  
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -121,6 +195,14 @@ const AutomationRulesSection = () => {
     setRules(rules.map(rule => 
       rule.id === id ? {...rule, isActive: !rule.isActive} : rule
     ));
+    
+    const rule = rules.find(r => r.id === id);
+    const status = rule && !rule.isActive ? 'activated' : 'deactivated';
+    
+    toast({
+      title: `Rule ${status}`,
+      description: `The rule has been ${status} successfully`,
+    });
   };
 
   const handleEditRule = (id: string) => {
@@ -161,8 +243,59 @@ const AutomationRulesSection = () => {
   };
 
   const handleSaveRule = () => {
-    // In a real implementation, this would save to an API
-    console.log('Saving rule:', formData);
+    if (!formData.name) {
+      toast({
+        title: "Missing information",
+        description: "Please provide a name for the rule",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    let triggerValue: string | string[] = formData.triggerValue;
+    if (formData.trigger === 'keyword') {
+      triggerValue = formData.triggerValue
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t.length > 0);
+    }
+    
+    const newRule = {
+      id: editingRule || (rules.length + 1).toString(),
+      name: formData.name,
+      description: formData.description,
+      platform: formData.platform,
+      contentType: formData.contentType,
+      trigger: formData.trigger,
+      triggerValue: triggerValue,
+      action: formData.action,
+      responseTemplate: formData.action === 'reply' ? formData.responseTemplate : null,
+      schedule: formData.action === 'reply' ? formData.schedule : null,
+      isActive: formData.isActive
+    };
+    
+    if (editingRule) {
+      // Update existing rule
+      setRules(rules => 
+        rules.map(r => 
+          r.id === editingRule ? newRule : r
+        )
+      );
+      
+      toast({
+        title: "Rule updated",
+        description: "Your automation rule has been updated successfully",
+      });
+    } else {
+      // Add new rule
+      setRules(rules => [...rules, newRule]);
+      
+      toast({
+        title: "Rule created",
+        description: "Your new automation rule has been created successfully",
+      });
+    }
+    
     setShowForm(false);
     setEditingRule(null);
   };
@@ -171,6 +304,30 @@ const AutomationRulesSection = () => {
     setShowForm(false);
     setEditingRule(null);
   };
+  
+  const handleViewActivity = (id: string) => {
+    setSelectedRuleActivity(id);
+    setShowActivity(true);
+  };
+  
+  const handleDeleteRule = (id: string) => {
+    setRules(rules => rules.filter(r => r.id !== id));
+    
+    toast({
+      title: "Rule deleted",
+      description: "The automation rule has been deleted successfully",
+    });
+  };
+  
+  // Filter activities for the selected rule
+  const ruleActivities = mockActivities.filter(
+    activity => !selectedRuleActivity || activity.ruleId === selectedRuleActivity
+  );
+  
+  // Get rule name for the activity dialog title
+  const selectedRuleName = selectedRuleActivity 
+    ? rules.find(r => r.id === selectedRuleActivity)?.name || 'Rule' 
+    : 'Rule';
 
   return (
     <div className="space-y-4">
@@ -229,14 +386,40 @@ const AutomationRulesSection = () => {
                             <Edit className="h-4 w-4 mr-2" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleViewActivity(rule.id)}>
                             <Eye className="h-4 w-4 mr-2" />
                             View Activity
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
-                            <Trash className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem 
+                                className="text-destructive"
+                                onSelect={(e) => e.preventDefault()}
+                              >
+                                <Trash className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently delete the rule "{rule.name}".
+                                  This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={() => handleDeleteRule(rule.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -319,7 +502,10 @@ const AutomationRulesSection = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={(e) => {
+              e.preventDefault();
+              handleSaveRule();
+            }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="rule-name">Rule Name</Label>
@@ -531,13 +717,78 @@ const AutomationRulesSection = () => {
               )}
               
               <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={handleCancelEdit}>Cancel</Button>
-                <Button onClick={handleSaveRule}>Save Rule</Button>
+                <Button type="button" variant="outline" onClick={handleCancelEdit}>Cancel</Button>
+                <Button type="submit">Save Rule</Button>
               </div>
             </form>
           </CardContent>
         </Card>
       )}
+      
+      {/* Rule Activity Dialog */}
+      <Dialog open={showActivity} onOpenChange={setShowActivity}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              {selectedRuleName} Activity
+            </DialogTitle>
+            <DialogDescription>
+              View all activations and outcomes of this automation rule
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="overflow-auto max-h-[60vh]">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-2 font-medium">Date</th>
+                  <th className="text-left py-2 font-medium">Platform</th>
+                  <th className="text-left py-2 font-medium">Trigger</th>
+                  <th className="text-left py-2 font-medium">Action</th>
+                  <th className="text-left py-2 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ruleActivities.length > 0 ? (
+                  ruleActivities.map((activity) => (
+                    <tr key={activity.id} className="border-b">
+                      <td className="py-2">
+                        {new Date(activity.date).toLocaleString()}
+                      </td>
+                      <td className="py-2">{activity.platform}</td>
+                      <td className="py-2">{activity.trigger}</td>
+                      <td className="py-2">{activity.action}</td>
+                      <td className="py-2">
+                        <Badge variant={activity.status === 'success' ? 'default' : 'destructive'}>
+                          {activity.status === 'success' ? (
+                            <Check className="h-3 w-3 mr-1" />
+                          ) : (
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                          )}
+                          {activity.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="py-4 text-center text-muted-foreground">
+                      No activity records found for this rule
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowActivity(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
