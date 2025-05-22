@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -119,7 +120,7 @@ const userProfiles = {
       },
       {
         id: 'p2',
-        content: 'What are your thoughts on the new summer collection? I'm obsessed with the pastel colors!',
+        content: "What are your thoughts on the new summer collection? I'm obsessed with the pastel colors!",
         date: '5 days ago',
         likes: 213,
         comments: 32
@@ -238,7 +239,7 @@ const CommentsSection = () => {
   const handleViewProfile = (id: string) => {
     const comment = commentsData.find(c => c.id === id);
     if (comment) {
-      setViewingProfile(comment.author);
+      setViewingProfile(comment.id);
     }
   };
   
@@ -306,7 +307,7 @@ const CommentsSection = () => {
                       <div>
                         <div className="font-medium">{comment.author}</div>
                         <div className="flex items-center text-sm text-muted-foreground">
-                          <div className={`h-2 w-2 rounded-full mr-2 ${platformColors[comment.platform]}`}></div>
+                          <div className={`h-2 w-2 rounded-full mr-2 ${platformColors[comment.platform as keyof typeof platformColors]}`}></div>
                           <span>{comment.platform}</span>
                           <span className="mx-2">•</span>
                           <span>{comment.time}</span>
