@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { 
   MessageSquare, Search, Filter, MoreHorizontal, Send, Bot, Sparkles,
-  Paperclip, Image, Video, File, Reply as ReplyIcon, Forward, Smile
+  Paperclip, Image, Video, File, Reply as ReplyIcon, Forward, Smile,
+  X as XIcon
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 // Mock data for direct messages
 const contacts = [
@@ -116,6 +117,17 @@ const platformColors = {
   LinkedIn: 'bg-blue-800'
 };
 
+// Types for attachments
+type AttachmentType = 'image' | 'video' | 'document' | 'emoji';
+
+interface Attachment {
+  type: AttachmentType;
+  name: string;
+  url?: string;
+  preview?: string;
+  content?: string;
+}
+
 const DirectMessagesSection = () => {
   const [selectedContact, setSelectedContact] = useState(contacts[0].id);
   const [filter, setFilter] = useState('all');
@@ -124,7 +136,12 @@ const DirectMessagesSection = () => {
   const [aiSuggestion, setAiSuggestion] = useState('Yes, you can pick it up tomorrow at any of our store locations. Do you have a preferred location?');
   const [messages, setMessages] = useState(conversation);
   const { toast } = useToast();
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [attachmentToPreview, setAttachmentToPreview] = useState<Attachment | null>(null);
 
+  // Filter contacts based on platform and search query
   const filteredContacts = contacts.filter(contact => {
     if (filter !== 'all' && contact.platform.toLowerCase() !== filter) {
       return false;
@@ -137,24 +154,27 @@ const DirectMessagesSection = () => {
     return true;
   });
 
+  // Get the current contact based on the selected contact ID
   const currentContact = contacts.find(c => c.id === selectedContact);
 
   const handleSendMessage = () => {
-    if (!messageText.trim()) return;
+    if (!messageText.trim() && attachments.length === 0) return;
     
     // Create a new message
     const newMessage = {
       id: (messages.length + 1).toString(),
       sender: 'me',
       text: messageText,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      attachments: attachments.length > 0 ? attachments : undefined
     };
     
     // Add message to conversation
     setMessages([...messages, newMessage]);
     
-    // Clear the input
+    // Clear the input and attachments
     setMessageText('');
+    setAttachments([]);
     
     toast({
       title: "Message sent",
@@ -180,12 +200,75 @@ const DirectMessagesSection = () => {
     }
   };
   
-  const handleAttachment = (type) => {
-    toast({
-      title: `Attach ${type}`,
-      description: `${type} attachment functionality triggered`,
-    });
+  const handleAttachment = (type: AttachmentType) => {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    
+    // Set accepted file types based on attachment type
+    switch (type) {
+      case 'image':
+        fileInput.accept = 'image/*';
+        break;
+      case 'video':
+        fileInput.accept = 'video/*';
+        break;
+      case 'document':
+        fileInput.accept = '.pdf,.doc,.docx,.txt';
+        break;
+      default:
+        break;
+    }
+    
+    // If not emoji, open file dialog
+    if (type !== 'emoji') {
+      fileInput.onchange = (e: Event) => {
+        const target = e.target as HTMLInputElement;
+        if (target.files && target.files[0]) {
+          const file = target.files[0];
+          const reader = new FileReader();
+          
+          reader.onload = (event) => {
+            const newAttachment: Attachment = {
+              type,
+              name: file.name,
+              url: URL.createObjectURL(file),
+              preview: type === 'image' ? event.target?.result as string : undefined
+            };
+            
+            setAttachments([...attachments, newAttachment]);
+          };
+          
+          if (type === 'image') {
+            reader.readAsDataURL(file);
+          } else {
+            reader.readAsArrayBuffer(file);
+          }
+        }
+      };
+      fileInput.click();
+    } else {
+      // For emoji, we'll just toggle the emoji picker
+      setShowEmojiPicker(!showEmojiPicker);
+    }
   };
+
+  const handleAddEmoji = (emoji: string) => {
+    const newAttachment: Attachment = {
+      type: 'emoji',
+      name: 'Emoji',
+      content: emoji
+    };
+    setAttachments([...attachments, newAttachment]);
+    setShowEmojiPicker(false);
+  };
+  
+  const removeAttachment = (index: number) => {
+    const newAttachments = [...attachments];
+    newAttachments.splice(index, 1);
+    setAttachments(newAttachments);
+  };
+
+  const emojis = ['😊', '👍', '❤️', '🎉', '😂', '🔥', '👏', '🙏', '😍', '🤩', '😎', '🤔', '👋', '✨', '💯', '🚀'];
 
   return (
     <div className="grid md:grid-cols-3 gap-4">
@@ -349,7 +432,35 @@ const DirectMessagesSection = () => {
                           : 'bg-muted text-muted-foreground'
                       }`}
                     >
-                      <div className="text-sm mb-1">{message.text}</div>
+                      {message.text && <div className="text-sm mb-1">{message.text}</div>}
+                      
+                      {message.attachments && message.attachments.map((attachment, index) => (
+                        <div key={index} className="mt-2">
+                          {attachment.type === 'image' && attachment.preview && (
+                            <img 
+                              src={attachment.preview} 
+                              alt={attachment.name} 
+                              className="max-h-40 rounded-md cursor-pointer"
+                              onClick={() => setAttachmentToPreview(attachment)}
+                            />
+                          )}
+                          
+                          {attachment.type === 'emoji' && attachment.content && (
+                            <span className="text-2xl">{attachment.content}</span>
+                          )}
+                          
+                          {(attachment.type === 'video' || attachment.type === 'document') && (
+                            <div className="flex items-center bg-background/10 p-2 rounded-md">
+                              {attachment.type === 'video' ? 
+                                <Video className="h-4 w-4 mr-2" /> : 
+                                <File className="h-4 w-4 mr-2" />
+                              }
+                              <span className="text-xs truncate">{attachment.name}</span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      
                       <div className="flex items-center justify-end text-xs opacity-70">
                         {message.time}
                         {message.isAI && (
@@ -372,7 +483,10 @@ const DirectMessagesSection = () => {
                             variant="ghost" 
                             size="icon" 
                             className="h-6 w-6" 
-                            onClick={() => handleForwardMessage(message.id)}
+                            onClick={() => {
+                              setConfirmDialogOpen(true);
+                              handleForwardMessage(message.id);
+                            }}
                           >
                             <Forward className="h-3 w-3" />
                           </Button>
@@ -384,6 +498,7 @@ const DirectMessagesSection = () => {
               </div>
             </ScrollArea>
             
+            {/* AI suggestion */}
             {aiSuggestion && (
               <div className="mb-2 flex items-center">
                 <Card className="w-full bg-muted/50">
@@ -402,9 +517,68 @@ const DirectMessagesSection = () => {
               </div>
             )}
             
+            {/* Attachments preview */}
+            {attachments.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2 mb-2">
+                {attachments.map((attachment, index) => (
+                  <div key={index} className="relative">
+                    {attachment.type === 'image' && attachment.preview && (
+                      <div className="relative">
+                        <img 
+                          src={attachment.preview} 
+                          alt={attachment.name} 
+                          className="h-16 w-16 object-cover rounded-md" 
+                        />
+                        <Button 
+                          variant="destructive" 
+                          size="icon" 
+                          className="h-5 w-5 absolute -top-2 -right-2 p-0"
+                          onClick={() => removeAttachment(index)}
+                        >
+                          <XIcon className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {attachment.type === 'emoji' && attachment.content && (
+                      <div className="relative bg-muted p-2 rounded-md">
+                        <span className="text-2xl">{attachment.content}</span>
+                        <Button 
+                          variant="destructive" 
+                          size="icon" 
+                          className="h-5 w-5 absolute -top-2 -right-2 p-0"
+                          onClick={() => removeAttachment(index)}
+                        >
+                          <XIcon className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {(attachment.type === 'video' || attachment.type === 'document') && (
+                      <div className="relative bg-muted p-2 rounded-md flex items-center">
+                        {attachment.type === 'video' ? 
+                          <Video className="h-4 w-4 mr-2" /> : 
+                          <File className="h-4 w-4 mr-2" />
+                        }
+                        <span className="text-xs truncate max-w-[80px]">{attachment.name}</span>
+                        <Button 
+                          variant="destructive" 
+                          size="icon" 
+                          className="h-5 w-5 absolute -top-2 -right-2 p-0"
+                          onClick={() => removeAttachment(index)}
+                        >
+                          <XIcon className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            
             <div className="flex items-center gap-2 mt-2">
               <div className="flex gap-1">
-                <Popover>
+                <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="icon" className="h-10 w-10">
                       <Paperclip className="h-4 w-4" />
@@ -412,19 +586,19 @@ const DirectMessagesSection = () => {
                   </PopoverTrigger>
                   <PopoverContent className="w-48 p-2">
                     <div className="grid grid-cols-2 gap-1">
-                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('Image')}>
+                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('image')}>
                         <Image className="h-4 w-4" />
                         <span>Image</span>
                       </Button>
-                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('Video')}>
+                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('video')}>
                         <Video className="h-4 w-4" />
                         <span>Video</span>
                       </Button>
-                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('Document')}>
+                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('document')}>
                         <File className="h-4 w-4" />
                         <span>Document</span>
                       </Button>
-                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('Emoji')}>
+                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('emoji')}>
                         <Smile className="h-4 w-4" />
                         <span>Emoji</span>
                       </Button>
@@ -432,6 +606,25 @@ const DirectMessagesSection = () => {
                   </PopoverContent>
                 </Popover>
               </div>
+              
+              {showEmojiPicker && (
+                <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+                  <PopoverContent side="top" className="w-[280px]">
+                    <div className="grid grid-cols-8 gap-1 p-2">
+                      {emojis.map((emoji, index) => (
+                        <Button 
+                          key={index} 
+                          variant="ghost" 
+                          className="h-8 w-8 p-0" 
+                          onClick={() => handleAddEmoji(emoji)}
+                        >
+                          {emoji}
+                        </Button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
               
               <Input 
                 placeholder="Type a message..." 
@@ -447,6 +640,71 @@ const DirectMessagesSection = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Image Preview Dialog */}
+      <AlertDialog open={!!attachmentToPreview} onOpenChange={(open) => !open && setAttachmentToPreview(null)}>
+        <AlertDialogContent className="max-w-[80vw]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{attachmentToPreview?.name}</AlertDialogTitle>
+          </AlertDialogHeader>
+          {attachmentToPreview?.type === 'image' && attachmentToPreview?.preview && (
+            <img 
+              src={attachmentToPreview.preview} 
+              alt={attachmentToPreview.name} 
+              className="max-h-[60vh] max-w-full mx-auto rounded-md" 
+            />
+          )}
+          <AlertDialogFooter>
+            <AlertDialogAction>Close</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Forward Confirmation Dialog */}
+      <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Forward Message</AlertDialogTitle>
+            <AlertDialogDescription>
+              Select a contact to forward this message to.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <ScrollArea className="h-[200px]">
+              <div className="space-y-2">
+                {contacts.map((contact) => (
+                  <div 
+                    key={contact.id} 
+                    className="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-accent"
+                    onClick={() => {
+                      toast({
+                        title: "Message forwarded",
+                        description: `Message forwarded to ${contact.name}`,
+                      });
+                      setConfirmDialogOpen(false);
+                    }}
+                  >
+                    <Avatar>
+                      <AvatarImage src={contact.avatar} alt={contact.name} />
+                      <AvatarFallback>{contact.name.substring(0, 2)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{contact.name}</p>
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <div className={`h-2 w-2 rounded-full mr-2 ${platformColors[contact.platform as keyof typeof platformColors]}`}></div>
+                        <span>{contact.platform}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

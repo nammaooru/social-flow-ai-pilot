@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import UserProfileView from './UserProfileView';
 
 // Mock data for comments
 const comments = [
@@ -95,6 +95,74 @@ const sentimentColors = {
   negative: 'bg-red-500'
 };
 
+// Sample user profile data
+const userProfiles = {
+  '1': {
+    id: '1',
+    name: 'Sarah Johnson',
+    username: 'sarah_j',
+    avatar: 'https://i.pravatar.cc/150?img=1',
+    platform: 'Instagram',
+    bio: 'Fashion enthusiast and lifestyle blogger. Love to travel and discover new trends.',
+    location: 'New York, USA',
+    joinedDate: 'March 2020',
+    followers: 3245,
+    following: 856,
+    engagementRate: '4.2%',
+    recentPosts: [
+      {
+        id: 'p1',
+        content: 'Just discovered this amazing new cafe downtown! The ambiance is perfect for weekend brunches.',
+        date: '2 days ago',
+        likes: 124,
+        comments: 18
+      },
+      {
+        id: 'p2',
+        content: 'What are your thoughts on the new summer collection? I'm obsessed with the pastel colors!',
+        date: '5 days ago',
+        likes: 213,
+        comments: 32
+      }
+    ],
+    recentComments: [
+      {
+        id: 'c1',
+        content: 'Love the new designs! When will they be available in stores?',
+        date: '10 minutes ago',
+        post: 'Summer Collection Launch'
+      },
+      {
+        id: 'c2',
+        content: 'This is exactly what I was looking for. Thanks for sharing!',
+        date: '3 days ago',
+        post: 'Style Guide 2025'
+      }
+    ]
+  },
+  '2': {
+    id: '2',
+    name: 'Mike Thompson',
+    username: 'mike_t',
+    avatar: 'https://i.pravatar.cc/150?img=2',
+    platform: 'Facebook',
+    bio: 'Tech enthusiast and product reviewer. Always on the lookout for the next big thing.',
+    location: 'San Francisco, USA',
+    joinedDate: 'January 2019',
+    followers: 1876,
+    following: 437,
+    engagementRate: '3.5%',
+    recentComments: [
+      {
+        id: 'c1',
+        content: 'Had a bad experience with your customer service yesterday. Still waiting for a resolution.',
+        date: '45 minutes ago',
+        post: 'Customer Appreciation Post'
+      }
+    ]
+  }
+};
+
 const CommentsSection = () => {
   const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -102,6 +170,7 @@ const CommentsSection = () => {
   const [replyText, setReplyText] = useState('');
   const [commentsData, setCommentsData] = useState(comments);
   const { toast } = useToast();
+  const [viewingProfile, setViewingProfile] = useState<string | null>(null);
 
   const filteredComments = commentsData.filter(comment => {
     if (filter !== 'all' && comment.platform.toLowerCase() !== filter) {
@@ -167,10 +236,10 @@ const CommentsSection = () => {
   };
   
   const handleViewProfile = (id: string) => {
-    toast({
-      title: "View profile",
-      description: "Viewing user profile functionality triggered",
-    });
+    const comment = commentsData.find(c => c.id === id);
+    if (comment) {
+      setViewingProfile(comment.author);
+    }
   };
   
   const handleFlag = (id: string) => {
@@ -190,149 +259,158 @@ const CommentsSection = () => {
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex flex-col md:flex-row justify-between gap-4">
-          <CardTitle>Recent Comments</CardTitle>
-          <div className="flex flex-wrap gap-2">
-            <div className="relative flex items-center">
-              <Search className="absolute left-2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search comments..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 w-full md:w-auto max-w-[200px]"
-              />
+    <>
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex flex-col md:flex-row justify-between gap-4">
+            <CardTitle>Recent Comments</CardTitle>
+            <div className="flex flex-wrap gap-2">
+              <div className="relative flex items-center">
+                <Search className="absolute left-2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search comments..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 w-full md:w-auto max-w-[200px]"
+                />
+              </div>
+              <Select value={filter} onValueChange={setFilter}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Platform" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Platforms</SelectItem>
+                  <SelectItem value="instagram">Instagram</SelectItem>
+                  <SelectItem value="facebook">Facebook</SelectItem>
+                  <SelectItem value="twitter">Twitter</SelectItem>
+                  <SelectItem value="linkedin">LinkedIn</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline" size="icon">
+                <Filter className="h-4 w-4" />
+              </Button>
             </div>
-            <Select value={filter} onValueChange={setFilter}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Platform" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Platforms</SelectItem>
-                <SelectItem value="instagram">Instagram</SelectItem>
-                <SelectItem value="facebook">Facebook</SelectItem>
-                <SelectItem value="twitter">Twitter</SelectItem>
-                <SelectItem value="linkedin">LinkedIn</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" size="icon">
-              <Filter className="h-4 w-4" />
-            </Button>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {filteredComments.length > 0 ? (
-            filteredComments.map((comment) => (
-              <div key={comment.id} className="border rounded-lg p-4 space-y-3">
-                <div className="flex justify-between">
-                  <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarImage src={comment.avatar} alt={comment.author} />
-                      <AvatarFallback>{comment.author.substring(0, 2)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-medium">{comment.author}</div>
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <div className={`h-2 w-2 rounded-full mr-2 ${platformColors[comment.platform]}`}></div>
-                        <span>{comment.platform}</span>
-                        <span className="mx-2">•</span>
-                        <span>{comment.time}</span>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {filteredComments.length > 0 ? (
+              filteredComments.map((comment) => (
+                <div key={comment.id} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        <AvatarImage src={comment.avatar} alt={comment.author} />
+                        <AvatarFallback>{comment.author.substring(0, 2)}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium">{comment.author}</div>
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <div className={`h-2 w-2 rounded-full mr-2 ${platformColors[comment.platform]}`}></div>
+                          <span>{comment.platform}</span>
+                          <span className="mx-2">•</span>
+                          <span>{comment.time}</span>
+                        </div>
                       </div>
                     </div>
+                    <Badge variant={comment.sentiment === 'positive' ? 'default' : comment.sentiment === 'negative' ? 'destructive' : 'secondary'}>
+                      {comment.sentiment}
+                    </Badge>
                   </div>
-                  <Badge variant={comment.sentiment === 'positive' ? 'default' : comment.sentiment === 'negative' ? 'destructive' : 'secondary'}>
-                    {comment.sentiment}
-                  </Badge>
-                </div>
-                
-                <div className="ml-10">
-                  <div className="text-sm text-muted-foreground">On post: {comment.post}</div>
-                  <div className="my-2">{comment.comment}</div>
                   
-                  <div className="flex justify-between items-center mt-3">
-                    <div className="flex space-x-2">
-                      <Button 
-                        variant={comment.liked ? "default" : "ghost"} 
-                        size="sm" 
-                        className="h-8"
-                        onClick={() => handleLike(comment.id)}
-                      >
-                        <ThumbsUp className="h-4 w-4 mr-1" />
-                        {comment.liked ? 'Liked' : 'Like'}
-                      </Button>
-                      <Button 
-                        variant={selectedComment === comment.id ? "default" : "ghost"} 
-                        size="sm" 
-                        className="h-8"
-                        onClick={() => handleReply(comment.id)}
-                      >
-                        <Reply className="h-4 w-4 mr-1" />
-                        Reply
-                      </Button>
+                  <div className="ml-10">
+                    <div className="text-sm text-muted-foreground">On post: {comment.post}</div>
+                    <div className="my-2">{comment.comment}</div>
+                    
+                    <div className="flex justify-between items-center mt-3">
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant={comment.liked ? "default" : "ghost"} 
+                          size="sm" 
+                          className="h-8"
+                          onClick={() => handleLike(comment.id)}
+                        >
+                          <ThumbsUp className="h-4 w-4 mr-1" />
+                          {comment.liked ? 'Liked' : 'Like'}
+                        </Button>
+                        <Button 
+                          variant={selectedComment === comment.id ? "default" : "ghost"} 
+                          size="sm" 
+                          className="h-8"
+                          onClick={() => handleReply(comment.id)}
+                        >
+                          <Reply className="h-4 w-4 mr-1" />
+                          Reply
+                        </Button>
+                      </div>
+                      
+                      <div className="flex items-center">
+                        {comment.replied && (
+                          <Badge variant="outline" className="mr-2 text-green-500 bg-green-50">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Replied
+                          </Badge>
+                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleViewProfile(comment.id)}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Profile
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleFlag(comment.id)}>
+                              <Flag className="h-4 w-4 mr-2" />
+                              Flag Comment
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              className="text-destructive" 
+                              onClick={() => handleDelete(comment.id)}
+                            >
+                              <Trash className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
                     
-                    <div className="flex items-center">
-                      {comment.replied && (
-                        <Badge variant="outline" className="mr-2 text-green-500 bg-green-50">
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Replied
-                        </Badge>
-                      )}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleViewProfile(comment.id)}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Profile
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleFlag(comment.id)}>
-                            <Flag className="h-4 w-4 mr-2" />
-                            Flag Comment
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            className="text-destructive" 
-                            onClick={() => handleDelete(comment.id)}
-                          >
-                            <Trash className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                    {selectedComment === comment.id && (
+                      <div className="mt-3 flex gap-2">
+                        <Input 
+                          placeholder="Type your reply..." 
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          className="flex-1"
+                        />
+                        <Button onClick={sendReply}>Send</Button>
+                      </div>
+                    )}
                   </div>
-                  
-                  {selectedComment === comment.id && (
-                    <div className="mt-3 flex gap-2">
-                      <Input 
-                        placeholder="Type your reply..." 
-                        value={replyText}
-                        onChange={(e) => setReplyText(e.target.value)}
-                        className="flex-1"
-                      />
-                      <Button onClick={sendReply}>Send</Button>
-                    </div>
-                  )}
                 </div>
+              ))
+            ) : (
+              <div className="text-center py-10">
+                <MessageCircle className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+                <h3 className="font-medium">No comments found</h3>
+                <p className="text-muted-foreground">Try adjusting your filters or search term</p>
               </div>
-            ))
-          ) : (
-            <div className="text-center py-10">
-              <MessageCircle className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-              <h3 className="font-medium">No comments found</h3>
-              <p className="text-muted-foreground">Try adjusting your filters or search term</p>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* User Profile Dialog */}
+      <UserProfileView
+        open={!!viewingProfile}
+        onClose={() => setViewingProfile(null)}
+        user={viewingProfile ? userProfiles[viewingProfile] : null}
+      />
+    </>
   );
 };
 

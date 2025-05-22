@@ -10,9 +10,78 @@ import CommentsSection from '@/components/engagement/CommentsSection';
 import DirectMessagesSection from '@/components/engagement/DirectMessagesSection';
 import ResponseTemplatesSection from '@/components/engagement/ResponseTemplatesSection';
 import AutomationRulesSection from '@/components/engagement/AutomationRulesSection';
+import { useToast } from '@/hooks/use-toast';
 
 const Engagement = () => {
   const [activeTab, setActiveTab] = useState('comments');
+  const { toast } = useToast();
+  
+  // Auto-response settings state
+  const [autoResponseActive, setAutoResponseActive] = useState(true);
+  const [aiComments, setAiComments] = useState(true);
+  const [aiMessages, setAiMessages] = useState(true);
+  const [instantComments, setInstantComments] = useState(true);
+  const [instantMessages, setInstantMessages] = useState(true);
+  const [autoLike, setAutoLike] = useState(true);
+  const [autoFollow, setAutoFollow] = useState(false);
+
+  const handleAutoResponseChange = (checked: boolean) => {
+    setAutoResponseActive(checked);
+    toast({
+      title: checked ? "Auto-responses activated" : "Auto-responses deactivated",
+      description: checked 
+        ? "The system will now automatically respond to user engagements" 
+        : "Auto-responses have been turned off",
+    });
+  };
+
+  const handleAiCommentsChange = (checked: boolean) => {
+    setAiComments(checked);
+    toast({
+      title: checked ? "AI comments enabled" : "AI comments disabled",
+      description: `AI-powered responses for comments have been ${checked ? 'enabled' : 'disabled'}`,
+    });
+  };
+
+  const handleAiMessagesChange = (checked: boolean) => {
+    setAiMessages(checked);
+    toast({
+      title: checked ? "AI messages enabled" : "AI messages disabled",
+      description: `AI-powered responses for direct messages have been ${checked ? 'enabled' : 'disabled'}`,
+    });
+  };
+
+  const handleInstantCommentsChange = (checked: boolean) => {
+    setInstantComments(checked);
+    toast({
+      title: checked ? "Instant comments enabled" : "Instant comments disabled",
+      description: `Instant responses for comments have been ${checked ? 'enabled' : 'disabled'}`,
+    });
+  };
+
+  const handleInstantMessagesChange = (checked: boolean) => {
+    setInstantMessages(checked);
+    toast({
+      title: checked ? "Instant messages enabled" : "Instant messages disabled",
+      description: `Instant responses for direct messages have been ${checked ? 'enabled' : 'disabled'}`,
+    });
+  };
+
+  const handleAutoLikeChange = (checked: boolean) => {
+    setAutoLike(checked);
+    toast({
+      title: checked ? "Auto-like enabled" : "Auto-like disabled",
+      description: `Automatic liking of comments has been ${checked ? 'enabled' : 'disabled'}`,
+    });
+  };
+
+  const handleAutoFollowChange = (checked: boolean) => {
+    setAutoFollow(checked);
+    toast({
+      title: checked ? "Auto-follow enabled" : "Auto-follow disabled",
+      description: `Automatic following of active users has been ${checked ? 'enabled' : 'disabled'}`,
+    });
+  };
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -50,7 +119,11 @@ const Engagement = () => {
               <CardDescription>Configure AI-powered auto-responses for your accounts</CardDescription>
             </div>
             <div className="flex items-center space-x-2">
-              <Switch id="auto-response" defaultChecked />
+              <Switch 
+                id="auto-response" 
+                checked={autoResponseActive}
+                onCheckedChange={handleAutoResponseChange}
+              />
               <Label htmlFor="auto-response">Active</Label>
             </div>
           </CardHeader>
@@ -67,11 +140,21 @@ const Engagement = () => {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="ai-comments" className="text-sm">Comments</Label>
-                      <Switch id="ai-comments" defaultChecked />
+                      <Switch 
+                        id="ai-comments" 
+                        checked={aiComments} 
+                        onCheckedChange={handleAiCommentsChange}
+                        disabled={!autoResponseActive}
+                      />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="ai-messages" className="text-sm">Direct Messages</Label>
-                      <Switch id="ai-messages" defaultChecked />
+                      <Switch 
+                        id="ai-messages" 
+                        checked={aiMessages}
+                        onCheckedChange={handleAiMessagesChange}
+                        disabled={!autoResponseActive}
+                      />
                     </div>
                   </div>
                 </CardContent>
@@ -88,11 +171,21 @@ const Engagement = () => {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="instant-comments" className="text-sm">Instant Comments</Label>
-                      <Switch id="instant-comments" defaultChecked />
+                      <Switch 
+                        id="instant-comments" 
+                        checked={instantComments}
+                        onCheckedChange={handleInstantCommentsChange}
+                        disabled={!autoResponseActive}
+                      />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="instant-messages" className="text-sm">Instant Messages</Label>
-                      <Switch id="instant-messages" defaultChecked />
+                      <Switch 
+                        id="instant-messages" 
+                        checked={instantMessages}
+                        onCheckedChange={handleInstantMessagesChange}
+                        disabled={!autoResponseActive}
+                      />
                     </div>
                   </div>
                 </CardContent>
@@ -109,11 +202,21 @@ const Engagement = () => {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="auto-like" className="text-sm">Auto-Like Comments</Label>
-                      <Switch id="auto-like" defaultChecked />
+                      <Switch 
+                        id="auto-like" 
+                        checked={autoLike}
+                        onCheckedChange={handleAutoLikeChange}
+                        disabled={!autoResponseActive}
+                      />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="auto-follow" className="text-sm">Auto-Follow Active Users</Label>
-                      <Switch id="auto-follow" />
+                      <Switch 
+                        id="auto-follow" 
+                        checked={autoFollow}
+                        onCheckedChange={handleAutoFollowChange}
+                        disabled={!autoResponseActive}
+                      />
                     </div>
                   </div>
                 </CardContent>
