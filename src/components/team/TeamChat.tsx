@@ -189,7 +189,7 @@ const initialChats = [
   {
     id: '5',
     name: 'Alex Johnson',
-    lastMessage: 'Let's meet at 3 PM to discuss the strategy',
+    lastMessage: "Let's meet at 3 PM to discuss the strategy",
     timestamp: 'Tuesday',
     unread: 0,
     isGroup: false,
