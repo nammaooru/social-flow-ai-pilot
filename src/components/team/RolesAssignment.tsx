@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Edit, Plus } from 'lucide-react';
+import { Edit, Plus, Trash } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -22,10 +22,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 // Mock data for roles
 const initialRoles = [
@@ -77,12 +77,12 @@ const initialRoles = [
 
 // Permission options
 const permissionOptions = [
-  { id: 'create', label: 'Create' },
-  { id: 'edit', label: 'Edit' },
-  { id: 'delete', label: 'Delete' },
-  { id: 'approve', label: 'Approve' },
-  { id: 'publish', label: 'Publish' },
-  { id: 'manage_users', label: 'Manage Users' }
+  { id: 'create', label: 'Create', description: 'Can create new items' },
+  { id: 'edit', label: 'Edit', description: 'Can modify existing items' },
+  { id: 'delete', label: 'Delete', description: 'Can remove items' },
+  { id: 'approve', label: 'Approve', description: 'Can approve items' },
+  { id: 'publish', label: 'Publish', description: 'Can publish content' },
+  { id: 'manage_users', label: 'Manage Users', description: 'Can manage user accounts' }
 ];
 
 const RolesAssignment = () => {
@@ -155,6 +155,10 @@ const RolesAssignment = () => {
     }
   };
 
+  const handleDeleteRole = (roleId: string) => {
+    setRoles(roles.filter(role => role.id !== roleId));
+  };
+
   return (
     <Card>
       <CardContent className="p-4">
@@ -195,27 +199,37 @@ const RolesAssignment = () => {
                 </div>
                 <div className="grid gap-2">
                   <Label>Permissions</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {permissionOptions.map(permission => (
-                      <div key={permission.id} className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={`permission-${permission.id}`} 
-                          checked={selectedPermissions.includes(permission.id)}
-                          onCheckedChange={(checked) => handlePermissionChange(permission.id, checked === true)}
-                        />
-                        <Label 
-                          htmlFor={`permission-${permission.id}`}
-                          className="text-sm font-normal"
-                        >
-                          {permission.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
+                  <ScrollArea className="h-52 border rounded-md p-2">
+                    <div className="space-y-3">
+                      {permissionOptions.map(permission => (
+                        <div key={permission.id} className="flex items-start space-x-2 p-1 hover:bg-muted/50 rounded-sm">
+                          <Checkbox 
+                            id={`permission-${permission.id}`} 
+                            checked={selectedPermissions.includes(permission.id)}
+                            onCheckedChange={(checked) => handlePermissionChange(permission.id, checked === true)}
+                            className="mt-1"
+                          />
+                          <div>
+                            <Label 
+                              htmlFor={`permission-${permission.id}`}
+                              className="text-sm font-medium cursor-pointer"
+                            >
+                              {permission.label}
+                            </Label>
+                            <p className="text-xs text-muted-foreground">{permission.description}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
+                <Button variant="outline" onClick={() => {
+                  setIsAddDialogOpen(false);
+                  setCurrentRole(null);
+                  setSelectedPermissions([]);
+                }}>Cancel</Button>
                 <Button 
                   onClick={handleAddRole}
                   disabled={!currentRole?.title}
@@ -246,7 +260,7 @@ const RolesAssignment = () => {
                   <TableCell>
                     <ul className="list-disc list-inside text-sm">
                       {role.responsibilities.slice(0, 2).map((resp, index) => (
-                        <li key={index}>{resp}</li>
+                        <li key={index} className="text-muted-foreground">{resp}</li>
                       ))}
                       {role.responsibilities.length > 2 && (
                         <li className="text-muted-foreground">+{role.responsibilities.length - 2} more</li>
@@ -263,72 +277,89 @@ const RolesAssignment = () => {
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Dialog open={isEditDialogOpen && editingRoleId === role.id} onOpenChange={setIsEditDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(role)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>Edit Role</DialogTitle>
-                          <DialogDescription>
-                            Update role details and responsibilities.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                          <div className="grid gap-2">
-                            <Label htmlFor="edit-title">Role Title</Label>
-                            <Input 
-                              id="edit-title" 
-                              value={currentRole?.title || ''}
-                              onChange={(e) => setCurrentRole({...currentRole, title: e.target.value})}
-                            />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label htmlFor="edit-responsibilities">Responsibilities</Label>
-                            <Textarea 
-                              id="edit-responsibilities"
-                              className="min-h-[100px]"
-                              onChange={(e) => handleResponsibilityChange(e.target.value)}
-                              value={currentRole?.responsibilities ? currentRole.responsibilities.join('\n') : ''}
-                            />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label>Permissions</Label>
-                            <div className="grid grid-cols-2 gap-2">
-                              {permissionOptions.map(permission => (
-                                <div key={permission.id} className="flex items-center space-x-2">
-                                  <Checkbox 
-                                    id={`edit-permission-${permission.id}`} 
-                                    checked={selectedPermissions.includes(permission.id)}
-                                    onCheckedChange={(checked) => handlePermissionChange(permission.id, checked === true)}
-                                  />
-                                  <Label 
-                                    htmlFor={`edit-permission-${permission.id}`}
-                                    className="text-sm font-normal"
-                                  >
-                                    {permission.label}
-                                  </Label>
+                    <div className="flex justify-end gap-2">
+                      <Dialog open={isEditDialogOpen && editingRoleId === role.id} onOpenChange={setIsEditDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="sm" onClick={() => handleOpenEditDialog(role)}>
+                            <Edit size={16} />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Edit Role</DialogTitle>
+                            <DialogDescription>
+                              Update role details and responsibilities.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                              <Label htmlFor="edit-title">Role Title</Label>
+                              <Input 
+                                id="edit-title" 
+                                value={currentRole?.title || ''}
+                                onChange={(e) => setCurrentRole({...currentRole, title: e.target.value})}
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="edit-responsibilities">Responsibilities</Label>
+                              <Textarea 
+                                id="edit-responsibilities"
+                                className="min-h-[100px]"
+                                onChange={(e) => handleResponsibilityChange(e.target.value)}
+                                value={currentRole?.responsibilities ? currentRole.responsibilities.join('\n') : ''}
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label>Permissions</Label>
+                              <ScrollArea className="h-52 border rounded-md p-2">
+                                <div className="space-y-3">
+                                  {permissionOptions.map(permission => (
+                                    <div key={permission.id} className="flex items-start space-x-2 p-1 hover:bg-muted/50 rounded-sm">
+                                      <Checkbox 
+                                        id={`edit-permission-${permission.id}`} 
+                                        checked={selectedPermissions.includes(permission.id)}
+                                        onCheckedChange={(checked) => handlePermissionChange(permission.id, checked === true)}
+                                        className="mt-1"
+                                      />
+                                      <div>
+                                        <Label 
+                                          htmlFor={`edit-permission-${permission.id}`}
+                                          className="text-sm font-medium cursor-pointer"
+                                        >
+                                          {permission.label}
+                                        </Label>
+                                        <p className="text-xs text-muted-foreground">{permission.description}</p>
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
-                              ))}
+                              </ScrollArea>
                             </div>
                           </div>
-                        </div>
-                        <DialogFooter>
-                          <Button variant="outline" onClick={() => {
-                            setIsEditDialogOpen(false);
-                            setEditingRoleId(null);
-                          }}>Cancel</Button>
-                          <Button 
-                            onClick={handleEditRole}
-                            disabled={!currentRole?.title}
-                          >
-                            Save Changes
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
+                          <DialogFooter>
+                            <Button variant="outline" onClick={() => {
+                              setIsEditDialogOpen(false);
+                              setEditingRoleId(null);
+                              setCurrentRole(null);
+                              setSelectedPermissions([]);
+                            }}>Cancel</Button>
+                            <Button 
+                              onClick={handleEditRole}
+                              disabled={!currentRole?.title}
+                            >
+                              Save Changes
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleDeleteRole(role.id)}
+                      >
+                        <Trash size={16} />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
