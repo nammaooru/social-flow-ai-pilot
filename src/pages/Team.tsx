@@ -3,14 +3,12 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Users, MessageSquare, UserCog, Calendar, Share2, BriefcaseBusiness, Building } from 'lucide-react';
+import { Users, MessageSquare, UserCog, Calendar, Building } from 'lucide-react';
 import TeamOrganization from '@/components/team/TeamOrganization';
 import RolesAssignment from '@/components/team/RolesAssignment';
 import DepartmentManagement from '@/components/team/DepartmentManagement';
 import TeamAvailability from '@/components/team/TeamAvailability';
 import TeamChat from '@/components/team/TeamChat';
-import WorkloadDistribution from '@/components/team/WorkloadDistribution';
-import CollaborationTools from '@/components/team/CollaborationTools';
 
 const Team = () => {
   const [activeTab, setActiveTab] = useState('organization');
@@ -55,7 +53,7 @@ const Team = () => {
         <Card className="flex-1">
           <CardHeader className="pb-2">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 mb-4">
+              <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 mb-4">
                 <TabsTrigger value="organization" className="flex items-center gap-2">
                   <Users size={16} />
                   <span className="hidden sm:inline">Organization</span>
@@ -76,14 +74,6 @@ const Team = () => {
                   <MessageSquare size={16} />
                   <span className="hidden sm:inline">Team Chat</span>
                 </TabsTrigger>
-                <TabsTrigger value="workload" className="flex items-center gap-2">
-                  <BriefcaseBusiness size={16} />
-                  <span className="hidden sm:inline">Workload</span>
-                </TabsTrigger>
-                <TabsTrigger value="collaboration" className="flex items-center gap-2">
-                  <Share2 size={16} />
-                  <span className="hidden sm:inline">Collaboration</span>
-                </TabsTrigger>
               </TabsList>
             </Tabs>
           </CardHeader>
@@ -103,12 +93,6 @@ const Team = () => {
               </TabsContent>
               <TabsContent value="chat">
                 <TeamChat />
-              </TabsContent>
-              <TabsContent value="workload">
-                <WorkloadDistribution />
-              </TabsContent>
-              <TabsContent value="collaboration">
-                <CollaborationTools />
               </TabsContent>
             </Tabs>
           </CardContent>
