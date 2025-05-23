@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, Paperclip, Smile, Users, FileText, Plus, Image, Video, File, Mic } from 'lucide-react';
+import { Send, Paperclip, Smile, Users, FileText, Plus, Image, Video, File, Mic, Upload, Edit, Trash2, Download, MoreVertical } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 // Mock data for chat messages
 const initialMessages = [
@@ -126,6 +127,11 @@ const TeamChat = () => {
   const [personalMessageText, setPersonalMessageText] = useState('');
   const [personalMessageFile, setPersonalMessageFile] = useState<File | null>(null);
   const [sharedFiles, setSharedFiles] = useState(initialSharedFiles);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [isEditFileDialogOpen, setIsEditFileDialogOpen] = useState(false);
+  const [editingFile, setEditingFile] = useState<any>(null);
+  const [editFileName, setEditFileName] = useState('');
+  const { toast } = useToast();
   
   const filteredMessages = messages.filter(msg => msg.groupId === selectedGroup);
   
@@ -136,6 +142,7 @@ const TeamChat = () => {
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const personalFileInputRef = React.useRef<HTMLInputElement>(null);
+  const uploadFileInputRef = React.useRef<HTMLInputElement>(null);
   
   const handleCreateGroup = () => {
     if (newGroupName.trim() === '' || selectedMembers.length === 0) return;
@@ -341,6 +348,92 @@ const TeamChat = () => {
     }
   };
   
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+    
+    Array.from(files).forEach((file) => {
+      const fileType = 
+        file.type.startsWith('image') ? 'image' :
+        file.type.startsWith('video') ? 'video' :
+        file.type.startsWith('audio') ? 'voice' : 'file';
+        
+      const fileSize = (file.size / (1024 * 1024)).toFixed(1);
+      
+      const newFile = {
+        id: sharedFiles.length + Math.random(),
+        name: file.name,
+        size: `${fileSize} MB`,
+        sharedBy: 'You',
+        date: 'Just now',
+        type: fileType,
+        file: file // Store the actual file object for potential future use
+      };
+      
+      setSharedFiles(prev => [...prev, newFile]);
+    });
+    
+    setIsUploadDialogOpen(false);
+    toast({
+      title: "Files uploaded successfully",
+      description: `${files.length} file(s) have been uploaded to the team chat.`,
+    });
+  };
+  
+  const handleDeleteFile = (fileId: number) => {
+    setSharedFiles(prev => prev.filter(file => file.id !== fileId));
+    toast({
+      title: "File deleted",
+      description: "The file has been removed from the team chat.",
+    });
+  };
+  
+  const handleEditFile = (file: any) => {
+    setEditingFile(file);
+    setEditFileName(file.name);
+    setIsEditFileDialogOpen(true);
+  };
+  
+  const handleSaveFileEdit = () => {
+    if (!editingFile || !editFileName.trim()) return;
+    
+    setSharedFiles(prev => prev.map(file => 
+      file.id === editingFile.id 
+        ? { ...file, name: editFileName.trim() }
+        : file
+    ));
+    
+    setIsEditFileDialogOpen(false);
+    setEditingFile(null);
+    setEditFileName('');
+    
+    toast({
+      title: "File renamed",
+      description: "The file name has been updated successfully.",
+    });
+  };
+  
+  const handleDownloadFile = (file: any) => {
+    // In a real application, this would download the actual file
+    toast({
+      title: "Download started",
+      description: `Downloading ${file.name}...`,
+    });
+  };
+  
+  const getFileIcon = (fileType: string) => {
+    switch (fileType) {
+      case 'image':
+        return <Image size={24} className="text-blue-500" />;
+      case 'video':
+        return <Video size={24} className="text-purple-500" />;
+      case 'voice':
+        return <Mic size={24} className="text-green-500" />;
+      default:
+        return <FileText size={24} className="text-blue-500" />;
+    }
+  };
+
   const renderAttachmentPreview = (attachment: any) => {
     if (!attachment) return null;
     
@@ -794,31 +887,109 @@ const TeamChat = () => {
           </TabsContent>
 
           <TabsContent value="files" className="h-full m-0">
+            <div className="border-b p-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <h3 className="font-medium">Shared Files</h3>
+                <Badge variant="outline">{sharedFiles.length}</Badge>
+              </div>
+              <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm">
+                    <Upload size={14} className="mr-2" /> Upload Files
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Upload Files</DialogTitle>
+                    <DialogDescription>
+                      Upload documents, images, videos, and other files to share with your team.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="py-4">
+                    <input
+                      type="file"
+                      ref={uploadFileInputRef}
+                      className="hidden"
+                      multiple
+                      accept=".pdf,.sketch,.xlsx,.xls,.docx,.doc,.png,.mp4,.mp3,.jpg,.jpeg,.gif,.bmp,.tiff,.svg,.webp,.mov,.avi,.mkv,.wav,.m4a,.ogg"
+                      onChange={handleFileUpload}
+                    />
+                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
+                      <Upload size={48} className="mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-lg font-medium mb-2">Drop files here or click to browse</p>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Supports PDF, Sketch, Excel, Word, Images, Videos, Audio files
+                      </p>
+                      <Button onClick={() => uploadFileInputRef.current?.click()}>
+                        Choose Files
+                      </Button>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+            
             <ScrollArea className="h-full p-4">
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   {sharedFiles.map((file) => (
-                    <div key={file.id} className="flex items-center justify-between p-3 border rounded-md">
-                      <div className="flex items-center gap-3">
-                        {file.type === 'image' ? (
-                          <Image size={24} className="text-blue-500" />
-                        ) : file.type === 'video' ? (
-                          <Video size={24} className="text-purple-500" />
-                        ) : file.type === 'voice' ? (
-                          <Mic size={24} className="text-green-500" />
-                        ) : (
-                          <FileText size={24} className="text-blue-500" />
-                        )}
-                        <div>
-                          <p className="font-medium text-sm">{file.name}</p>
+                    <div key={file.id} className="flex items-center justify-between p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {getFileIcon(file.type)}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{file.name}</p>
                           <p className="text-xs text-muted-foreground">
                             {file.size} • Shared by {file.sharedBy} • {file.date}
                           </p>
                         </div>
                       </div>
-                      <Button variant="ghost" size="sm">Download</Button>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDownloadFile(file)}
+                        >
+                          <Download size={16} />
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical size={16} />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditFile(file)}>
+                              <Edit size={16} className="mr-2" />
+                              Rename
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownloadFile(file)}>
+                              <Download size={16} className="mr-2" />
+                              Download
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteFile(file.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 size={16} className="mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
                   ))}
+                  {sharedFiles.length === 0 && (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <FileText size={48} className="mx-auto mb-4 opacity-50" />
+                      <p className="text-lg font-medium mb-2">No files shared yet</p>
+                      <p className="text-sm">Upload files to share with your team</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </ScrollArea>
@@ -907,6 +1078,38 @@ const TeamChat = () => {
             </ScrollArea>
           </TabsContent>
         </Tabs>
+        
+        {/* Edit File Dialog */}
+        <Dialog open={isEditFileDialogOpen} onOpenChange={setIsEditFileDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Rename File</DialogTitle>
+              <DialogDescription>
+                Enter a new name for the file.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Label htmlFor="file-name">File Name</Label>
+              <Input 
+                id="file-name"
+                value={editFileName}
+                onChange={(e) => setEditFileName(e.target.value)}
+                placeholder="Enter file name"
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditFileDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSaveFileEdit}
+                disabled={!editFileName.trim()}
+              >
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
