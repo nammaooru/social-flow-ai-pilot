@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -92,8 +91,8 @@ const teamMembers = [
   { id: 5, name: 'Casey Davis', role: 'SEO Specialist', avatar: 'https://i.pravatar.cc/150?img=5', status: 'offline' },
 ];
 
-// Mock shared files
-const sharedFiles = [
+// Mock shared files - now as initial data
+const initialSharedFiles = [
   { id: 1, name: 'Q2 Marketing Strategy.pdf', size: '2.4 MB', sharedBy: 'Alex Johnson', date: '2 days ago', type: 'file' },
   { id: 2, name: 'Website Mockups.sketch', size: '8.1 MB', sharedBy: 'Sam Smith', date: 'Yesterday', type: 'file' },
   { id: 3, name: 'Analytics Report April.xlsx', size: '1.7 MB', sharedBy: 'Jordan Lee', date: '3 hours ago', type: 'file' },
@@ -126,6 +125,7 @@ const TeamChat = () => {
   const [personalMessageTo, setPersonalMessageTo] = useState<number | null>(null);
   const [personalMessageText, setPersonalMessageText] = useState('');
   const [personalMessageFile, setPersonalMessageFile] = useState<File | null>(null);
+  const [sharedFiles, setSharedFiles] = useState(initialSharedFiles);
   
   const filteredMessages = messages.filter(msg => msg.groupId === selectedGroup);
   
