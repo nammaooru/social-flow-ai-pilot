@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Edit, Plus, Trash } from 'lucide-react';
@@ -92,6 +91,24 @@ const RolesAssignment = () => {
   const [currentRole, setCurrentRole] = useState<any>(null);
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+  
+  // Load roles from localStorage if available
+  useEffect(() => {
+    const storedRoles = localStorage.getItem('teamRoles');
+    if (storedRoles) {
+      try {
+        const parsedRoles = JSON.parse(storedRoles);
+        setRoles(parsedRoles);
+      } catch (e) {
+        console.error("Error parsing stored roles:", e);
+      }
+    }
+  }, []);
+  
+  // Save roles to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('teamRoles', JSON.stringify(roles));
+  }, [roles]);
   
   const handleOpenEditDialog = (role: any) => {
     setCurrentRole({...role});

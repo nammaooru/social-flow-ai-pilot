@@ -24,6 +24,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useEffect } from 'react';
 
 // Mock team data
 const teamMembers = [
@@ -82,6 +83,26 @@ const departments = [
   { value: "Management", label: "Management" },
 ];
 
+// Get the initial roles from RolesAssignment component
+const initialRoles = [
+  {
+    id: '1',
+    title: 'Marketing Director',
+  },
+  {
+    id: '2',
+    title: 'Lead Designer',
+  },
+  {
+    id: '3',
+    title: 'Full Stack Developer',
+  },
+  {
+    id: '4',
+    title: 'Content Strategist',
+  }
+];
+
 const TeamOrganization = () => {
   const [members, setMembers] = useState(teamMembers);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -91,10 +112,24 @@ const TeamOrganization = () => {
     department: '',
     role: ''
   });
+  const [roles, setRoles] = useState(initialRoles);
+
+  // Get roles from localStorage if available
+  useEffect(() => {
+    const storedRoles = localStorage.getItem('teamRoles');
+    if (storedRoles) {
+      try {
+        const parsedRoles = JSON.parse(storedRoles);
+        setRoles(parsedRoles);
+      } catch (e) {
+        console.error("Error parsing stored roles:", e);
+      }
+    }
+  }, []);
 
   const handleAddMember = () => {
-    // Ensure department is not empty before adding
-    if (!newMember.department) {
+    // Ensure department and role are not empty before adding
+    if (!newMember.department || !newMember.role) {
       return;
     }
     
@@ -167,11 +202,21 @@ const TeamOrganization = () => {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="role">Role</Label>
-                  <Input 
-                    id="role" 
-                    value={newMember.role}
-                    onChange={(e) => setNewMember({...newMember, role: e.target.value})}
-                  />
+                  <Select 
+                    onValueChange={(value) => setNewMember({...newMember, role: value})}
+                    value={newMember.role || undefined}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roles.map((role) => (
+                        <SelectItem key={role.id} value={role.title}>
+                          {role.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <DialogFooter>
