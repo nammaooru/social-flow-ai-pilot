@@ -16,6 +16,38 @@ export function AppearanceSettings({ onSettingChange }: AppearanceSettingsProps)
   const { toast } = useToast();
   const [theme, setTheme] = React.useState("system");
   
+  const handleThemeChange = (newTheme: string) => {
+    setTheme(newTheme);
+    
+    // Apply theme immediately
+    const root = document.documentElement;
+    
+    if (newTheme === "dark") {
+      root.classList.add("dark");
+      root.classList.remove("light");
+    } else if (newTheme === "light") {
+      root.classList.add("light");
+      root.classList.remove("dark");
+    } else {
+      // System theme
+      root.classList.remove("dark", "light");
+      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      root.classList.add(systemTheme);
+    }
+    
+    // Store theme preference
+    localStorage.setItem("theme", newTheme);
+    
+    toast({
+      title: "Theme updated",
+      description: `Theme changed to ${newTheme} mode.`,
+    });
+    
+    if (onSettingChange) {
+      onSettingChange();
+    }
+  };
+  
   const handleSave = () => {
     toast({
       title: "Appearance updated",
@@ -27,6 +59,13 @@ export function AppearanceSettings({ onSettingChange }: AppearanceSettingsProps)
       onSettingChange();
     }
   };
+
+  // Initialize theme on component mount
+  React.useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") || "system";
+    setTheme(savedTheme);
+    handleThemeChange(savedTheme);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -44,8 +83,8 @@ export function AppearanceSettings({ onSettingChange }: AppearanceSettingsProps)
         </CardHeader>
         <CardContent>
           <RadioGroup
-            defaultValue={theme}
-            onValueChange={setTheme}
+            value={theme}
+            onValueChange={handleThemeChange}
             className="grid grid-cols-1 md:grid-cols-3 gap-4"
           >
             <div>
@@ -56,7 +95,7 @@ export function AppearanceSettings({ onSettingChange }: AppearanceSettingsProps)
               />
               <Label
                 htmlFor="light"
-                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
               >
                 <Sun className="mb-3 h-6 w-6" />
                 <span className="text-center">Light</span>
@@ -71,7 +110,7 @@ export function AppearanceSettings({ onSettingChange }: AppearanceSettingsProps)
               />
               <Label
                 htmlFor="dark"
-                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
               >
                 <Moon className="mb-3 h-6 w-6" />
                 <span className="text-center">Dark</span>
@@ -86,7 +125,7 @@ export function AppearanceSettings({ onSettingChange }: AppearanceSettingsProps)
               />
               <Label
                 htmlFor="system"
-                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
               >
                 <Monitor className="mb-3 h-6 w-6" />
                 <span className="text-center">System</span>

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileSettings } from "@/components/settings/ProfileSettings";
@@ -5,7 +6,6 @@ import { AccountSettings } from "@/components/settings/AccountSettings";
 import { NotificationSettings } from "@/components/settings/NotificationSettings";
 import { AppearanceSettings } from "@/components/settings/AppearanceSettings";
 import { IntegrationSettings } from "@/components/settings/IntegrationSettings";
-import { UsersSettings } from "@/components/settings/UsersSettings";
 import { WhiteLabelSettings } from "@/components/settings/WhiteLabelSettings";
 import { BillingSettings } from "@/components/settings/BillingSettings";
 import { AnalyticsSettings } from "@/components/settings/AnalyticsSettings";
@@ -18,7 +18,7 @@ import { ChatbotSettings } from "@/components/settings/ChatbotSettings";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  User, Users, CreditCard, Paintbrush, BarChart3, 
+  User, CreditCard, Paintbrush, BarChart3, 
   Globe, Shield, Share2, Bell, HelpCircle, Key, MessageSquare, 
   Link
 } from "lucide-react";
@@ -39,19 +39,19 @@ const Settings = () => {
   const [selectedRole, setSelectedRole] = useState<UserRole>("User");
   const { toast } = useToast();
   
-  // Define which settings are available to which roles
+  // Define which settings are available to which roles (removed "users" from all roles)
   const roleAccess: Record<UserRole, string[]> = {
     "Super Admin": [
-      "profile", "users", "white-label", "billing", "appearance", "analytics", 
+      "profile", "white-label", "billing", "appearance", "analytics", 
       "global-settings", "security", "social-accounts", "notifications", 
       "support", "api-keys", "chatbot", "integrations"
     ],
     "White Label": [
-      "profile", "users", "billing", "appearance", "analytics", 
+      "profile", "billing", "appearance", "analytics", 
       "security", "social-accounts", "notifications", "support", "chatbot", "integrations"
     ],
     "Admin": [
-      "profile", "users", "appearance", "analytics", "security", 
+      "profile", "appearance", "analytics", "security", 
       "social-accounts", "notifications", "support", "chatbot", "integrations"
     ],
     "User": [
@@ -79,7 +79,6 @@ const Settings = () => {
 
   const settingsMenu = [
     { id: "profile", label: "Profile", icon: <User size={18} /> },
-    { id: "users", label: "Users", icon: <Users size={18} /> },
     { id: "white-label", label: "White Label", icon: <WhiteLabel size={18} /> },
     { id: "billing", label: "Billing", icon: <CreditCard size={18} /> },
     { id: "appearance", label: "Appearance", icon: <Paintbrush size={18} /> },
@@ -163,10 +162,6 @@ const Settings = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsContent value="profile">
               <ProfileSettings onSettingChange={handleSettingChange} />
-            </TabsContent>
-            
-            <TabsContent value="users">
-              <UsersSettings role={selectedRole} onSettingChange={handleSettingChange} />
             </TabsContent>
             
             <TabsContent value="white-label">

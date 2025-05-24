@@ -29,6 +29,71 @@ export function GlobalSettings({ onSettingChange }: CommonSettingsProps) {
     logLevel: "info"
   });
   
+  // Comprehensive world timezones
+  const worldTimezones = [
+    { value: "UTC", label: "UTC - Coordinated Universal Time" },
+    { value: "America/New_York", label: "America/New York - Eastern Time (EST/EDT)" },
+    { value: "America/Chicago", label: "America/Chicago - Central Time (CST/CDT)" },
+    { value: "America/Denver", label: "America/Denver - Mountain Time (MST/MDT)" },
+    { value: "America/Los_Angeles", label: "America/Los Angeles - Pacific Time (PST/PDT)" },
+    { value: "America/Anchorage", label: "America/Anchorage - Alaska Time" },
+    { value: "Pacific/Honolulu", label: "Pacific/Honolulu - Hawaii Time" },
+    { value: "America/Toronto", label: "America/Toronto - Eastern Time (Canada)" },
+    { value: "America/Vancouver", label: "America/Vancouver - Pacific Time (Canada)" },
+    { value: "America/Sao_Paulo", label: "America/Sao Paulo - Brazil Time" },
+    { value: "America/Argentina/Buenos_Aires", label: "America/Buenos Aires - Argentina Time" },
+    { value: "America/Mexico_City", label: "America/Mexico City - Central Standard Time" },
+    { value: "Europe/London", label: "Europe/London - Greenwich Mean Time (GMT/BST)" },
+    { value: "Europe/Paris", label: "Europe/Paris - Central European Time (CET/CEST)" },
+    { value: "Europe/Berlin", label: "Europe/Berlin - Central European Time (CET/CEST)" },
+    { value: "Europe/Rome", label: "Europe/Rome - Central European Time (CET/CEST)" },
+    { value: "Europe/Madrid", label: "Europe/Madrid - Central European Time (CET/CEST)" },
+    { value: "Europe/Amsterdam", label: "Europe/Amsterdam - Central European Time (CET/CEST)" },
+    { value: "Europe/Zurich", label: "Europe/Zurich - Central European Time (CET/CEST)" },
+    { value: "Europe/Vienna", label: "Europe/Vienna - Central European Time (CET/CEST)" },
+    { value: "Europe/Stockholm", label: "Europe/Stockholm - Central European Time (CET/CEST)" },
+    { value: "Europe/Oslo", label: "Europe/Oslo - Central European Time (CET/CEST)" },
+    { value: "Europe/Copenhagen", label: "Europe/Copenhagen - Central European Time (CET/CEST)" },
+    { value: "Europe/Helsinki", label: "Europe/Helsinki - Eastern European Time (EET/EEST)" },
+    { value: "Europe/Warsaw", label: "Europe/Warsaw - Central European Time (CET/CEST)" },
+    { value: "Europe/Prague", label: "Europe/Prague - Central European Time (CET/CEST)" },
+    { value: "Europe/Budapest", label: "Europe/Budapest - Central European Time (CET/CEST)" },
+    { value: "Europe/Bucharest", label: "Europe/Bucharest - Eastern European Time (EET/EEST)" },
+    { value: "Europe/Athens", label: "Europe/Athens - Eastern European Time (EET/EEST)" },
+    { value: "Europe/Istanbul", label: "Europe/Istanbul - Turkey Time (TRT)" },
+    { value: "Europe/Moscow", label: "Europe/Moscow - Moscow Standard Time (MSK)" },
+    { value: "Europe/Kiev", label: "Europe/Kiev - Eastern European Time (EET/EEST)" },
+    { value: "Asia/Tokyo", label: "Asia/Tokyo - Japan Standard Time (JST)" },
+    { value: "Asia/Seoul", label: "Asia/Seoul - Korea Standard Time (KST)" },
+    { value: "Asia/Shanghai", label: "Asia/Shanghai - China Standard Time (CST)" },
+    { value: "Asia/Hong_Kong", label: "Asia/Hong Kong - Hong Kong Time (HKT)" },
+    { value: "Asia/Singapore", label: "Asia/Singapore - Singapore Standard Time (SGT)" },
+    { value: "Asia/Bangkok", label: "Asia/Bangkok - Indochina Time (ICT)" },
+    { value: "Asia/Jakarta", label: "Asia/Jakarta - Western Indonesian Time (WIB)" },
+    { value: "Asia/Manila", label: "Asia/Manila - Philippine Standard Time (PST)" },
+    { value: "Asia/Kuala_Lumpur", label: "Asia/Kuala Lumpur - Malaysia Time (MYT)" },
+    { value: "Asia/Kolkata", label: "Asia/Kolkata - India Standard Time (IST)" },
+    { value: "Asia/Karachi", label: "Asia/Karachi - Pakistan Standard Time (PKT)" },
+    { value: "Asia/Dhaka", label: "Asia/Dhaka - Bangladesh Standard Time (BST)" },
+    { value: "Asia/Dubai", label: "Asia/Dubai - Gulf Standard Time (GST)" },
+    { value: "Asia/Tehran", label: "Asia/Tehran - Iran Standard Time (IRST)" },
+    { value: "Asia/Jerusalem", label: "Asia/Jerusalem - Israel Standard Time (IST)" },
+    { value: "Asia/Riyadh", label: "Asia/Riyadh - Arabia Standard Time (AST)" },
+    { value: "Africa/Cairo", label: "Africa/Cairo - Eastern European Time (EET)" },
+    { value: "Africa/Lagos", label: "Africa/Lagos - West Africa Time (WAT)" },
+    { value: "Africa/Johannesburg", label: "Africa/Johannesburg - South Africa Standard Time (SAST)" },
+    { value: "Africa/Nairobi", label: "Africa/Nairobi - East Africa Time (EAT)" },
+    { value: "Africa/Casablanca", label: "Africa/Casablanca - Western European Time (WET)" },
+    { value: "Australia/Sydney", label: "Australia/Sydney - Australian Eastern Time (AEST/AEDT)" },
+    { value: "Australia/Melbourne", label: "Australia/Melbourne - Australian Eastern Time (AEST/AEDT)" },
+    { value: "Australia/Brisbane", label: "Australia/Brisbane - Australian Eastern Standard Time (AEST)" },
+    { value: "Australia/Perth", label: "Australia/Perth - Australian Western Standard Time (AWST)" },
+    { value: "Australia/Adelaide", label: "Australia/Adelaide - Australian Central Time (ACST/ACDT)" },
+    { value: "Pacific/Auckland", label: "Pacific/Auckland - New Zealand Standard Time (NZST/NZDT)" },
+    { value: "Pacific/Fiji", label: "Pacific/Fiji - Fiji Time (FJT)" },
+    { value: "Pacific/Guam", label: "Pacific/Guam - Chamorro Standard Time (ChST)" }
+  ];
+  
   const handleSave = () => {
     toast({
       title: "Global settings saved",
@@ -89,23 +154,23 @@ export function GlobalSettings({ onSettingChange }: CommonSettingsProps) {
                 />
               </div>
               
+              <div className="space-y-2">
+                <Label htmlFor="timezone">Timezone</Label>
+                <Select value={settings.timezone} onValueChange={(value) => handleInputChange("timezone", value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {worldTimezones.map((tz) => (
+                      <SelectItem key={tz.value} value={tz.value}>
+                        {tz.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="timezone">Timezone</Label>
-                  <Select value={settings.timezone} onValueChange={(value) => handleInputChange("timezone", value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="UTC">UTC</SelectItem>
-                      <SelectItem value="America/New_York">Eastern Time</SelectItem>
-                      <SelectItem value="America/Chicago">Central Time</SelectItem>
-                      <SelectItem value="America/Denver">Mountain Time</SelectItem>
-                      <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
                 <div className="space-y-2">
                   <Label htmlFor="dateFormat">Date Format</Label>
                   <Select value={settings.dateFormat} onValueChange={(value) => handleInputChange("dateFormat", value)}>
@@ -119,21 +184,21 @@ export function GlobalSettings({ onSettingChange }: CommonSettingsProps) {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="language">Default Language</Label>
-                <Select value={settings.language} onValueChange={(value) => handleInputChange("language", value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="es">Spanish</SelectItem>
-                    <SelectItem value="fr">French</SelectItem>
-                    <SelectItem value="de">German</SelectItem>
-                  </SelectContent>
-                </Select>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="language">Default Language</Label>
+                  <Select value={settings.language} onValueChange={(value) => handleInputChange("language", value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="es">Spanish</SelectItem>
+                      <SelectItem value="fr">French</SelectItem>
+                      <SelectItem value="de">German</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardContent>
           </Card>
