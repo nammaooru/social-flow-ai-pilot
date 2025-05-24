@@ -21,8 +21,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
-// Types for attachments
-type AttachmentType = 'image' | 'video' | 'document' | 'emoji';
+// Types for attachments - updated to include 'voice'
+type AttachmentType = 'image' | 'video' | 'document' | 'emoji' | 'voice';
 
 interface Attachment {
   type: AttachmentType;
@@ -401,7 +401,7 @@ const DirectMessagesSection = ({ showAiSuggestions = true }: DirectMessagesSecti
                           <span className="text-xs text-muted-foreground">{contact.time}</span>
                         </div>
                         <div className="flex items-center text-sm">
-                          <div className={`h-2 w-2 rounded-full mr-2 ${platformColors[contact.platform]}`}></div>
+                          <div className={`h-2 w-2 rounded-full mr-2 ${platformColors[contact.platform as keyof typeof platformColors]}`}></div>
                           <span className="text-xs">{contact.platform}</span>
                         </div>
                         <p className="text-sm text-muted-foreground truncate">{contact.lastMessage}</p>
@@ -461,7 +461,7 @@ const DirectMessagesSection = ({ showAiSuggestions = true }: DirectMessagesSecti
                     className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div 
-                      className={`max-w-[80%] p-3 rounded-lg relative ${
+                      className={`max-w-[80%] p-3 rounded-lg relative group ${
                         message.sender === 'me' 
                           ? 'bg-primary text-primary-foreground' 
                           : 'bg-muted text-muted-foreground'
@@ -503,7 +503,6 @@ const DirectMessagesSection = ({ showAiSuggestions = true }: DirectMessagesSecti
                         )}
                       </div>
 
-                      {/* Message actions - enhanced for all messages */}
                       <div className="absolute opacity-0 group-hover:opacity-100 right-0 bottom-0 transform translate-y-full flex gap-1 pt-1">
                         <Button 
                           variant="ghost" 
@@ -531,7 +530,6 @@ const DirectMessagesSection = ({ showAiSuggestions = true }: DirectMessagesSecti
               </div>
             </ScrollArea>
             
-            {/* AI suggestion - only show if enabled */}
             {showAiSuggestions && aiSuggestion && (
               <div className="mb-2 flex items-center">
                 <Card className="w-full bg-muted/50">
@@ -550,7 +548,6 @@ const DirectMessagesSection = ({ showAiSuggestions = true }: DirectMessagesSecti
               </div>
             )}
             
-            {/* Attachments preview */}
             {attachments.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2 mb-2">
                 {attachments.map((attachment, index) => (
@@ -678,7 +675,6 @@ const DirectMessagesSection = ({ showAiSuggestions = true }: DirectMessagesSecti
         </CardContent>
       </Card>
 
-      {/* Image Preview Dialog */}
       <AlertDialog open={!!attachmentToPreview} onOpenChange={(open) => !open && setAttachmentToPreview(null)}>
         <AlertDialogContent className="max-w-[80vw]">
           <AlertDialogHeader>
@@ -697,7 +693,6 @@ const DirectMessagesSection = ({ showAiSuggestions = true }: DirectMessagesSecti
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Forward Confirmation Dialog */}
       <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -1,8 +1,10 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +12,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -26,6 +29,10 @@ import {
   X,
   Reply,
   Forward,
+  Upload,
+  Download,
+  Edit,
+  Trash2,
 } from 'lucide-react';
 
 interface Message {
@@ -43,10 +50,20 @@ interface Message {
 }
 
 interface Attachment {
-  type: 'image' | 'file' | 'video' | 'voice' | 'emoji';
+  type: 'image' | 'file' | 'video' | 'voice' | 'emoji' | 'document';
   name: string;
   url?: string;
   preview?: string;
+}
+
+interface SharedFile {
+  id: string;
+  name: string;
+  size: string;
+  uploadedBy: string;
+  uploadedAt: string;
+  url: string;
+  type: string;
 }
 
 const TeamChat = () => {
@@ -114,7 +131,8 @@ const TeamChat = () => {
       avatar: 'https://i.pravatar.cc/150?img=3',
     },
   ]);
-  const [files, setFiles] = useState([
+
+  const [sharedFiles, setSharedFiles] = useState<SharedFile[]>([
     {
       id: '1',
       name: 'Campaign Brief.pdf',
@@ -122,6 +140,7 @@ const TeamChat = () => {
       uploadedBy: 'Jane Smith',
       uploadedAt: '2:55 PM',
       url: '/files/campaign_brief.pdf',
+      type: 'pdf'
     },
     {
       id: '2',
@@ -130,6 +149,7 @@ const TeamChat = () => {
       uploadedBy: 'John Doe',
       uploadedAt: 'Yesterday',
       url: '/files/marketing_plan.docx',
+      type: 'docx'
     },
     {
       id: '3',
@@ -138,8 +158,10 @@ const TeamChat = () => {
       uploadedBy: 'Alice Johnson',
       uploadedAt: '1 week ago',
       url: '/images/logo.png',
+      type: 'png'
     },
   ]);
+
   const [members, setMembers] = useState([
     {
       id: '1',
@@ -174,6 +196,8 @@ const TeamChat = () => {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
+  const [editingFile, setEditingFile] = useState<string | null>(null);
+  const [newFileName, setNewFileName] = useState('');
   const { toast } = useToast();
 
   const handleSendMessage = () => {
@@ -204,9 +228,8 @@ const TeamChat = () => {
     });
   };
 
-  const handleAttachment = (type: 'image' | 'file' | 'video' | 'voice' | 'emoji') => {
+  const handleAttachment = (type: 'image' | 'file' | 'video' | 'voice' | 'emoji' | 'document') => {
     if (type === 'emoji') {
-      // Handle emoji selection
       toast({
         title: "Emoji selected",
         description: "Emoji selection feature activated",
@@ -215,7 +238,6 @@ const TeamChat = () => {
     }
 
     if (type === 'voice') {
-      // Handle voice recording
       toast({
         title: "Voice recording",
         description: "Voice recording feature activated",
@@ -225,7 +247,22 @@ const TeamChat = () => {
 
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = type === 'image' ? 'image/*' : '*/*';
+    
+    // Set accept based on type
+    switch (type) {
+      case 'image':
+        input.accept = 'image/*';
+        break;
+      case 'video':
+        input.accept = 'video/*';
+        break;
+      case 'document':
+      case 'file':
+        input.accept = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt';
+        break;
+      default:
+        input.accept = '*/*';
+    }
 
     input.onchange = (event: any) => {
       const file = event.target.files[0];
@@ -272,6 +309,78 @@ const TeamChat = () => {
         description: `Message "${message.text.substring(0, 30)}..." ready to forward`,
       });
     }
+  };
+
+  const handleFileUpload = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.gif,.mp4,.mp3,.sketch';
+    input.multiple = true;
+
+    input.onchange = (event: any) => {
+      const files = Array.from(event.target.files) as File[];
+      
+      files.forEach((file) => {
+        const newFile: SharedFile = {
+          id: String(sharedFiles.length + Math.random()),
+          name: file.name,
+          size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
+          uploadedBy: 'You',
+          uploadedAt: 'Just now',
+          url: URL.createObjectURL(file),
+          type: file.name.split('.').pop()?.toLowerCase() || 'file'
+        };
+        
+        setSharedFiles(prev => [...prev, newFile]);
+      });
+
+      toast({
+        title: "Files uploaded",
+        description: `${files.length} file(s) uploaded successfully`,
+      });
+    };
+
+    input.click();
+  };
+
+  const handleFileRename = (fileId: string) => {
+    if (!newFileName.trim()) return;
+    
+    setSharedFiles(prev => prev.map(file => 
+      file.id === fileId 
+        ? { ...file, name: newFileName }
+        : file
+    ));
+    
+    setEditingFile(null);
+    setNewFileName('');
+    
+    toast({
+      title: "File renamed",
+      description: "File has been renamed successfully",
+    });
+  };
+
+  const handleFileDownload = (file: SharedFile) => {
+    const link = document.createElement('a');
+    link.href = file.url;
+    link.download = file.name;
+    link.click();
+    
+    toast({
+      title: "Download started",
+      description: `Downloading ${file.name}`,
+    });
+  };
+
+  const handleFileDelete = (fileId: string) => {
+    const file = sharedFiles.find(f => f.id === fileId);
+    setSharedFiles(prev => prev.filter(f => f.id !== fileId));
+    
+    toast({
+      title: "File deleted",
+      description: `${file?.name} has been deleted`,
+    });
   };
 
   return (
@@ -335,7 +444,6 @@ const TeamChat = () => {
                             </div>
                           )}
                           
-                          {/* Message Actions */}
                           <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                             <Button 
                               variant="ghost" 
@@ -361,9 +469,8 @@ const TeamChat = () => {
                 </div>
               </ScrollArea>
               
-              {/* Message Input */}
-              <div className="mt-4 space-y-2">
-                {attachments.length > 0 && (
+              {attachments.length > 0 && (
+                <div className="mt-4 space-y-2">
                   <div className="flex flex-wrap gap-2">
                     {attachments.map((attachment, index) => (
                       <div key={index} className="relative">
@@ -380,7 +487,7 @@ const TeamChat = () => {
                             </Button>
                           </div>
                         )}
-                        {attachment.type === 'file' && (
+                        {(attachment.type === 'file' || attachment.type === 'document') && (
                           <div className="relative bg-muted p-2 rounded-md flex items-center gap-2">
                             <FileText size={16} />
                             <span className="text-xs max-w-[80px] truncate">{attachment.name}</span>
@@ -397,52 +504,52 @@ const TeamChat = () => {
                       </div>
                     ))}
                   </div>
-                )}
-                
-                <div className="flex items-center gap-2">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" size="icon">
-                        <Paperclip className="h-4 w-4" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-48 p-2">
-                      <div className="grid grid-cols-2 gap-1">
-                        <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('image')}>
-                          <span>🖼️</span>
-                          <span>Image</span>
-                        </Button>
-                        <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('video')}>
-                          <span>🎥</span>
-                          <span>Video</span>
-                        </Button>
-                        <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('document')}>
-                          <span>📄</span>
-                          <span>Document</span>
-                        </Button>
-                        <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('voice')}>
-                          <span>🎤</span>
-                          <span>Voice</span>
-                        </Button>
-                        <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('emoji')}>
-                          <span>😊</span>
-                          <span>Emoji</span>
-                        </Button>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                  
-                  <Input
-                    placeholder="Type a message..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                    className="flex-1"
-                  />
-                  <Button onClick={handleSendMessage}>
-                    <Send className="h-4 w-4" />
-                  </Button>
                 </div>
+              )}
+              
+              <div className="mt-4 flex items-center gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <Paperclip className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-48 p-2">
+                    <div className="grid grid-cols-2 gap-1">
+                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('image')}>
+                        <span>🖼️</span>
+                        <span>Image</span>
+                      </Button>
+                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('video')}>
+                        <span>🎥</span>
+                        <span>Video</span>
+                      </Button>
+                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('document')}>
+                        <span>📄</span>
+                        <span>Document</span>
+                      </Button>
+                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('voice')}>
+                        <span>🎤</span>
+                        <span>Voice</span>
+                      </Button>
+                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('emoji')}>
+                        <span>😊</span>
+                        <span>Emoji</span>
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                
+                <Input
+                  placeholder="Type a message..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                  className="flex-1"
+                />
+                <Button onClick={handleSendMessage}>
+                  <Send className="h-4 w-4" />
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -451,20 +558,73 @@ const TeamChat = () => {
         <TabsContent value="files">
           <Card>
             <CardHeader>
-              <CardTitle>Team Files</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                <span>Team Files</span>
+                <Button onClick={handleFileUpload} className="flex items-center gap-2">
+                  <Upload size={16} />
+                  Upload Files
+                </Button>
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[400px] pr-4">
                 <div className="space-y-2">
-                  {files.map((file) => (
-                    <div key={file.id} className="flex items-center justify-between p-2 bg-muted rounded-md">
-                      <div>
-                        <div className="font-medium">{file.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          Uploaded by {file.uploadedBy} at {file.uploadedAt}
-                        </div>
+                  {sharedFiles.map((file) => (
+                    <div key={file.id} className="flex items-center justify-between p-3 bg-muted rounded-md">
+                      <div className="flex-1">
+                        {editingFile === file.id ? (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={newFileName}
+                              onChange={(e) => setNewFileName(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && handleFileRename(file.id)}
+                              className="h-8"
+                            />
+                            <Button size="sm" onClick={() => handleFileRename(file.id)}>
+                              Save
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => setEditingFile(null)}>
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="font-medium">{file.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {file.size} • Uploaded by {file.uploadedBy} at {file.uploadedAt}
+                            </div>
+                          </>
+                        )}
                       </div>
-                      <div className="text-sm">{file.size}</div>
+                      <div className="flex items-center gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleFileDownload(file)}
+                          className="h-8 w-8"
+                        >
+                          <Download size={14} />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => {
+                            setEditingFile(file.id);
+                            setNewFileName(file.name);
+                          }}
+                          className="h-8 w-8"
+                        >
+                          <Edit size={14} />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleFileDelete(file.id)}
+                          className="h-8 w-8"
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -514,10 +674,9 @@ const TeamChat = () => {
               <Label htmlFor="name" className="text-right">
                 Group Name
               </Label>
-              <Input id="name" value="New Group" className="col-span-3" />
+              <Input id="name" defaultValue="New Group" className="col-span-3" />
             </div>
           </div>
-          {/* @ts-ignore */}
           <DialogFooter>
             <Button type="submit">Create Group</Button>
           </DialogFooter>
@@ -534,13 +693,12 @@ const TeamChat = () => {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
+              <Label htmlFor="member-name" className="text-right">
                 Member Name
               </Label>
-              <Input id="name" value="Search Member" className="col-span-3" />
+              <Input id="member-name" placeholder="Search Member" className="col-span-3" />
             </div>
           </div>
-          {/* @ts-ignore */}
           <DialogFooter>
             <Button type="submit">Add Member</Button>
           </DialogFooter>
