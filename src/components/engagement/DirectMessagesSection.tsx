@@ -216,16 +216,21 @@ const DirectMessagesSection = ({ showAiSuggestions = true }: DirectMessagesSecti
   
   const handleAttachment = (type: AttachmentType) => {
     if (type === 'emoji') {
-      // For emoji, just toggle the picker without opening the file dialog
       setShowEmojiPicker(!showEmojiPicker);
       return;
     }
     
-    // For other types, create a file input and trigger it
+    if (type === 'voice') {
+      toast({
+        title: "Voice recording",
+        description: "Voice recording feature activated",
+      });
+      return;
+    }
+    
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     
-    // Set accepted file types based on attachment type
     switch (type) {
       case 'image':
         fileInput.accept = 'image/*';
@@ -498,30 +503,28 @@ const DirectMessagesSection = ({ showAiSuggestions = true }: DirectMessagesSecti
                         )}
                       </div>
 
-                      {/* Message actions */}
-                      {message.sender !== 'me' && (
-                        <div className="absolute opacity-0 hover:opacity-100 right-0 bottom-0 transform translate-y-full flex gap-1 pt-1">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-6 w-6" 
-                            onClick={() => handleReplyMessage(message.id)}
-                          >
-                            <ReplyIcon className="h-3 w-3" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-6 w-6" 
-                            onClick={() => {
-                              setConfirmDialogOpen(true);
-                              handleForwardMessage(message.id);
-                            }}
-                          >
-                            <Forward className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      )}
+                      {/* Message actions - enhanced for all messages */}
+                      <div className="absolute opacity-0 group-hover:opacity-100 right-0 bottom-0 transform translate-y-full flex gap-1 pt-1">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6" 
+                          onClick={() => handleReplyMessage(message.id)}
+                        >
+                          <ReplyIcon className="h-3 w-3" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6" 
+                          onClick={() => {
+                            setConfirmDialogOpen(true);
+                            handleForwardMessage(message.id);
+                          }}
+                        >
+                          <Forward className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -614,7 +617,7 @@ const DirectMessagesSection = ({ showAiSuggestions = true }: DirectMessagesSecti
                       <Paperclip className="h-4 w-4" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-48 p-2">
+                  <PopoverContent className="w-56 p-2">
                     <div className="grid grid-cols-2 gap-1">
                       <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('image')}>
                         <span>🖼️</span>
@@ -627,6 +630,10 @@ const DirectMessagesSection = ({ showAiSuggestions = true }: DirectMessagesSecti
                       <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('document')}>
                         <span>📄</span>
                         <span>Document</span>
+                      </Button>
+                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('voice')}>
+                        <span>🎤</span>
+                        <span>Voice</span>
                       </Button>
                       <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('emoji')}>
                         <Smile className="h-4 w-4" />
