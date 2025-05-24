@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,6 +32,11 @@ import {
   Download,
   Edit,
   Trash2,
+  Smile,
+  Image,
+  Video,
+  File,
+  MoreHorizontal,
 } from 'lucide-react';
 
 interface Message {
@@ -47,10 +51,15 @@ interface Message {
     url: string;
     preview?: string;
   };
+  replyTo?: {
+    id: string;
+    sender: string;
+    text: string;
+  };
 }
 
 interface Attachment {
-  type: 'image' | 'file' | 'video' | 'voice' | 'emoji' | 'document';
+  type: 'image' | 'file' | 'video' | 'document';
   name: string;
   url?: string;
   preview?: string;
@@ -89,6 +98,11 @@ const TeamChat = () => {
       text: 'Just wanted to align on the upcoming marketing campaign.',
       timestamp: '2:40 PM',
       avatar: 'https://i.pravatar.cc/150?img=1',
+      replyTo: {
+        id: '2',
+        sender: 'Jane Smith',
+        text: 'I can do 3 PM. Anything specific on the agenda?',
+      },
     },
     {
       id: '4',
@@ -115,20 +129,6 @@ const TeamChat = () => {
         name: 'campaign_brief.pdf',
         url: '/files/campaign_brief.pdf',
       },
-    },
-    {
-      id: '7',
-      sender: 'John Doe',
-      text: 'Thanks, Jane! I\'ll take a look.',
-      timestamp: '3:00 PM',
-      avatar: 'https://i.pravatar.cc/150?img=1',
-    },
-    {
-      id: '8',
-      sender: 'Alice Johnson',
-      text: 'Great, looking forward to discussing it!',
-      timestamp: '3:05 PM',
-      avatar: 'https://i.pravatar.cc/150?img=3',
     },
   ]);
 
@@ -192,13 +192,30 @@ const TeamChat = () => {
       status: 'offline',
     },
   ]);
+
   const [newMessage, setNewMessage] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   const [editingFile, setEditingFile] = useState<string | null>(null);
   const [newFileName, setNewFileName] = useState('');
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [forwardingMessage, setForwardingMessage] = useState<Message | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const { toast } = useToast();
+
+  const emojis = [
+    '😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘',
+    '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒',
+    '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡',
+    '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶',
+    '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴',
+    '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀',
+    '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾', '👋', '🤚',
+    '🖐️', '✋', '🖖', '👌', '🤌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇',
+    '☝️', '👍', '👎', '👊', '✊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💅', '🤳',
+    '💪', '🦾', '🦿', '🦵', '🦶', '👂', '🦻', '👃', '🧠', '🫀', '🫁', '🦷', '🦴', '👀', '👁️', '👅'
+  ];
 
   const handleSendMessage = () => {
     if (newMessage.trim() === '' && attachments.length === 0) return;
@@ -217,38 +234,27 @@ const TeamChat = () => {
           preview: attachments[0].preview,
         }
         : undefined,
+      replyTo: replyingTo ? {
+        id: replyingTo.id,
+        sender: replyingTo.sender,
+        text: replyingTo.text,
+      } : undefined,
     };
 
     setMessages([...messages, message]);
     setNewMessage('');
     setAttachments([]);
+    setReplyingTo(null);
     toast({
       title: "Message sent",
       description: "Your message has been sent successfully",
     });
   };
 
-  const handleAttachment = (type: 'image' | 'file' | 'video' | 'voice' | 'emoji' | 'document') => {
-    if (type === 'emoji') {
-      toast({
-        title: "Emoji selected",
-        description: "Emoji selection feature activated",
-      });
-      return;
-    }
-
-    if (type === 'voice') {
-      toast({
-        title: "Voice recording",
-        description: "Voice recording feature activated",
-      });
-      return;
-    }
-
+  const handleAttachment = (type: 'image' | 'file' | 'video' | 'document') => {
     const input = document.createElement('input');
     input.type = 'file';
     
-    // Set accept based on type
     switch (type) {
       case 'image':
         input.accept = 'image/*';
@@ -290,25 +296,29 @@ const TeamChat = () => {
     setAttachments(newAttachments);
   };
 
-  const handleReplyMessage = (messageId: string) => {
-    const message = messages.find(m => m.id === messageId);
-    if (message) {
-      setNewMessage(`Replying to: "${message.text.substring(0, 30)}${message.text.length > 30 ? '...' : ''}" \n\n`);
-    }
+  const handleReplyMessage = (message: Message) => {
+    setReplyingTo(message);
     toast({
       title: "Reply mode activated",
-      description: "You can now type your reply",
+      description: `Replying to ${message.sender}`,
     });
   };
 
-  const handleForwardMessage = (messageId: string) => {
-    const message = messages.find(m => m.id === messageId);
-    if (message) {
-      toast({
-        title: "Forward message",
-        description: `Message "${message.text.substring(0, 30)}..." ready to forward`,
-      });
-    }
+  const handleForwardMessage = (message: Message) => {
+    setForwardingMessage(message);
+    toast({
+      title: "Forward message",
+      description: "Select a member to forward the message to",
+    });
+  };
+
+  const cancelReply = () => {
+    setReplyingTo(null);
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setNewMessage(prev => prev + emoji);
+    setShowEmojiPicker(false);
   };
 
   const handleFileUpload = () => {
@@ -407,60 +417,104 @@ const TeamChat = () => {
         </TabsList>
 
         <TabsContent value="chat" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Team Messages</span>
-                <Badge variant="outline">{messages.length} messages</Badge>
+          <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center justify-between text-blue-900">
+                <span className="flex items-center gap-2">
+                  💬 Team Messages
+                </span>
+                <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
+                  {messages.length} messages
+                </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="bg-white rounded-lg shadow-inner">
               <ScrollArea className="h-[400px] pr-4">
                 <div className="space-y-4">
                   {messages.map((message) => (
                     <div key={message.id} className="flex items-start gap-3 group">
-                      <Avatar>
+                      <Avatar className="ring-2 ring-blue-100">
                         <AvatarImage src={message.avatar} alt={message.sender} />
-                        <AvatarFallback>{message.sender.substring(0, 2)}</AvatarFallback>
+                        <AvatarFallback className="bg-blue-500 text-white">
+                          {message.sender.substring(0, 2)}
+                        </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2 text-sm">
-                          <span className="font-medium">{message.sender}</span>
-                          <span className="text-muted-foreground">{message.timestamp}</span>
+                          <span className="font-medium text-gray-900">{message.sender}</span>
+                          <span className="text-gray-500">{message.timestamp}</span>
                         </div>
-                        <div className="text-sm bg-muted p-2 rounded-lg relative">
-                          {message.text}
+                        
+                        {message.replyTo && (
+                          <div className="bg-gray-100 border-l-4 border-blue-500 p-2 rounded-r-lg mb-2">
+                            <div className="text-xs text-gray-600 font-medium">
+                              Replying to {message.replyTo.sender}
+                            </div>
+                            <div className="text-xs text-gray-700 truncate">
+                              {message.replyTo.text}
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-2xl shadow-sm border border-blue-100">
+                          <div className="text-sm text-gray-800">{message.text}</div>
+                          
                           {message.attachment && (
-                            <div className="mt-2">
+                            <div className="mt-3">
                               {message.attachment.type === 'image' && (
-                                <img src={message.attachment.url} alt="attachment" className="max-w-xs rounded" />
+                                <img 
+                                  src={message.attachment.url} 
+                                  alt="attachment" 
+                                  className="max-w-xs rounded-lg shadow-sm border" 
+                                />
                               )}
                               {message.attachment.type === 'file' && (
-                                <div className="flex items-center gap-2 p-2 bg-background rounded border">
-                                  <FileText size={16} />
-                                  <span className="text-xs">{message.attachment.name}</span>
+                                <div className="flex items-center gap-2 p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
+                                  <FileText size={16} className="text-blue-600" />
+                                  <span className="text-sm font-medium text-gray-700">
+                                    {message.attachment.name}
+                                  </span>
                                 </div>
                               )}
                             </div>
                           )}
                           
-                          <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                          <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-all duration-200 flex gap-1">
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="h-6 w-6 p-0"
-                              onClick={() => handleReplyMessage(message.id)}
+                              className="h-7 w-7 p-0 bg-white/80 hover:bg-white shadow-sm"
+                              onClick={() => handleReplyMessage(message)}
                             >
-                              <Reply size={12} />
+                              <Reply size={12} className="text-blue-600" />
                             </Button>
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="h-6 w-6 p-0"
-                              onClick={() => handleForwardMessage(message.id)}
+                              className="h-7 w-7 p-0 bg-white/80 hover:bg-white shadow-sm"
+                              onClick={() => handleForwardMessage(message)}
                             >
-                              <Forward size={12} />
+                              <Forward size={12} className="text-green-600" />
                             </Button>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-7 w-7 p-0 bg-white/80 hover:bg-white shadow-sm"
+                                >
+                                  <MoreHorizontal size={12} className="text-gray-600" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-32 p-1">
+                                <Button variant="ghost" size="sm" className="w-full justify-start h-8">
+                                  Edit
+                                </Button>
+                                <Button variant="ghost" size="sm" className="w-full justify-start h-8 text-red-600">
+                                  Delete
+                                </Button>
+                              </PopoverContent>
+                            </Popover>
                           </div>
                         </div>
                       </div>
@@ -469,6 +523,27 @@ const TeamChat = () => {
                 </div>
               </ScrollArea>
               
+              {replyingTo && (
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="text-sm text-blue-700 font-medium">
+                      Replying to {replyingTo.sender}
+                    </div>
+                    <div className="text-sm text-blue-600 truncate">
+                      {replyingTo.text}
+                    </div>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={cancelReply}
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    <X size={16} />
+                  </Button>
+                </div>
+              )}
+              
               {attachments.length > 0 && (
                 <div className="mt-4 space-y-2">
                   <div className="flex flex-wrap gap-2">
@@ -476,11 +551,11 @@ const TeamChat = () => {
                       <div key={index} className="relative">
                         {attachment.type === 'image' && attachment.preview && (
                           <div className="relative">
-                            <img src={attachment.preview} alt={attachment.name} className="h-16 w-16 object-cover rounded-md" />
+                            <img src={attachment.preview} alt={attachment.name} className="h-16 w-16 object-cover rounded-md shadow-sm border" />
                             <Button 
                               variant="destructive" 
                               size="sm" 
-                              className="h-5 w-5 absolute -top-2 -right-2 p-0"
+                              className="h-5 w-5 absolute -top-2 -right-2 p-0 shadow-sm"
                               onClick={() => removeAttachment(index)}
                             >
                               <X size={12} />
@@ -488,8 +563,8 @@ const TeamChat = () => {
                           </div>
                         )}
                         {(attachment.type === 'file' || attachment.type === 'document') && (
-                          <div className="relative bg-muted p-2 rounded-md flex items-center gap-2">
-                            <FileText size={16} />
+                          <div className="relative bg-white p-2 rounded-md flex items-center gap-2 border shadow-sm">
+                            <FileText size={16} className="text-blue-600" />
                             <span className="text-xs max-w-[80px] truncate">{attachment.name}</span>
                             <Button 
                               variant="destructive" 
@@ -507,35 +582,61 @@ const TeamChat = () => {
                 </div>
               )}
               
-              <div className="mt-4 flex items-center gap-2">
+              <div className="mt-4 flex items-center gap-2 p-2 bg-gray-50 rounded-lg border">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="icon">
-                      <Paperclip className="h-4 w-4" />
+                    <Button variant="ghost" size="icon" className="hover:bg-gray-200">
+                      <Paperclip className="h-4 w-4 text-gray-600" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-48 p-2">
+                  <PopoverContent className="w-56 p-2">
                     <div className="grid grid-cols-2 gap-1">
-                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('image')}>
-                        <span>🖼️</span>
-                        <span>Image</span>
+                      <Button 
+                        variant="ghost" 
+                        className="flex items-center justify-start gap-2 h-10" 
+                        onClick={() => handleAttachment('image')}
+                      >
+                        <Image size={16} className="text-green-600" />
+                        <span>Photo</span>
                       </Button>
-                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('video')}>
-                        <span>🎥</span>
+                      <Button 
+                        variant="ghost" 
+                        className="flex items-center justify-start gap-2 h-10" 
+                        onClick={() => handleAttachment('video')}
+                      >
+                        <Video size={16} className="text-red-600" />
                         <span>Video</span>
                       </Button>
-                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('document')}>
-                        <span>📄</span>
+                      <Button 
+                        variant="ghost" 
+                        className="flex items-center justify-start gap-2 h-10" 
+                        onClick={() => handleAttachment('document')}
+                      >
+                        <File size={16} className="text-blue-600" />
                         <span>Document</span>
                       </Button>
-                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('voice')}>
-                        <span>🎤</span>
-                        <span>Voice</span>
-                      </Button>
-                      <Button variant="ghost" className="flex items-center justify-start gap-2 h-9" onClick={() => handleAttachment('emoji')}>
-                        <span>😊</span>
-                        <span>Emoji</span>
-                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
+                <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="hover:bg-gray-200">
+                      <Smile className="h-4 w-4 text-yellow-600" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-2">
+                    <div className="grid grid-cols-8 gap-1 max-h-48 overflow-y-auto">
+                      {emojis.map((emoji, index) => (
+                        <Button
+                          key={index}
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-lg hover:bg-gray-100"
+                          onClick={() => handleEmojiSelect(emoji)}
+                        >
+                          {emoji}
+                        </Button>
+                      ))}
                     </div>
                   </PopoverContent>
                 </Popover>
@@ -545,9 +646,12 @@ const TeamChat = () => {
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                  className="flex-1"
+                  className="flex-1 border-0 bg-white shadow-sm"
                 />
-                <Button onClick={handleSendMessage}>
+                <Button 
+                  onClick={handleSendMessage}
+                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                >
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
@@ -702,6 +806,41 @@ const TeamChat = () => {
           <DialogFooter>
             <Button type="submit">Add Member</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!forwardingMessage} onOpenChange={() => setForwardingMessage(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Forward Message</DialogTitle>
+            <DialogDescription>
+              Select a member to forward the message to.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="space-y-2">
+              {members.map((member) => (
+                <Button
+                  key={member.id}
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    toast({
+                      title: "Message forwarded",
+                      description: `Message forwarded to ${member.name}`,
+                    });
+                    setForwardingMessage(null);
+                  }}
+                >
+                  <Avatar className="h-6 w-6 mr-2">
+                    <AvatarImage src={member.avatar} alt={member.name} />
+                    <AvatarFallback>{member.name.substring(0, 2)}</AvatarFallback>
+                  </Avatar>
+                  {member.name}
+                </Button>
+              ))}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
