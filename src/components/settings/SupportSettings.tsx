@@ -78,7 +78,7 @@ export function SupportSettings({ role, onSettingChange }: SupportSettingsProps)
             <CardTitle className="text-sm font-medium">Response Time</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">< 2h</div>
+            <div className="text-2xl font-bold">&lt; 2h</div>
             <p className="text-xs text-muted-foreground">average first response</p>
           </CardContent>
         </Card>
@@ -246,7 +246,7 @@ export function SupportSettings({ role, onSettingChange }: SupportSettingsProps)
                     <span className="text-sm text-green-600">Support team is online</span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Average response time: < 30 seconds
+                    Average response time: &lt; 30 seconds
                   </p>
                 </div>
                 <Button onClick={handleStartChat} className="mt-4">
