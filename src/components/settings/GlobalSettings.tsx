@@ -196,6 +196,30 @@ export function GlobalSettings({ onSettingChange }: CommonSettingsProps) {
                       <SelectItem value="es">Spanish</SelectItem>
                       <SelectItem value="fr">French</SelectItem>
                       <SelectItem value="de">German</SelectItem>
+                      <SelectItem value="hi">Hindi</SelectItem>
+                      <SelectItem value="bn">Bengali</SelectItem>
+                      <SelectItem value="te">Telugu</SelectItem>
+                      <SelectItem value="mr">Marathi</SelectItem>
+                      <SelectItem value="ta">Tamil</SelectItem>
+                      <SelectItem value="gu">Gujarati</SelectItem>
+                      <SelectItem value="ur">Urdu</SelectItem>
+                      <SelectItem value="kn">Kannada</SelectItem>
+                      <SelectItem value="ml">Malayalam</SelectItem>
+                      <SelectItem value="or">Odia</SelectItem>
+                      <SelectItem value="pa">Punjabi</SelectItem>
+                      <SelectItem value="as">Assamese</SelectItem>
+                      <SelectItem value="mai">Maithili</SelectItem>
+                      <SelectItem value="mag">Magahi</SelectItem>
+                      <SelectItem value="bho">Bhojpuri</SelectItem>
+                      <SelectItem value="ne">Nepali</SelectItem>
+                      <SelectItem value="sa">Sanskrit</SelectItem>
+                      <SelectItem value="ks">Kashmiri</SelectItem>
+                      <SelectItem value="sd">Sindhi</SelectItem>
+                      <SelectItem value="kok">Konkani</SelectItem>
+                      <SelectItem value="doi">Dogri</SelectItem>
+                      <SelectItem value="mni">Manipuri</SelectItem>
+                      <SelectItem value="sat">Santali</SelectItem>
+                      <SelectItem value="bpy">Bishnupriya</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
