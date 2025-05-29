@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { MoreHorizontal, Plus, Search, Users as UsersIcon, Edit, Trash2, UserPlus, Shield, Crown } from "lucide-react";
+import { MoreHorizontal, Plus, Search, Users as UsersIcon, Edit, Trash2, UserPlus, Shield, Crown, Upload } from "lucide-react";
 import { CommonSettingsProps } from "@/pages/Settings";
 
 interface User {
@@ -19,6 +19,9 @@ interface User {
   role: "Super Admin" | "White Label" | "Admin" | "User";
   status: "Active" | "Inactive" | "Pending";
   avatar?: string;
+  company?: string;
+  address?: string;
+  phone?: string;
   lastActive: string;
   createdAt: string;
   permissions?: string[];
@@ -38,7 +41,11 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
-    role: "Admin" as User["role"]
+    role: "Admin" as User["role"],
+    company: "",
+    address: "",
+    phone: "",
+    avatar: ""
   });
   
   const [users, setUsers] = useState<User[]>([
@@ -48,6 +55,9 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
       email: "admin@company.com",
       role: "Super Admin",
       status: "Active",
+      company: "Tech Corp",
+      address: "123 Main St, New York, NY 10001",
+      phone: "+1 (555) 123-4567",
       lastActive: "2 hours ago",
       createdAt: "2024-01-01",
       permissions: ["all"]
@@ -58,6 +68,9 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
       email: "brand@company.com",
       role: "White Label",
       status: "Active",
+      company: "Brand Solutions Inc",
+      address: "456 Business Ave, Los Angeles, CA 90210",
+      phone: "+1 (555) 987-6543",
       lastActive: "1 day ago",
       createdAt: "2024-01-15",
       permissions: ["branding", "users", "settings"]
@@ -68,6 +81,9 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
       email: "content@company.com",
       role: "Admin",
       status: "Active",
+      company: "Content Masters LLC",
+      address: "789 Creative Blvd, Chicago, IL 60601",
+      phone: "+1 (555) 456-7890",
       lastActive: "3 hours ago",
       createdAt: "2024-02-01",
       permissions: ["content", "analytics", "support"]
@@ -78,6 +94,9 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
       email: "marketing@company.com",
       role: "Admin",
       status: "Inactive",
+      company: "Marketing Pro",
+      address: "321 Strategy St, Miami, FL 33101",
+      phone: "+1 (555) 321-0987",
       lastActive: "1 week ago",
       createdAt: "2024-01-20",
       permissions: ["content", "analytics"]
@@ -130,13 +149,17 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
       email: newUser.email,
       role: newUser.role,
       status: "Pending",
+      company: newUser.company,
+      address: newUser.address,
+      phone: newUser.phone,
+      avatar: newUser.avatar,
       lastActive: "Never",
       createdAt: new Date().toISOString().split('T')[0],
       permissions: []
     };
     
     setUsers(prev => [...prev, createdUser]);
-    setNewUser({ name: "", email: "", role: "Admin" });
+    setNewUser({ name: "", email: "", role: "Admin", company: "", address: "", phone: "", avatar: "" });
     setIsAddUserDialogOpen(false);
     
     toast({
@@ -216,10 +239,18 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
     setIsDeleteUserDialogOpen(true);
   };
   
+  const handleUserNameClick = (user: User) => {
+    const manageableRoles = getManageableRoles();
+    if (manageableRoles.includes(user.role)) {
+      openEditDialog(user);
+    }
+  };
+  
   const filteredUsers = getVisibleUsers().filter(user => 
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.role.toLowerCase().includes(searchTerm.toLowerCase())
+    user.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (user.company && user.company.toLowerCase().includes(searchTerm.toLowerCase()))
   );
   
   const getRoleIcon = (userRole: User["role"]) => {
@@ -333,16 +364,30 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
                     Add User
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle>Add New User</DialogTitle>
                     <DialogDescription>
-                      Create a new user account with the specified role
+                      Create a new user account with detailed information
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="newUserName">Full Name</Label>
+                      <Label htmlFor="newUserAvatar">Avatar URL</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="newUserAvatar"
+                          placeholder="https://example.com/avatar.jpg"
+                          value={newUser.avatar}
+                          onChange={(e) => setNewUser(prev => ({ ...prev, avatar: e.target.value }))}
+                        />
+                        <Button variant="outline" size="sm">
+                          <Upload className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="newUserName">Full Name *</Label>
                       <Input
                         id="newUserName"
                         placeholder="John Doe"
@@ -351,7 +396,16 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="newUserEmail">Email Address</Label>
+                      <Label htmlFor="newUserCompany">Company</Label>
+                      <Input
+                        id="newUserCompany"
+                        placeholder="Company Name"
+                        value={newUser.company}
+                        onChange={(e) => setNewUser(prev => ({ ...prev, company: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="newUserEmail">Email Address *</Label>
                       <Input
                         id="newUserEmail"
                         type="email"
@@ -360,8 +414,26 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
                         onChange={(e) => setNewUser(prev => ({ ...prev, email: e.target.value }))}
                       />
                     </div>
+                    <div className="space-y-2 col-span-2">
+                      <Label htmlFor="newUserAddress">Address</Label>
+                      <Input
+                        id="newUserAddress"
+                        placeholder="123 Main St, City, State ZIP"
+                        value={newUser.address}
+                        onChange={(e) => setNewUser(prev => ({ ...prev, address: e.target.value }))}
+                      />
+                    </div>
                     <div className="space-y-2">
-                      <Label htmlFor="newUserRole">Role</Label>
+                      <Label htmlFor="newUserPhone">Phone Number</Label>
+                      <Input
+                        id="newUserPhone"
+                        placeholder="+1 (555) 123-4567"
+                        value={newUser.phone}
+                        onChange={(e) => setNewUser(prev => ({ ...prev, phone: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="newUserRole">Role *</Label>
                       <Select 
                         value={newUser.role} 
                         onValueChange={(value: User["role"]) => setNewUser(prev => ({ ...prev, role: value }))}
@@ -398,7 +470,7 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search users by name, email, or role..."
+                placeholder="Search users by name, email, company, or role..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9"
@@ -411,17 +483,26 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
                 
                 return (
                   <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
-                    <div className="flex items-center gap-3">
-                      <Avatar>
+                    <div className="flex items-center gap-3 flex-1">
+                      <Avatar className="h-12 w-12">
                         <AvatarImage src={user.avatar} />
                         <AvatarFallback>{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                       </Avatar>
-                      <div>
+                      <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="font-medium">{user.name}</p>
+                          <button
+                            onClick={() => handleUserNameClick(user)}
+                            className={`font-medium text-left hover:underline ${canEditThisUser ? 'text-blue-600 cursor-pointer' : 'cursor-default'}`}
+                            disabled={!canEditThisUser}
+                          >
+                            {user.name}
+                          </button>
                           {getRoleIcon(user.role)}
                         </div>
                         <p className="text-sm text-muted-foreground">{user.email}</p>
+                        {user.company && (
+                          <p className="text-xs text-muted-foreground">{user.company}</p>
+                        )}
                         <p className="text-xs text-muted-foreground">
                           Created: {user.createdAt} • Last active: {user.lastActive}
                         </p>
@@ -477,15 +558,29 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
       
       {/* Edit User Dialog */}
       <Dialog open={isEditUserDialogOpen} onOpenChange={setIsEditUserDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
+            <DialogTitle>Edit User Details</DialogTitle>
             <DialogDescription>
-              Update user information and role
+              Update user information and settings
             </DialogDescription>
           </DialogHeader>
           {selectedUser && (
-            <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="editUserAvatar">Avatar URL</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="editUserAvatar"
+                    placeholder="https://example.com/avatar.jpg"
+                    value={selectedUser.avatar || ""}
+                    onChange={(e) => setSelectedUser(prev => prev ? { ...prev, avatar: e.target.value } : null)}
+                  />
+                  <Button variant="outline" size="sm">
+                    <Upload className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="editUserName">Full Name</Label>
                 <Input
@@ -495,12 +590,36 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="editUserCompany">Company</Label>
+                <Input
+                  id="editUserCompany"
+                  value={selectedUser.company || ""}
+                  onChange={(e) => setSelectedUser(prev => prev ? { ...prev, company: e.target.value } : null)}
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="editUserEmail">Email Address</Label>
                 <Input
                   id="editUserEmail"
                   type="email"
                   value={selectedUser.email}
                   onChange={(e) => setSelectedUser(prev => prev ? { ...prev, email: e.target.value } : null)}
+                />
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="editUserAddress">Address</Label>
+                <Input
+                  id="editUserAddress"
+                  value={selectedUser.address || ""}
+                  onChange={(e) => setSelectedUser(prev => prev ? { ...prev, address: e.target.value } : null)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editUserPhone">Phone Number</Label>
+                <Input
+                  id="editUserPhone"
+                  value={selectedUser.phone || ""}
+                  onChange={(e) => setSelectedUser(prev => prev ? { ...prev, phone: e.target.value } : null)}
                 />
               </div>
               <div className="space-y-2">
@@ -574,6 +693,9 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
                 <div>
                   <p className="font-medium">{selectedUser.name}</p>
                   <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
+                  {selectedUser.company && (
+                    <p className="text-xs text-muted-foreground">{selectedUser.company}</p>
+                  )}
                   <Badge variant={getRoleBadgeVariant(selectedUser.role)} className="mt-1">
                     {selectedUser.role}
                   </Badge>
