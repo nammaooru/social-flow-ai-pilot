@@ -15,12 +15,13 @@ import { SocialAccountsSettings } from "@/components/settings/SocialAccountsSett
 import { SupportSettings } from "@/components/settings/SupportSettings";
 import { ApiKeysSettings } from "@/components/settings/ApiKeysSettings";
 import { ChatbotSettings } from "@/components/settings/ChatbotSettings";
+import { UsersSettings } from "@/components/settings/UsersSettings";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { 
   User, CreditCard, Paintbrush, BarChart3, 
   Globe, Shield, Share2, Bell, HelpCircle, Key, MessageSquare, 
-  Link
+  Link, Users
 } from "lucide-react";
 // Import custom WhiteLabel icon instead of using it from lucide-react
 import WhiteLabel from "@/components/settings/WhiteLabel";
@@ -39,15 +40,15 @@ const Settings = () => {
   const [selectedRole, setSelectedRole] = useState<UserRole>("User");
   const { toast } = useToast();
   
-  // Define which settings are available to which roles (removed "users" from all roles)
+  // Define which settings are available to which roles (now includes users for Super Admin and White Label)
   const roleAccess: Record<UserRole, string[]> = {
     "Super Admin": [
-      "profile", "white-label", "billing", "appearance", "analytics", 
+      "profile", "users", "white-label", "billing", "appearance", "analytics", 
       "global-settings", "security", "social-accounts", "notifications", 
       "support", "api-keys", "chatbot", "integrations"
     ],
     "White Label": [
-      "profile", "billing", "appearance", "analytics", 
+      "profile", "users", "billing", "appearance", "analytics", 
       "security", "social-accounts", "notifications", "support", "chatbot", "integrations"
     ],
     "Admin": [
@@ -79,6 +80,7 @@ const Settings = () => {
 
   const settingsMenu = [
     { id: "profile", label: "Profile", icon: <User size={18} /> },
+    { id: "users", label: "Users", icon: <Users size={18} /> },
     { id: "white-label", label: "White Label", icon: <WhiteLabel size={18} /> },
     { id: "billing", label: "Billing", icon: <CreditCard size={18} /> },
     { id: "appearance", label: "Appearance", icon: <Paintbrush size={18} /> },
@@ -162,6 +164,10 @@ const Settings = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsContent value="profile">
               <ProfileSettings onSettingChange={handleSettingChange} />
+            </TabsContent>
+            
+            <TabsContent value="users">
+              <UsersSettings role={selectedRole} onSettingChange={handleSettingChange} />
             </TabsContent>
             
             <TabsContent value="white-label">
