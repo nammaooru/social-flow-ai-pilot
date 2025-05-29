@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileSettings } from "@/components/settings/ProfileSettings";
@@ -171,7 +170,7 @@ const Settings = () => {
             </TabsContent>
             
             <TabsContent value="white-label">
-              <WhiteLabelSettings onSettingChange={handleSettingChange} />
+              <WhiteLabelSettings onSettingChange={handleSettingChange} role={selectedRole} />
             </TabsContent>
             
             <TabsContent value="billing">

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -38,7 +37,7 @@ interface BrandingConfig {
   }[];
 }
 
-export function WhiteLabelSettings({ onSettingChange, role }: CommonSettingsProps) {
+export function WhiteLabelSettings({ onSettingChange, role = "User" }: CommonSettingsProps) {
   const { toast } = useToast();
   const [selectedWhiteLabel, setSelectedWhiteLabel] = useState<string>("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -50,11 +49,13 @@ export function WhiteLabelSettings({ onSettingChange, role }: CommonSettingsProp
   const whiteLabelUsers: WhiteLabelUser[] = [
     { id: "1", name: "Acme Corp", email: "admin@acme.com", company: "Acme Corporation", isActive: true },
     { id: "2", name: "TechStart Inc", email: "admin@techstart.com", company: "TechStart Inc", isActive: true },
-    { id: "3", name: "Digital Solutions", email: "admin@digitalsol.com", company: "Digital Solutions Ltd", isActive: false },
+    { id: "3", name: "Digital Solutions", email: "admin@digitalsol.com", company: "Digital Solutions Ltd", isActive: true },
+    { id: "4", name: "Global Tech", email: "admin@globaltech.com", company: "Global Tech Solutions", isActive: true },
+    { id: "5", name: "Innovation Labs", email: "admin@innolabs.com", company: "Innovation Labs Inc", isActive: true },
   ];
 
   const [branding, setBranding] = useState<BrandingConfig>({
-    companyName: "Your Company",
+    companyName: selectedWhiteLabel ? whiteLabelUsers.find(u => u.id === selectedWhiteLabel)?.company || "Your Company" : "Your Company",
     logo: "",
     favicon: "",
     primaryColor: "#3b82f6",
@@ -69,9 +70,12 @@ export function WhiteLabelSettings({ onSettingChange, role }: CommonSettingsProp
       { type: 'A', name: '@', value: '192.168.1.1', status: 'pending' }
     ]
   });
+
+  // Debug log to see what role is being passed
+  console.log("WhiteLabelSettings role:", role);
   
   const handleSave = () => {
-    if (!selectedWhiteLabel && role === "Super Admin") {
+    if (role === "Super Admin" && !selectedWhiteLabel) {
       toast({
         title: "Please select a White Label user",
         description: "You must select a White Label user to configure their branding.",
@@ -80,13 +84,30 @@ export function WhiteLabelSettings({ onSettingChange, role }: CommonSettingsProp
       return;
     }
 
+    const selectedUser = whiteLabelUsers.find(u => u.id === selectedWhiteLabel);
     toast({
       title: "White label settings saved",
-      description: `Branding configuration has been updated successfully${selectedWhiteLabel ? ` for ${whiteLabelUsers.find(u => u.id === selectedWhiteLabel)?.name}` : ''}.`,
+      description: `Branding configuration has been updated successfully${selectedUser ? ` for ${selectedUser.name}` : ''}.`,
     });
     
     if (onSettingChange) {
       onSettingChange();
+    }
+  };
+
+  const handleWhiteLabelSelection = (userId: string) => {
+    setSelectedWhiteLabel(userId);
+    const selectedUser = whiteLabelUsers.find(u => u.id === userId);
+    if (selectedUser) {
+      setBranding(prev => ({
+        ...prev,
+        companyName: selectedUser.company
+      }));
+      
+      toast({
+        title: "White Label user selected",
+        description: `Now configuring branding for ${selectedUser.name}`,
+      });
     }
   };
   
@@ -134,12 +155,21 @@ export function WhiteLabelSettings({ onSettingChange, role }: CommonSettingsProp
 
     toast({
       title: `${type === 'logo' ? 'Logo' : 'Favicon'} uploaded`,
-      description: "File has been successfully uploaded.",
+      description: "File has been successfully uploaded and processed.",
     });
   };
 
   const handleDomainVerification = () => {
-    // Simulate domain verification
+    if (!branding.customDomain) {
+      toast({
+        title: "No domain specified",
+        description: "Please enter a custom domain before verification.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Simulate domain verification process
     setBranding(prev => ({
       ...prev,
       domainStatus: 'active',
@@ -147,8 +177,8 @@ export function WhiteLabelSettings({ onSettingChange, role }: CommonSettingsProp
     }));
 
     toast({
-      title: "Domain verified",
-      description: "Your custom domain has been successfully verified and is now active.",
+      title: "Domain verified successfully",
+      description: `${branding.customDomain} has been verified and is now active.`,
     });
   };
 
@@ -166,359 +196,372 @@ export function WhiteLabelSettings({ onSettingChange, role }: CommonSettingsProp
         <h3 className="text-lg font-medium">White Label Settings</h3>
         <p className="text-sm text-muted-foreground">
           {role === "Super Admin" 
-            ? "Configure branding and appearance for White Label users." 
+            ? "Configure branding and appearance for White Label users. Select a White Label user to customize their specific branding." 
             : "Customize your platform's branding and appearance to match your brand identity."}
         </p>
       </div>
 
       {role === "Super Admin" && (
-        <Card>
+        <Card className="border-2 border-primary/20">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-primary">
               <User className="h-5 w-5" />
               Select White Label User
             </CardTitle>
-            <CardDescription>Choose which White Label user to configure</CardDescription>
+            <CardDescription>Choose which White Label user to configure their branding and domain settings</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <Label htmlFor="whiteLabelSelect">White Label User</Label>
-              <Select value={selectedWhiteLabel} onValueChange={setSelectedWhiteLabel}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a White Label user to configure" />
-                </SelectTrigger>
-                <SelectContent>
-                  {whiteLabelUsers
-                    .filter(user => user.isActive)
-                    .map(user => (
-                      <SelectItem key={user.id} value={user.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{user.name}</span>
-                          <span className="text-sm text-muted-foreground">{user.email}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="whiteLabelSelect" className="text-base font-medium">White Label User</Label>
+                <Select value={selectedWhiteLabel} onValueChange={handleWhiteLabelSelection}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a White Label user to configure their branding" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {whiteLabelUsers
+                      .filter(user => user.isActive)
+                      .map(user => (
+                        <SelectItem key={user.id} value={user.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{user.name}</span>
+                            <span className="text-sm text-muted-foreground">{user.email} • {user.company}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {selectedWhiteLabel && (
+                <div className="p-3 bg-muted rounded-lg">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Check className="h-4 w-4 text-green-600" />
+                    <span>Configuring branding for: <strong>{whiteLabelUsers.find(u => u.id === selectedWhiteLabel)?.name}</strong></span>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
       )}
-      
-      <Tabs defaultValue="branding" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="branding">Branding</TabsTrigger>
-          <TabsTrigger value="colors">Colors</TabsTrigger>
-          <TabsTrigger value="advanced">Advanced</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="branding" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="h-5 w-5" />
-                Brand Assets
-              </CardTitle>
-              <CardDescription>Upload your logo and branding materials</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="companyName">Company Name</Label>
-                <Input
-                  id="companyName"
-                  value={branding.companyName}
-                  onChange={(e) => handleInputChange("companyName", e.target.value)}
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
+
+      {/* Show configuration only if White Label user is selected (for Super Admin) or if user is not Super Admin */}
+      {(role !== "Super Admin" || selectedWhiteLabel) && (
+        <Tabs defaultValue="branding" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="branding">Branding</TabsTrigger>
+            <TabsTrigger value="colors">Colors</TabsTrigger>
+            <TabsTrigger value="advanced">Advanced</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="branding" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Upload className="h-5 w-5" />
+                  Brand Assets
+                </CardTitle>
+                <CardDescription>Upload your logo and branding materials</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label>Logo</Label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                    {logoPreview ? (
-                      <div className="space-y-2">
-                        <img src={logoPreview} alt="Logo preview" className="mx-auto h-16 w-auto object-contain" />
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => document.getElementById('logo-upload')?.click()}
-                        >
-                          Change Logo
-                        </Button>
-                      </div>
-                    ) : (
-                      <div>
-                        <Upload className="mx-auto h-8 w-8 text-gray-400" />
-                        <p className="mt-2 text-sm text-gray-600">Upload your logo</p>
-                        <p className="text-xs text-gray-500">PNG, JPG, SVG up to 1MB</p>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="mt-2"
-                          onClick={() => document.getElementById('logo-upload')?.click()}
-                        >
-                          Choose File
-                        </Button>
-                      </div>
-                    )}
-                    <input
-                      id="logo-upload"
-                      type="file"
-                      accept="image/png,image/jpeg,image/jpg,image/svg+xml"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleFileUpload(file, 'logo');
-                      }}
-                    />
-                  </div>
+                  <Label htmlFor="companyName">Company Name</Label>
+                  <Input
+                    id="companyName"
+                    value={branding.companyName}
+                    onChange={(e) => handleInputChange("companyName", e.target.value)}
+                  />
                 </div>
                 
-                <div className="space-y-2">
-                  <Label>Favicon</Label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                    {faviconPreview ? (
-                      <div className="space-y-2">
-                        <img src={faviconPreview} alt="Favicon preview" className="mx-auto h-8 w-8 object-contain" />
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => document.getElementById('favicon-upload')?.click()}
-                        >
-                          Change Favicon
-                        </Button>
-                      </div>
-                    ) : (
-                      <div>
-                        <Upload className="mx-auto h-8 w-8 text-gray-400" />
-                        <p className="mt-2 text-sm text-gray-600">Upload favicon</p>
-                        <p className="text-xs text-gray-500">ICO, PNG 32x32px up to 1MB</p>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="mt-2"
-                          onClick={() => document.getElementById('favicon-upload')?.click()}
-                        >
-                          Choose File
-                        </Button>
-                      </div>
-                    )}
-                    <input
-                      id="favicon-upload"
-                      type="file"
-                      accept="image/png,image/x-icon,image/vnd.microsoft.icon"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleFileUpload(file, 'favicon');
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5" />
-                Domain Settings
-              </CardTitle>
-              <CardDescription>Configure your custom domain and DNS settings</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="customDomain">Custom Domain</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="customDomain"
-                    placeholder="app.yourcompany.com"
-                    value={branding.customDomain}
-                    onChange={(e) => handleInputChange("customDomain", e.target.value)}
-                  />
-                  <Button 
-                    variant="outline"
-                    onClick={handleDomainVerification}
-                    disabled={!branding.customDomain}
-                  >
-                    Verify
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Point your domain to our servers for a fully branded experience
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>SSL Certificate</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Automatically provision SSL certificates for your domain
-                  </p>
-                </div>
-                <Switch
-                  checked={branding.sslEnabled}
-                  onCheckedChange={(checked) => handleInputChange("sslEnabled", checked)}
-                />
-              </div>
-
-              {branding.customDomain && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Domain Status:</span>
-                    <div className={`flex items-center gap-1 text-sm ${
-                      branding.domainStatus === 'active' ? 'text-green-600' : 
-                      branding.domainStatus === 'error' ? 'text-red-600' : 'text-yellow-600'
-                    }`}>
-                      {branding.domainStatus === 'active' ? <Check className="h-4 w-4" /> : 
-                       branding.domainStatus === 'error' ? <X className="h-4 w-4" /> : 
-                       <Upload className="h-4 w-4" />}
-                      {branding.domainStatus.charAt(0).toUpperCase() + branding.domainStatus.slice(1)}
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium">DNS Records</h4>
-                    <p className="text-xs text-muted-foreground">
-                      Add these DNS records to your domain registrar to point your domain to our servers
-                    </p>
-                    
-                    {branding.dnsRecords.map((record, index) => (
-                      <div key={index} className="border rounded-lg p-3 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-mono bg-muted px-2 py-1 rounded">{record.type}</span>
-                            <span className={`text-xs ${
-                              record.status === 'verified' ? 'text-green-600' : 'text-yellow-600'
-                            }`}>
-                              {record.status === 'verified' ? 'Verified' : 'Pending'}
-                            </span>
-                          </div>
-                          <Button
-                            variant="ghost"
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Logo</Label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                      {logoPreview ? (
+                        <div className="space-y-2">
+                          <img src={logoPreview} alt="Logo preview" className="mx-auto h-16 w-auto object-contain" />
+                          <Button 
+                            variant="outline" 
                             size="sm"
-                            onClick={() => copyToClipboard(record.value)}
+                            onClick={() => document.getElementById('logo-upload')?.click()}
                           >
-                            <Copy className="h-4 w-4" />
+                            Change Logo
                           </Button>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 text-xs">
-                          <div>
-                            <span className="text-muted-foreground">Name:</span>
-                            <p className="font-mono">{record.name}</p>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Value:</span>
-                            <p className="font-mono break-all">{record.value}</p>
-                          </div>
+                      ) : (
+                        <div>
+                          <Upload className="mx-auto h-8 w-8 text-gray-400" />
+                          <p className="mt-2 text-sm text-gray-600">Upload your logo</p>
+                          <p className="text-xs text-gray-500">PNG, JPG, SVG up to 1MB</p>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="mt-2"
+                            onClick={() => document.getElementById('logo-upload')?.click()}
+                          >
+                            Choose File
+                          </Button>
                         </div>
-                      </div>
-                    ))}
+                      )}
+                      <input
+                        id="logo-upload"
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,image/svg+xml"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleFileUpload(file, 'logo');
+                        }}
+                      />
+                    </div>
                   </div>
-
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <ExternalLink className="h-3 w-3" />
-                    <span>Need help? Check our documentation for DNS setup instructions</span>
+                  
+                  <div className="space-y-2">
+                    <Label>Favicon</Label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                      {faviconPreview ? (
+                        <div className="space-y-2">
+                          <img src={faviconPreview} alt="Favicon preview" className="mx-auto h-8 w-8 object-contain" />
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => document.getElementById('favicon-upload')?.click()}
+                          >
+                            Change Favicon
+                          </Button>
+                        </div>
+                      ) : (
+                        <div>
+                          <Upload className="mx-auto h-8 w-8 text-gray-400" />
+                          <p className="mt-2 text-sm text-gray-600">Upload favicon</p>
+                          <p className="text-xs text-gray-500">ICO, PNG 32x32px up to 1MB</p>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="mt-2"
+                            onClick={() => document.getElementById('favicon-upload')?.click()}
+                          >
+                            Choose File
+                          </Button>
+                        </div>
+                      )}
+                      <input
+                        id="favicon-upload"
+                        type="file"
+                        accept="image/png,image/x-icon,image/vnd.microsoft.icon"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleFileUpload(file, 'favicon');
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="colors" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Palette className="h-5 w-5" />
-                Color Scheme
-              </CardTitle>
-              <CardDescription>Customize your brand colors</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="h-5 w-5" />
+                  Domain Settings
+                </CardTitle>
+                <CardDescription>Configure your custom domain and DNS settings</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="primaryColor">Primary Color</Label>
+                  <Label htmlFor="customDomain">Custom Domain</Label>
                   <div className="flex gap-2">
                     <Input
-                      id="primaryColor"
-                      type="color"
-                      value={branding.primaryColor}
-                      onChange={(e) => handleInputChange("primaryColor", e.target.value)}
-                      className="w-16 h-10 p-1"
+                      id="customDomain"
+                      placeholder="app.yourcompany.com"
+                      value={branding.customDomain}
+                      onChange={(e) => handleInputChange("customDomain", e.target.value)}
                     />
-                    <Input
-                      value={branding.primaryColor}
-                      onChange={(e) => handleInputChange("primaryColor", e.target.value)}
-                      placeholder="#3b82f6"
-                    />
+                    <Button 
+                      variant="outline"
+                      onClick={handleDomainVerification}
+                      disabled={!branding.customDomain}
+                    >
+                      Verify
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Point your domain to our servers for a fully branded experience
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>SSL Certificate</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Automatically provision SSL certificates for your domain
+                    </p>
+                  </div>
+                  <Switch
+                    checked={branding.sslEnabled}
+                    onCheckedChange={(checked) => handleInputChange("sslEnabled", checked)}
+                  />
+                </div>
+
+                {branding.customDomain && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">Domain Status:</span>
+                      <div className={`flex items-center gap-1 text-sm ${
+                        branding.domainStatus === 'active' ? 'text-green-600' : 
+                        branding.domainStatus === 'error' ? 'text-red-600' : 'text-yellow-600'
+                      }`}>
+                        {branding.domainStatus === 'active' ? <Check className="h-4 w-4" /> : 
+                         branding.domainStatus === 'error' ? <X className="h-4 w-4" /> : 
+                         <Upload className="h-4 w-4" />}
+                        {branding.domainStatus.charAt(0).toUpperCase() + branding.domainStatus.slice(1)}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-medium">DNS Records</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Add these DNS records to your domain registrar to point your domain to our servers
+                      </p>
+                      
+                      {branding.dnsRecords.map((record, index) => (
+                        <div key={index} className="border rounded-lg p-3 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-mono bg-muted px-2 py-1 rounded">{record.type}</span>
+                              <span className={`text-xs ${
+                                record.status === 'verified' ? 'text-green-600' : 'text-yellow-600'
+                              }`}>
+                                {record.status === 'verified' ? 'Verified' : 'Pending'}
+                              </span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => copyToClipboard(record.value)}
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 text-xs">
+                            <div>
+                              <span className="text-muted-foreground">Name:</span>
+                              <p className="font-mono">{record.name}</p>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Value:</span>
+                              <p className="font-mono break-all">{record.value}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <ExternalLink className="h-3 w-3" />
+                      <span>Need help? Check our documentation for DNS setup instructions</span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="colors" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Palette className="h-5 w-5" />
+                  Color Scheme
+                </CardTitle>
+                <CardDescription>Customize your brand colors</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="primaryColor">Primary Color</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="primaryColor"
+                        type="color"
+                        value={branding.primaryColor}
+                        onChange={(e) => handleInputChange("primaryColor", e.target.value)}
+                        className="w-16 h-10 p-1"
+                      />
+                      <Input
+                        value={branding.primaryColor}
+                        onChange={(e) => handleInputChange("primaryColor", e.target.value)}
+                        placeholder="#3b82f6"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="secondaryColor">Secondary Color</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="secondaryColor"
+                        type="color"
+                        value={branding.secondaryColor}
+                        onChange={(e) => handleInputChange("secondaryColor", e.target.value)}
+                        className="w-16 h-10 p-1"
+                      />
+                      <Input
+                        value={branding.secondaryColor}
+                        onChange={(e) => handleInputChange("secondaryColor", e.target.value)}
+                        placeholder="#64748b"
+                      />
+                    </div>
                   </div>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="secondaryColor">Secondary Color</Label>
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2">Color Preview</h4>
                   <div className="flex gap-2">
-                    <Input
-                      id="secondaryColor"
-                      type="color"
-                      value={branding.secondaryColor}
-                      onChange={(e) => handleInputChange("secondaryColor", e.target.value)}
-                      className="w-16 h-10 p-1"
+                    <div 
+                      className="w-12 h-12 rounded" 
+                      style={{ backgroundColor: branding.primaryColor }}
                     />
-                    <Input
-                      value={branding.secondaryColor}
-                      onChange={(e) => handleInputChange("secondaryColor", e.target.value)}
-                      placeholder="#64748b"
+                    <div 
+                      className="w-12 h-12 rounded" 
+                      style={{ backgroundColor: branding.secondaryColor }}
                     />
                   </div>
                 </div>
-              </div>
-              
-              <div className="p-4 border rounded-lg">
-                <h4 className="font-medium mb-2">Color Preview</h4>
-                <div className="flex gap-2">
-                  <div 
-                    className="w-12 h-12 rounded" 
-                    style={{ backgroundColor: branding.primaryColor }}
-                  />
-                  <div 
-                    className="w-12 h-12 rounded" 
-                    style={{ backgroundColor: branding.secondaryColor }}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="advanced" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Advanced Customization</CardTitle>
+                <CardDescription>Advanced branding options and custom styling</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="hideFooter">Hide Platform Footer</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Remove the default footer from all pages
+                    </p>
+                  </div>
+                  <Switch
+                    id="hideFooter"
+                    checked={branding.hideFooter}
+                    onCheckedChange={(checked) => handleInputChange("hideFooter", checked)}
                   />
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="advanced" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Advanced Customization</CardTitle>
-              <CardDescription>Advanced branding options and custom styling</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="hideFooter">Hide Platform Footer</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Remove the default footer from all pages
-                  </p>
-                </div>
-                <Switch
-                  id="hideFooter"
-                  checked={branding.hideFooter}
-                  onCheckedChange={(checked) => handleInputChange("hideFooter", checked)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="customCSS">Custom CSS</Label>
-                <textarea
-                  id="customCSS"
-                  className="w-full h-32 p-3 border rounded-md font-mono text-sm"
-                  placeholder="/* Add your custom CSS here */
+                
+                <div className="space-y-2">
+                  <Label htmlFor="customCSS">Custom CSS</Label>
+                  <textarea
+                    id="customCSS"
+                    className="w-full h-32 p-3 border rounded-md font-mono text-sm"
+                    placeholder="/* Add your custom CSS here */
 .custom-header {
   background: linear-gradient(45deg, #your-primary-color, #your-secondary-color);
 }
@@ -527,22 +570,34 @@ export function WhiteLabelSettings({ onSettingChange, role }: CommonSettingsProp
   border-radius: 8px;
   transition: all 0.3s ease;
 }"
-                  value={branding.customCSS}
-                  onChange={(e) => handleInputChange("customCSS", e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Add custom CSS to further customize the appearance. Changes will be applied globally.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-      
+                    value={branding.customCSS}
+                    onChange={(e) => handleInputChange("customCSS", e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Add custom CSS to further customize the appearance. Changes will be applied globally.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      )}
+
+      {/* Save button - show different states based on role and selection */}
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={role === "Super Admin" && !selectedWhiteLabel}>
-          Save Changes
-        </Button>
+        {role === "Super Admin" ? (
+          <Button 
+            onClick={handleSave} 
+            disabled={!selectedWhiteLabel}
+            className={!selectedWhiteLabel ? "opacity-50" : ""}
+          >
+            {selectedWhiteLabel ? "Save Branding Configuration" : "Select White Label User First"}
+          </Button>
+        ) : (
+          <Button onClick={handleSave}>
+            Save Changes
+          </Button>
+        )}
       </div>
     </div>
   );
