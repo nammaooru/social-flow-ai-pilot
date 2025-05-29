@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { MoreHorizontal, Plus, Search, Users as UsersIcon, Edit, Trash2, UserPlus, Shield, Crown, Upload } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { MoreHorizontal, Plus, Search, Users as UsersIcon, Edit, Trash2, UserPlus, Shield, Crown, Upload, X } from "lucide-react";
 import { CommonSettingsProps } from "@/pages/Settings";
 
 interface User {
@@ -25,6 +26,7 @@ interface User {
   lastActive: string;
   createdAt: string;
   permissions?: string[];
+  parentWhiteLabel?: string; // For Admin users to track which White Label they belong to
 }
 
 interface UsersSettingsProps extends CommonSettingsProps {
@@ -38,6 +40,13 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
   const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
   const [isDeleteUserDialogOpen, setIsDeleteUserDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
+  const [editAvatarFile, setEditAvatarFile] = useState<File | null>(null);
+  const [editAvatarPreview, setEditAvatarPreview] = useState<string>("");
+  
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
@@ -45,7 +54,8 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
     company: "",
     address: "",
     phone: "",
-    avatar: ""
+    avatar: "",
+    parentWhiteLabel: ""
   });
   
   const [users, setUsers] = useState<User[]>([
@@ -86,7 +96,8 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
       phone: "+1 (555) 456-7890",
       lastActive: "3 hours ago",
       createdAt: "2024-02-01",
-      permissions: ["content", "analytics", "support"]
+      permissions: ["content", "analytics", "support"],
+      parentWhiteLabel: "2"
     },
     {
       id: "4",
@@ -99,9 +110,89 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
       phone: "+1 (555) 321-0987",
       lastActive: "1 week ago",
       createdAt: "2024-01-20",
-      permissions: ["content", "analytics"]
+      permissions: ["content", "analytics"],
+      parentWhiteLabel: "2"
     }
   ]);
+  
+  // Handle avatar file selection for new user
+  const handleAvatarSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Check file size (1MB = 1024 * 1024 bytes)
+      if (file.size > 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Avatar image must be less than 1MB",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setAvatarPreview(result);
+        setNewUser(prev => ({ ...prev, avatar: result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle avatar file selection for edit user
+  const handleEditAvatarSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Check file size (1MB = 1024 * 1024 bytes)
+      if (file.size > 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Avatar image must be less than 1MB",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      setEditAvatarFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setEditAvatarPreview(result);
+        if (selectedUser) {
+          setSelectedUser(prev => prev ? { ...prev, avatar: result } : null);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Remove avatar preview
+  const removeAvatarPreview = () => {
+    setAvatarFile(null);
+    setAvatarPreview("");
+    setNewUser(prev => ({ ...prev, avatar: "" }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  // Remove edit avatar preview
+  const removeEditAvatarPreview = () => {
+    setEditAvatarFile(null);
+    setEditAvatarPreview("");
+    if (selectedUser) {
+      setSelectedUser(prev => prev ? { ...prev, avatar: "" } : null);
+    }
+    if (editFileInputRef.current) {
+      editFileInputRef.current.value = "";
+    }
+  };
+  
+  // Get White Label users for dropdown
+  const getWhiteLabelUsers = () => {
+    return users.filter(user => user.role === "White Label" && user.status === "Active");
+  };
   
   // Determine what roles the current user can manage
   const getManageableRoles = (): User["role"][] => {
@@ -142,24 +233,37 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
       });
       return;
     }
+
+    // If creating Admin and no White Label selected
+    if (newUser.role === "Admin" && !newUser.parentWhiteLabel) {
+      toast({
+        title: "White Label required",
+        description: "Please select a White Label for this Admin user.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     const createdUser: User = {
       id: Date.now().toString(),
       name: newUser.name,
       email: newUser.email,
       role: newUser.role,
-      status: "Pending",
+      status: "Active", // Default to Active instead of Pending
       company: newUser.company,
       address: newUser.address,
       phone: newUser.phone,
       avatar: newUser.avatar,
       lastActive: "Never",
       createdAt: new Date().toISOString().split('T')[0],
-      permissions: []
+      permissions: [],
+      parentWhiteLabel: newUser.role === "Admin" ? newUser.parentWhiteLabel : undefined
     };
     
     setUsers(prev => [...prev, createdUser]);
-    setNewUser({ name: "", email: "", role: "Admin", company: "", address: "", phone: "", avatar: "" });
+    setNewUser({ name: "", email: "", role: "Admin", company: "", address: "", phone: "", avatar: "", parentWhiteLabel: "" });
+    setAvatarFile(null);
+    setAvatarPreview("");
     setIsAddUserDialogOpen(false);
     
     toast({
@@ -191,12 +295,40 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
     
     setIsEditUserDialogOpen(false);
     setSelectedUser(null);
+    setEditAvatarFile(null);
+    setEditAvatarPreview("");
     
     toast({
       title: "User updated",
       description: "User information has been updated successfully.",
     });
     
+    if (onSettingChange) {
+      onSettingChange();
+    }
+  };
+
+  const handleToggleUserStatus = (user: User) => {
+    const manageableRoles = getManageableRoles();
+    if (!manageableRoles.includes(user.role)) {
+      toast({
+        title: "Permission denied",
+        description: "You don't have permission to modify this user's status.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const newStatus = user.status === "Active" ? "Inactive" : "Active";
+    setUsers(prev => prev.map(u => 
+      u.id === user.id ? { ...u, status: newStatus } : u
+    ));
+
+    toast({
+      title: "User status updated",
+      description: `${user.name} is now ${newStatus.toLowerCase()}.`,
+    });
+
     if (onSettingChange) {
       onSettingChange();
     }
@@ -231,6 +363,7 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
   
   const openEditDialog = (user: User) => {
     setSelectedUser({ ...user });
+    setEditAvatarPreview(user.avatar || "");
     setIsEditUserDialogOpen(true);
   };
   
@@ -281,6 +414,7 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
   
   const manageableRoles = getManageableRoles();
   const canManageUsers = manageableRoles.length > 0;
+  const showAddUserButton = role === "Super Admin"; // Only Super Admin can add users
   
   return (
     <div className="space-y-6">
@@ -330,13 +464,13 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
+            <CardTitle className="text-sm font-medium">Active</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {getVisibleUsers().filter(u => u.status === "Pending").length}
+              {getVisibleUsers().filter(u => u.status === "Active").length}
             </div>
-            <p className="text-xs text-muted-foreground">pending invites</p>
+            <p className="text-xs text-muted-foreground">active users</p>
           </CardContent>
         </Card>
       </div>
@@ -356,7 +490,7 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
                 }
               </CardDescription>
             </div>
-            {canManageUsers && (
+            {showAddUserButton && (
               <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="flex items-center gap-2">
@@ -373,17 +507,44 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
                   </DialogHeader>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="newUserAvatar">Avatar URL</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="newUserAvatar"
-                          placeholder="https://example.com/avatar.jpg"
-                          value={newUser.avatar}
-                          onChange={(e) => setNewUser(prev => ({ ...prev, avatar: e.target.value }))}
-                        />
-                        <Button variant="outline" size="sm">
-                          <Upload className="h-4 w-4" />
-                        </Button>
+                      <Label htmlFor="newUserAvatar">Avatar</Label>
+                      <div className="flex flex-col gap-2">
+                        {avatarPreview && (
+                          <div className="relative w-20 h-20">
+                            <Avatar className="w-20 h-20">
+                              <AvatarImage src={avatarPreview} />
+                              <AvatarFallback>Preview</AvatarFallback>
+                            </Avatar>
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0"
+                              onClick={removeAvatarPreview}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
+                        <div className="flex gap-2">
+                          <Input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarSelect}
+                            className="hidden"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="flex-1"
+                          >
+                            <Upload className="h-4 w-4 mr-2" />
+                            Upload Avatar
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Max 1MB</p>
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -436,7 +597,9 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
                       <Label htmlFor="newUserRole">Role *</Label>
                       <Select 
                         value={newUser.role} 
-                        onValueChange={(value: User["role"]) => setNewUser(prev => ({ ...prev, role: value }))}
+                        onValueChange={(value: User["role"]) => {
+                          setNewUser(prev => ({ ...prev, role: value, parentWhiteLabel: "" }));
+                        }}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -453,6 +616,32 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
                         </SelectContent>
                       </Select>
                     </div>
+                    {newUser.role === "Admin" && (
+                      <div className="space-y-2 col-span-2">
+                        <Label htmlFor="newUserWhiteLabel">White Label *</Label>
+                        <Select 
+                          value={newUser.parentWhiteLabel} 
+                          onValueChange={(value) => setNewUser(prev => ({ ...prev, parentWhiteLabel: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select White Label" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getWhiteLabelUsers().map(whiteLabel => (
+                              <SelectItem key={whiteLabel.id} value={whiteLabel.id}>
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="w-6 h-6">
+                                    <AvatarImage src={whiteLabel.avatar} />
+                                    <AvatarFallback>{whiteLabel.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                  </Avatar>
+                                  {whiteLabel.name} ({whiteLabel.company})
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setIsAddUserDialogOpen(false)}>
@@ -503,6 +692,11 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
                         {user.company && (
                           <p className="text-xs text-muted-foreground">{user.company}</p>
                         )}
+                        {user.parentWhiteLabel && (
+                          <p className="text-xs text-muted-foreground">
+                            Under: {users.find(u => u.id === user.parentWhiteLabel)?.name}
+                          </p>
+                        )}
                         <p className="text-xs text-muted-foreground">
                           Created: {user.createdAt} • Last active: {user.lastActive}
                         </p>
@@ -519,6 +713,16 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
                       </Badge>
                       {canEditThisUser && (
                         <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor={`status-${user.id}`} className="text-xs">
+                              {user.status === "Active" ? "Active" : "Inactive"}
+                            </Label>
+                            <Switch
+                              id={`status-${user.id}`}
+                              checked={user.status === "Active"}
+                              onCheckedChange={() => handleToggleUserStatus(user)}
+                            />
+                          </div>
                           <Button 
                             variant="ghost" 
                             size="sm"
@@ -568,17 +772,44 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
           {selectedUser && (
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="editUserAvatar">Avatar URL</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="editUserAvatar"
-                    placeholder="https://example.com/avatar.jpg"
-                    value={selectedUser.avatar || ""}
-                    onChange={(e) => setSelectedUser(prev => prev ? { ...prev, avatar: e.target.value } : null)}
-                  />
-                  <Button variant="outline" size="sm">
-                    <Upload className="h-4 w-4" />
-                  </Button>
+                <Label htmlFor="editUserAvatar">Avatar</Label>
+                <div className="flex flex-col gap-2">
+                  {(editAvatarPreview || selectedUser.avatar) && (
+                    <div className="relative w-20 h-20">
+                      <Avatar className="w-20 h-20">
+                        <AvatarImage src={editAvatarPreview || selectedUser.avatar} />
+                        <AvatarFallback>Preview</AvatarFallback>
+                      </Avatar>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0"
+                        onClick={removeEditAvatarPreview}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <Input
+                      ref={editFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleEditAvatarSelect}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => editFileInputRef.current?.click()}
+                      className="flex-1"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Avatar
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Max 1MB</p>
                 </div>
               </div>
               <div className="space-y-2">
@@ -663,6 +894,34 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
                   </SelectContent>
                 </Select>
               </div>
+              {selectedUser.role === "Admin" && (
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="editUserWhiteLabel">White Label</Label>
+                  <Select 
+                    value={selectedUser.parentWhiteLabel || ""} 
+                    onValueChange={(value) => 
+                      setSelectedUser(prev => prev ? { ...prev, parentWhiteLabel: value } : null)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select White Label" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getWhiteLabelUsers().map(whiteLabel => (
+                        <SelectItem key={whiteLabel.id} value={whiteLabel.id}>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="w-6 h-6">
+                              <AvatarImage src={whiteLabel.avatar} />
+                              <AvatarFallback>{whiteLabel.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                            </Avatar>
+                            {whiteLabel.name} ({whiteLabel.company})
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>
