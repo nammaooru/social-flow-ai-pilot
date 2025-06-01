@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,8 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CommonSettingsProps } from "@/pages/Settings";
-import { Loader2, CheckCircle, AlertCircle, Link } from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle, Link, Plus } from "lucide-react";
+import { Instagram, Facebook, Linkedin, Youtube } from "lucide-react";
 
 interface SocialAccount {
   id: string;
@@ -22,11 +22,30 @@ interface SocialAccount {
   avatar?: string;
   color: string;
   syncInProgress?: boolean;
+  icon: React.ReactNode;
 }
+
+const platformIcons = {
+  Instagram: <Instagram className="h-5 w-5 text-white" />,
+  X: (
+    <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+    </svg>
+  ),
+  Facebook: <Facebook className="h-5 w-5 text-white" />,
+  LinkedIn: <Linkedin className="h-5 w-5 text-white" />,
+  TikTok: (
+    <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+    </svg>
+  ),
+  YouTube: <Youtube className="h-5 w-5 text-white" />
+};
 
 export function SocialAccountsSettings({ onSettingChange }: CommonSettingsProps) {
   const { toast } = useToast();
   const [isConnectingAll, setIsConnectingAll] = useState(false);
+  const [showAddNewAccount, setShowAddNewAccount] = useState(false);
   const [accounts, setAccounts] = useState<SocialAccount[]>([
     {
       id: "1",
@@ -37,18 +56,20 @@ export function SocialAccountsSettings({ onSettingChange }: CommonSettingsProps)
       posts: 234,
       lastSync: "2 minutes ago",
       color: "bg-gradient-to-r from-purple-500 to-pink-500",
-      syncInProgress: false
+      syncInProgress: false,
+      icon: platformIcons.Instagram
     },
     {
       id: "2",
-      platform: "Twitter",
+      platform: "X",
       username: "@yourbrand",
       connected: true,
       followers: 8750,
       posts: 567,
       lastSync: "5 minutes ago",
-      color: "bg-blue-500",
-      syncInProgress: false
+      color: "bg-black",
+      syncInProgress: false,
+      icon: platformIcons.X
     },
     {
       id: "3",
@@ -59,7 +80,8 @@ export function SocialAccountsSettings({ onSettingChange }: CommonSettingsProps)
       posts: 0,
       lastSync: "Never",
       color: "bg-blue-600",
-      syncInProgress: false
+      syncInProgress: false,
+      icon: platformIcons.Facebook
     },
     {
       id: "4",
@@ -70,7 +92,8 @@ export function SocialAccountsSettings({ onSettingChange }: CommonSettingsProps)
       posts: 89,
       lastSync: "1 hour ago",
       color: "bg-blue-700",
-      syncInProgress: false
+      syncInProgress: false,
+      icon: platformIcons.LinkedIn
     },
     {
       id: "5",
@@ -81,7 +104,8 @@ export function SocialAccountsSettings({ onSettingChange }: CommonSettingsProps)
       posts: 0,
       lastSync: "Never",
       color: "bg-black",
-      syncInProgress: false
+      syncInProgress: false,
+      icon: platformIcons.TikTok
     },
     {
       id: "6",
@@ -92,7 +116,8 @@ export function SocialAccountsSettings({ onSettingChange }: CommonSettingsProps)
       posts: 45,
       lastSync: "30 minutes ago",
       color: "bg-red-600",
-      syncInProgress: false
+      syncInProgress: false,
+      icon: platformIcons.YouTube
     }
   ]);
   
@@ -107,15 +132,58 @@ export function SocialAccountsSettings({ onSettingChange }: CommonSettingsProps)
     syncErrors: true
   });
   
+  const handleAddAccount = (platform: string) => {
+    toast({
+      title: "Redirecting to " + platform,
+      description: "You will be redirected to " + platform + " to connect your account.",
+    });
+    
+    setTimeout(() => {
+      const newAccount: SocialAccount = {
+        id: Date.now().toString(),
+        platform,
+        username: `@your${platform.toLowerCase()}`,
+        connected: true,
+        followers: Math.floor(Math.random() * 10000) + 1000,
+        posts: Math.floor(Math.random() * 100) + 10,
+        lastSync: "Just now",
+        color: getColorForPlatform(platform),
+        syncInProgress: false,
+        icon: platformIcons[platform as keyof typeof platformIcons]
+      };
+      
+      setAccounts(prev => [...prev, newAccount]);
+      
+      toast({
+        title: platform + " account added",
+        description: `Successfully connected your ${platform} account.`,
+      });
+      
+      if (onSettingChange) {
+        onSettingChange();
+      }
+    }, 2000);
+  };
+  
+  const getColorForPlatform = (platform: string) => {
+    const colors: Record<string, string> = {
+      Instagram: "bg-gradient-to-r from-purple-500 to-pink-500",
+      X: "bg-black",
+      Facebook: "bg-blue-600",
+      LinkedIn: "bg-blue-700",
+      TikTok: "bg-black",
+      YouTube: "bg-red-600"
+    };
+    return colors[platform] || "bg-gray-500";
+  };
+  
   const handleConnectAll = async () => {
     setIsConnectingAll(true);
     
     try {
-      // Simulate connecting to each disconnected account
       const disconnectedAccounts = accounts.filter(acc => !acc.connected);
       
       for (const account of disconnectedAccounts) {
-        // Simulate API call delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         setAccounts(prev => prev.map(acc => 
@@ -161,7 +229,6 @@ export function SocialAccountsSettings({ onSettingChange }: CommonSettingsProps)
     
     try {
       if (account.connected) {
-        // Disconnect account
         setAccounts(prev => prev.map(acc => 
           acc.id === accountId 
             ? { ...acc, connected: false, followers: 0, posts: 0, lastSync: "Never" }
@@ -173,7 +240,6 @@ export function SocialAccountsSettings({ onSettingChange }: CommonSettingsProps)
           description: `${account.platform} has been disconnected successfully.`,
         });
       } else {
-        // Connect account - simulate OAuth flow
         await new Promise(resolve => setTimeout(resolve, 1500));
         
         setAccounts(prev => prev.map(acc => 
@@ -210,16 +276,13 @@ export function SocialAccountsSettings({ onSettingChange }: CommonSettingsProps)
     const account = accounts.find(acc => acc.id === accountId);
     if (!account || !account.connected) return;
     
-    // Set sync in progress
     setAccounts(prev => prev.map(acc => 
       acc.id === accountId ? { ...acc, syncInProgress: true } : acc
     ));
     
     try {
-      // Simulate sync process
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Update account data
       setAccounts(prev => prev.map(acc => 
         acc.id === accountId 
           ? { 
@@ -262,13 +325,11 @@ export function SocialAccountsSettings({ onSettingChange }: CommonSettingsProps)
       return;
     }
     
-    // Start sync for all connected accounts
     setAccounts(prev => prev.map(acc => 
       acc.connected ? { ...acc, syncInProgress: true } : acc
     ));
     
     try {
-      // Simulate syncing all accounts
       for (const account of connectedAccounts) {
         await new Promise(resolve => setTimeout(resolve, 1000));
         
@@ -319,6 +380,8 @@ export function SocialAccountsSettings({ onSettingChange }: CommonSettingsProps)
   const totalPosts = connectedAccounts.reduce((sum, acc) => sum + acc.posts, 0);
   const disconnectedAccounts = accounts.filter(acc => !acc.connected);
   
+  const availablePlatforms = ["Instagram", "X", "Facebook", "LinkedIn", "TikTok", "YouTube"];
+  
   return (
     <div className="space-y-6">
       <div>
@@ -364,6 +427,52 @@ export function SocialAccountsSettings({ onSettingChange }: CommonSettingsProps)
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
+              <CardTitle>Add My Account</CardTitle>
+              <CardDescription>Connect your personal accounts to these platforms</CardDescription>
+            </div>
+            <Button
+              onClick={() => setShowAddNewAccount(!showAddNewAccount)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add New Social Account
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {availablePlatforms.map((platform) => (
+              <div key={platform} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className={getColorForPlatform(platform)}>
+                      {platformIcons[platform as keyof typeof platformIcons]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">{platform}</p>
+                    <p className="text-sm text-muted-foreground">Connect your account</p>
+                  </div>
+                </div>
+                
+                <Button
+                  onClick={() => handleAddAccount(platform)}
+                  variant="default"
+                  size="sm"
+                >
+                  Add Account
+                </Button>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
               <CardTitle>Connected Platforms</CardTitle>
               <CardDescription>Manage your social media platform connections</CardDescription>
             </div>
@@ -404,7 +513,7 @@ export function SocialAccountsSettings({ onSettingChange }: CommonSettingsProps)
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10">
                     <AvatarFallback className={account.color}>
-                      {account.platform.substring(0, 2)}
+                      {account.icon}
                     </AvatarFallback>
                   </Avatar>
                   <div>
