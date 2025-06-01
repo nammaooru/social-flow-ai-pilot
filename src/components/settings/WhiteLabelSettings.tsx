@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Palette, Globe, User, Check, X, ExternalLink, Copy } from "lucide-react";
+import { Upload, Palette, Globe, User, Check, X, ExternalLink, Copy, RefreshCw, Shield, AlertCircle } from "lucide-react";
 import { CommonSettingsProps } from "@/pages/Settings";
 
 interface WhiteLabelUser {
@@ -16,6 +17,14 @@ interface WhiteLabelUser {
   email: string;
   company: string;
   isActive: boolean;
+}
+
+interface DnsRecord {
+  type: string;
+  name: string;
+  value: string;
+  status: 'pending' | 'verified' | 'error';
+  ttl?: number;
 }
 
 interface BrandingConfig {
@@ -28,13 +37,13 @@ interface BrandingConfig {
   hideFooter: boolean;
   customCSS: string;
   sslEnabled: boolean;
-  domainStatus: 'pending' | 'active' | 'error';
-  dnsRecords: {
-    type: string;
-    name: string;
-    value: string;
-    status: 'pending' | 'verified';
-  }[];
+  domainStatus: 'pending' | 'active' | 'error' | 'verifying';
+  dnsRecords: DnsRecord[];
+  subdomainPrefix: string;
+  redirectUrls: string[];
+  autoRenewSsl: boolean;
+  forceHttps: boolean;
+  domainVerificationCode: string;
 }
 
 export function WhiteLabelSettings({ onSettingChange, role = "User" }: CommonSettingsProps) {
@@ -44,6 +53,8 @@ export function WhiteLabelSettings({ onSettingChange, role = "User" }: CommonSet
   const [faviconFile, setFaviconFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>("");
   const [faviconPreview, setFaviconPreview] = useState<string>("");
+  const [isVerifyingDomain, setIsVerifyingDomain] = useState(false);
+  const [isDnsChecking, setIsDnsChecking] = useState(false);
 
   // Mock data for White Label users
   const whiteLabelUsers: WhiteLabelUser[] = [
@@ -65,9 +76,15 @@ export function WhiteLabelSettings({ onSettingChange, role = "User" }: CommonSet
     customCSS: "",
     sslEnabled: true,
     domainStatus: 'pending',
+    subdomainPrefix: "",
+    redirectUrls: [""],
+    autoRenewSsl: true,
+    forceHttps: true,
+    domainVerificationCode: `whitelabel-verify-${Math.random().toString(36).substring(2, 15)}`,
     dnsRecords: [
-      { type: 'CNAME', name: 'www', value: 'app.yourplatform.com', status: 'pending' },
-      { type: 'A', name: '@', value: '192.168.1.1', status: 'pending' }
+      { type: 'A', name: '@', value: '192.168.1.100', status: 'pending', ttl: 3600 },
+      { type: 'CNAME', name: 'www', value: 'app.yourplatform.com', status: 'pending', ttl: 3600 },
+      { type: 'TXT', name: '@', value: '', status: 'pending', ttl: 300 }
     ]
   });
 
@@ -101,7 +118,11 @@ export function WhiteLabelSettings({ onSettingChange, role = "User" }: CommonSet
     if (selectedUser) {
       setBranding(prev => ({
         ...prev,
-        companyName: selectedUser.company
+        companyName: selectedUser.company,
+        subdomainPrefix: selectedUser.name.toLowerCase().replace(/\s+/g, '-'),
+        dnsRecords: prev.dnsRecords.map((record, index) => 
+          index === 2 ? { ...record, value: `whitelabel-verify-${selectedUser.id}` } : record
+        )
       }));
       
       toast({
@@ -159,7 +180,7 @@ export function WhiteLabelSettings({ onSettingChange, role = "User" }: CommonSet
     });
   };
 
-  const handleDomainVerification = () => {
+  const handleDomainVerification = async () => {
     if (!branding.customDomain) {
       toast({
         title: "No domain specified",
@@ -169,17 +190,85 @@ export function WhiteLabelSettings({ onSettingChange, role = "User" }: CommonSet
       return;
     }
 
-    // Simulate domain verification process
-    setBranding(prev => ({
-      ...prev,
-      domainStatus: 'active',
-      dnsRecords: prev.dnsRecords.map(record => ({ ...record, status: 'verified' }))
-    }));
+    setIsVerifyingDomain(true);
+    setBranding(prev => ({ ...prev, domainStatus: 'verifying' }));
 
-    toast({
-      title: "Domain verified successfully",
-      description: `${branding.customDomain} has been verified and is now active.`,
-    });
+    try {
+      // Simulate domain verification process
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // Simulate verification success/failure
+      const isVerified = Math.random() > 0.3; // 70% success rate for demo
+      
+      if (isVerified) {
+        setBranding(prev => ({
+          ...prev,
+          domainStatus: 'active',
+          dnsRecords: prev.dnsRecords.map(record => ({ ...record, status: 'verified' }))
+        }));
+
+        toast({
+          title: "Domain verified successfully",
+          description: `${branding.customDomain} has been verified and is now active.`,
+        });
+      } else {
+        setBranding(prev => ({ ...prev, domainStatus: 'error' }));
+        toast({
+          title: "Domain verification failed",
+          description: "Please check your DNS records and try again.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      setBranding(prev => ({ ...prev, domainStatus: 'error' }));
+      toast({
+        title: "Verification error",
+        description: "An error occurred during domain verification.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsVerifyingDomain(false);
+    }
+  };
+
+  const checkDnsRecords = async () => {
+    if (!branding.customDomain) {
+      toast({
+        title: "No domain specified",
+        description: "Please enter a custom domain before checking DNS.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsDnsChecking(true);
+
+    try {
+      // Simulate DNS checking
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Simulate DNS record status updates
+      setBranding(prev => ({
+        ...prev,
+        dnsRecords: prev.dnsRecords.map(record => ({
+          ...record,
+          status: Math.random() > 0.5 ? 'verified' : 'pending'
+        }))
+      }));
+
+      toast({
+        title: "DNS records checked",
+        description: "DNS record status has been updated.",
+      });
+    } catch (error) {
+      toast({
+        title: "DNS check failed",
+        description: "Unable to check DNS records. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDnsChecking(false);
+    }
   };
 
   const copyToClipboard = (text: string) => {
@@ -189,6 +278,59 @@ export function WhiteLabelSettings({ onSettingChange, role = "User" }: CommonSet
       description: "DNS record value has been copied to your clipboard.",
     });
   };
+
+  const addRedirectUrl = () => {
+    setBranding(prev => ({
+      ...prev,
+      redirectUrls: [...prev.redirectUrls, ""]
+    }));
+  };
+
+  const removeRedirectUrl = (index: number) => {
+    setBranding(prev => ({
+      ...prev,
+      redirectUrls: prev.redirectUrls.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateRedirectUrl = (index: number, value: string) => {
+    setBranding(prev => ({
+      ...prev,
+      redirectUrls: prev.redirectUrls.map((url, i) => i === index ? value : url)
+    }));
+  };
+
+  const generateSslCertificate = async () => {
+    if (!branding.customDomain) {
+      toast({
+        title: "Domain required",
+        description: "Please configure a custom domain before generating SSL certificate.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Simulate SSL certificate generation
+      toast({
+        title: "Generating SSL certificate",
+        description: "This may take a few minutes...",
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      toast({
+        title: "SSL certificate generated",
+        description: "Your SSL certificate has been successfully generated and installed.",
+      });
+    } catch (error) {
+      toast({
+        title: "SSL generation failed",
+        description: "Unable to generate SSL certificate. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
   
   return (
     <div className="space-y-6">
@@ -196,8 +338,8 @@ export function WhiteLabelSettings({ onSettingChange, role = "User" }: CommonSet
         <h3 className="text-lg font-medium">White Label Settings</h3>
         <p className="text-sm text-muted-foreground">
           {role === "Super Admin" 
-            ? "Configure branding and appearance for White Label users. Select a White Label user to customize their specific branding." 
-            : "Customize your platform's branding and appearance to match your brand identity."}
+            ? "Configure branding and appearance for White Label users. Select a White Label user to customize their specific branding and domain settings." 
+            : "Customize your platform's branding, appearance, and domain configuration to match your brand identity."}
         </p>
       </div>
 
@@ -249,9 +391,10 @@ export function WhiteLabelSettings({ onSettingChange, role = "User" }: CommonSet
       {/* Show configuration only if White Label user is selected (for Super Admin) or if user is not Super Admin */}
       {(role !== "Super Admin" || selectedWhiteLabel) && (
         <Tabs defaultValue="branding" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="branding">Branding</TabsTrigger>
             <TabsTrigger value="colors">Colors</TabsTrigger>
+            <TabsTrigger value="domain">Domain</TabsTrigger>
             <TabsTrigger value="advanced">Advanced</TabsTrigger>
           </TabsList>
           
@@ -361,113 +504,6 @@ export function WhiteLabelSettings({ onSettingChange, role = "User" }: CommonSet
                 </div>
               </CardContent>
             </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="h-5 w-5" />
-                  Domain Settings
-                </CardTitle>
-                <CardDescription>Configure your custom domain and DNS settings</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="customDomain">Custom Domain</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="customDomain"
-                      placeholder="app.yourcompany.com"
-                      value={branding.customDomain}
-                      onChange={(e) => handleInputChange("customDomain", e.target.value)}
-                    />
-                    <Button 
-                      variant="outline"
-                      onClick={handleDomainVerification}
-                      disabled={!branding.customDomain}
-                    >
-                      Verify
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Point your domain to our servers for a fully branded experience
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>SSL Certificate</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Automatically provision SSL certificates for your domain
-                    </p>
-                  </div>
-                  <Switch
-                    checked={branding.sslEnabled}
-                    onCheckedChange={(checked) => handleInputChange("sslEnabled", checked)}
-                  />
-                </div>
-
-                {branding.customDomain && (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">Domain Status:</span>
-                      <div className={`flex items-center gap-1 text-sm ${
-                        branding.domainStatus === 'active' ? 'text-green-600' : 
-                        branding.domainStatus === 'error' ? 'text-red-600' : 'text-yellow-600'
-                      }`}>
-                        {branding.domainStatus === 'active' ? <Check className="h-4 w-4" /> : 
-                         branding.domainStatus === 'error' ? <X className="h-4 w-4" /> : 
-                         <Upload className="h-4 w-4" />}
-                        {branding.domainStatus.charAt(0).toUpperCase() + branding.domainStatus.slice(1)}
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <h4 className="text-sm font-medium">DNS Records</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Add these DNS records to your domain registrar to point your domain to our servers
-                      </p>
-                      
-                      {branding.dnsRecords.map((record, index) => (
-                        <div key={index} className="border rounded-lg p-3 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-mono bg-muted px-2 py-1 rounded">{record.type}</span>
-                              <span className={`text-xs ${
-                                record.status === 'verified' ? 'text-green-600' : 'text-yellow-600'
-                              }`}>
-                                {record.status === 'verified' ? 'Verified' : 'Pending'}
-                              </span>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => copyToClipboard(record.value)}
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4 text-xs">
-                            <div>
-                              <span className="text-muted-foreground">Name:</span>
-                              <p className="font-mono">{record.name}</p>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Value:</span>
-                              <p className="font-mono break-all">{record.value}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <ExternalLink className="h-3 w-3" />
-                      <span>Need help? Check our documentation for DNS setup instructions</span>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </TabsContent>
           
           <TabsContent value="colors" className="space-y-4">
@@ -531,6 +567,251 @@ export function WhiteLabelSettings({ onSettingChange, role = "User" }: CommonSet
                     />
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="domain" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="h-5 w-5" />
+                  Domain Configuration
+                </CardTitle>
+                <CardDescription>Configure your custom domain and DNS settings for White Label branding</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="customDomain">Custom Domain</Label>
+                    <Input
+                      id="customDomain"
+                      placeholder="app.yourcompany.com"
+                      value={branding.customDomain}
+                      onChange={(e) => handleInputChange("customDomain", e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Your primary domain for the White Label application
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="subdomainPrefix">Subdomain Prefix</Label>
+                    <Input
+                      id="subdomainPrefix"
+                      placeholder="acme"
+                      value={branding.subdomainPrefix}
+                      onChange={(e) => handleInputChange("subdomainPrefix", e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Creates: {branding.subdomainPrefix || 'subdomain'}.yourplatform.com
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <Button 
+                    onClick={handleDomainVerification}
+                    disabled={!branding.customDomain || isVerifyingDomain}
+                    className="flex items-center gap-2"
+                  >
+                    {isVerifyingDomain ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                    {isVerifyingDomain ? "Verifying..." : "Verify Domain"}
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    onClick={checkDnsRecords}
+                    disabled={!branding.customDomain || isDnsChecking}
+                    className="flex items-center gap-2"
+                  >
+                    {isDnsChecking ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                    {isDnsChecking ? "Checking..." : "Check DNS"}
+                  </Button>
+
+                  <div className={`flex items-center gap-2 text-sm ${
+                    branding.domainStatus === 'active' ? 'text-green-600' : 
+                    branding.domainStatus === 'error' ? 'text-red-600' : 
+                    branding.domainStatus === 'verifying' ? 'text-blue-600' : 'text-yellow-600'
+                  }`}>
+                    {branding.domainStatus === 'active' ? <Check className="h-4 w-4" /> : 
+                     branding.domainStatus === 'error' ? <X className="h-4 w-4" /> :
+                     branding.domainStatus === 'verifying' ? <RefreshCw className="h-4 w-4 animate-spin" /> :
+                     <AlertCircle className="h-4 w-4" />}
+                    Status: {branding.domainStatus.charAt(0).toUpperCase() + branding.domainStatus.slice(1)}
+                  </div>
+                </div>
+
+                {/* Redirect URLs */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Redirect URLs</Label>
+                    <Button size="sm" variant="outline" onClick={addRedirectUrl}>
+                      Add URL
+                    </Button>
+                  </div>
+                  {branding.redirectUrls.map((url, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        placeholder="https://yourapp.com/callback"
+                        value={url}
+                        onChange={(e) => updateRedirectUrl(index, e.target.value)}
+                      />
+                      {branding.redirectUrls.length > 1 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => removeRedirectUrl(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  <p className="text-xs text-muted-foreground">
+                    URLs that are allowed for authentication redirects
+                  </p>
+                </div>
+
+                {/* SSL Configuration */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    SSL Certificate Configuration
+                  </h4>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>SSL Enabled</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Enable HTTPS for your domain
+                        </p>
+                      </div>
+                      <Switch
+                        checked={branding.sslEnabled}
+                        onCheckedChange={(checked) => handleInputChange("sslEnabled", checked)}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Auto-Renew SSL</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Automatically renew certificates
+                        </p>
+                      </div>
+                      <Switch
+                        checked={branding.autoRenewSsl}
+                        onCheckedChange={(checked) => handleInputChange("autoRenewSsl", checked)}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Force HTTPS</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Redirect HTTP to HTTPS
+                        </p>
+                      </div>
+                      <Switch
+                        checked={branding.forceHttps}
+                        onCheckedChange={(checked) => handleInputChange("forceHttps", checked)}
+                      />
+                    </div>
+
+                    <div className="flex items-center">
+                      <Button
+                        variant="outline"
+                        onClick={generateSslCertificate}
+                        disabled={!branding.sslEnabled}
+                        className="flex items-center gap-2"
+                      >
+                        <Shield className="h-4 w-4" />
+                        Generate SSL Certificate
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* DNS Records */}
+                {branding.customDomain && (
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium">DNS Configuration</h4>
+                    <p className="text-xs text-muted-foreground">
+                      Add these DNS records to your domain registrar to configure your White Label domain
+                    </p>
+                    
+                    {branding.dnsRecords.map((record, index) => (
+                      <div key={index} className="border rounded-lg p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs font-mono bg-muted px-2 py-1 rounded font-medium">
+                              {record.type}
+                            </span>
+                            <span className={`text-xs font-medium ${
+                              record.status === 'verified' ? 'text-green-600' : 
+                              record.status === 'error' ? 'text-red-600' : 'text-yellow-600'
+                            }`}>
+                              {record.status === 'verified' ? '✓ Verified' : 
+                               record.status === 'error' ? '✗ Error' : '⏳ Pending'}
+                            </span>
+                            {record.ttl && (
+                              <span className="text-xs text-muted-foreground">
+                                TTL: {record.ttl}s
+                              </span>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyToClipboard(record.value || (index === 2 ? branding.domainVerificationCode : record.value))}
+                            className="flex items-center gap-1"
+                          >
+                            <Copy className="h-3 w-3" />
+                            Copy
+                          </Button>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 text-xs">
+                          <div>
+                            <span className="text-muted-foreground font-medium">Name/Host:</span>
+                            <p className="font-mono mt-1 p-2 bg-muted rounded">{record.name}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground font-medium">Value/Points to:</span>
+                            <p className="font-mono mt-1 p-2 bg-muted rounded break-all">
+                              {index === 2 ? branding.domainVerificationCode : record.value}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {index === 2 && (
+                          <p className="text-xs text-muted-foreground">
+                            This TXT record is used for domain verification
+                          </p>
+                        )}
+                      </div>
+                    ))}
+
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground p-3 bg-muted rounded-lg">
+                      <ExternalLink className="h-3 w-3" />
+                      <span>
+                        Need help configuring DNS? Check our 
+                        <a href="#" className="ml-1 text-primary hover:underline">domain setup guide</a>
+                        or contact support for assistance.
+                      </span>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
