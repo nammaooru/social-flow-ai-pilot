@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -18,6 +17,14 @@ interface SecuritySettingsProps extends CommonSettingsProps {
 
 export function SecuritySettings({ role, onSettingChange }: SecuritySettingsProps) {
   const { toast } = useToast();
+  
+  // Mock profile data - in a real app, this would come from the user's profile
+  const [profileData] = useState({
+    phone: "+1 234 567 8900", // This would be fetched from Personal Information
+    firstName: "John",
+    lastName: "Doe"
+  });
+  
   const [security, setSecurity] = useState({
     twoFactorEnabled: false,
     twoFactorMethod: "app", // "app", "sms", "whatsapp"
@@ -25,13 +32,12 @@ export function SecuritySettings({ role, onSettingChange }: SecuritySettingsProp
     loginNotifications: true,
     smsNotifications: true,
     whatsappNotifications: false,
-    phoneNumber: "",
     sessionTimeout: "24",
     ipWhitelist: "",
     apiKeyRotation: true
   });
   
-  const [sessions, setSessions] = useState([
+  const [sessions] = useState([
     { id: "1", device: "Chrome on Windows", location: "New York, US", lastActive: "Current session", current: true },
     { id: "2", device: "Safari on iPhone", location: "New York, US", lastActive: "2 hours ago", current: false },
     { id: "3", device: "Firefox on Mac", location: "Los Angeles, US", lastActive: "1 day ago", current: false }
@@ -96,10 +102,10 @@ export function SecuritySettings({ role, onSettingChange }: SecuritySettingsProp
   };
 
   const handleTestNotification = (type: "sms" | "whatsapp") => {
-    if (!security.phoneNumber) {
+    if (!profileData.phone) {
       toast({
         title: "Phone number required",
-        description: "Please enter a phone number to test notifications.",
+        description: "Please add a phone number in your Personal Information to test notifications.",
         variant: "destructive",
       });
       return;
@@ -107,7 +113,7 @@ export function SecuritySettings({ role, onSettingChange }: SecuritySettingsProp
 
     toast({
       title: `Test ${type.toUpperCase()} sent`,
-      description: `A test message has been sent to ${security.phoneNumber}`,
+      description: `A test message has been sent to ${profileData.phone}`,
     });
   };
   
@@ -172,7 +178,7 @@ export function SecuritySettings({ role, onSettingChange }: SecuritySettingsProp
           <Card>
             <CardHeader>
               <CardTitle>Security Preferences</CardTitle>
-              <CardDescription>Configure additional security options and notifications</CardDescription>
+              <CardDescription>Configure security notifications and preferences</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
@@ -189,73 +195,88 @@ export function SecuritySettings({ role, onSettingChange }: SecuritySettingsProp
                 />
               </div>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phoneNumber">Phone Number</Label>
-                  <Input
-                    id="phoneNumber"
-                    type="tel"
-                    placeholder="+1 (555) 123-4567"
-                    value={security.phoneNumber}
-                    onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Required for SMS and WhatsApp notifications
+              {profileData.phone && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>Phone Number:</strong> {profileData.phone}
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    From your Personal Information. Update it in Profile settings if needed.
                   </p>
                 </div>
+              )}
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="smsNotifications" className="flex items-center gap-2">
-                      <Phone className="h-4 w-4" />
-                      SMS Login Notifications
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Get SMS alerts when someone signs into your account
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleTestNotification("sms")}
-                      disabled={!security.phoneNumber}
-                    >
-                      Test
-                    </Button>
-                    <Switch
-                      id="smsNotifications"
-                      checked={security.smsNotifications}
-                      onCheckedChange={(checked) => handleInputChange("smsNotifications", checked)}
-                    />
-                  </div>
+              {!profileData.phone && (
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    <strong>No phone number set.</strong> Add a phone number in your Personal Information to enable SMS and WhatsApp notifications.
+                  </p>
                 </div>
+              )}
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="whatsappNotifications" className="flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4" />
-                      WhatsApp Login Notifications
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Get WhatsApp messages when someone signs into your account
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="smsNotifications" className="flex items-center gap-2">
+                    <Phone className="h-4 w-4" />
+                    SMS Login Notifications
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Get SMS alerts when someone signs into your account
+                  </p>
+                  {profileData.phone && (
+                    <p className="text-xs text-muted-foreground">
+                      Will be sent to: {profileData.phone}
                     </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleTestNotification("whatsapp")}
-                      disabled={!security.phoneNumber}
-                    >
-                      Test
-                    </Button>
-                    <Switch
-                      id="whatsappNotifications"
-                      checked={security.whatsappNotifications}
-                      onCheckedChange={(checked) => handleInputChange("whatsappNotifications", checked)}
-                    />
-                  </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleTestNotification("sms")}
+                    disabled={!profileData.phone}
+                  >
+                    Test
+                  </Button>
+                  <Switch
+                    id="smsNotifications"
+                    checked={security.smsNotifications}
+                    onCheckedChange={(checked) => handleInputChange("smsNotifications", checked)}
+                    disabled={!profileData.phone}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="whatsappNotifications" className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    WhatsApp Login Notifications
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Get WhatsApp messages when someone signs into your account
+                  </p>
+                  {profileData.phone && (
+                    <p className="text-xs text-muted-foreground">
+                      Will be sent to: {profileData.phone}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleTestNotification("whatsapp")}
+                    disabled={!profileData.phone}
+                  >
+                    Test
+                  </Button>
+                  <Switch
+                    id="whatsappNotifications"
+                    checked={security.whatsappNotifications}
+                    onCheckedChange={(checked) => handleInputChange("whatsappNotifications", checked)}
+                    disabled={!profileData.phone}
+                  />
                 </div>
               </div>
             </CardContent>
@@ -327,12 +348,13 @@ export function SecuritySettings({ role, onSettingChange }: SecuritySettingsProp
                         <h4 className="font-medium text-green-900 mb-2">
                           {security.twoFactorMethod === "sms" ? "SMS" : "WhatsApp"} 2FA Setup
                         </h4>
-                        <p className="text-sm text-green-800 mb-2">
-                          Verification codes will be sent to: {security.phoneNumber || "No phone number set"}
-                        </p>
-                        {!security.phoneNumber && (
+                        {profileData.phone ? (
+                          <p className="text-sm text-green-800">
+                            Verification codes will be sent to: <strong>{profileData.phone}</strong>
+                          </p>
+                        ) : (
                           <p className="text-sm text-red-600">
-                            Please set your phone number in Security Preferences first
+                            Please add a phone number in your Personal Information first
                           </p>
                         )}
                       </div>
@@ -341,7 +363,7 @@ export function SecuritySettings({ role, onSettingChange }: SecuritySettingsProp
 
                   <Button 
                     onClick={handleEnable2FA}
-                    disabled={(security.twoFactorMethod === "sms" || security.twoFactorMethod === "whatsapp") && !security.phoneNumber}
+                    disabled={(security.twoFactorMethod === "sms" || security.twoFactorMethod === "whatsapp") && !profileData.phone}
                     className="w-full"
                   >
                     Setup {security.twoFactorMethod === "app" ? "Authenticator App" : 
@@ -360,6 +382,8 @@ export function SecuritySettings({ role, onSettingChange }: SecuritySettingsProp
                         <p className="text-sm text-muted-foreground">
                           Method: {security.twoFactorMethod === "app" ? "Authenticator App" : 
                                    security.twoFactorMethod === "sms" ? "SMS" : "WhatsApp"}
+                          {(security.twoFactorMethod === "sms" || security.twoFactorMethod === "whatsapp") && 
+                           profileData.phone && ` (${profileData.phone})`}
                         </p>
                       </div>
                     </div>
