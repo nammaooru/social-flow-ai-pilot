@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -37,7 +38,7 @@ export function SecuritySettings({ role, onSettingChange }: SecuritySettingsProp
     apiKeyRotation: true
   });
   
-  const [sessions] = useState([
+  const [sessions, setSessions] = useState([
     { id: "1", device: "Chrome on Windows", location: "New York, US", lastActive: "Current session", current: true },
     { id: "2", device: "Safari on iPhone", location: "New York, US", lastActive: "2 hours ago", current: false },
     { id: "3", device: "Firefox on Mac", location: "Los Angeles, US", lastActive: "1 day ago", current: false }
