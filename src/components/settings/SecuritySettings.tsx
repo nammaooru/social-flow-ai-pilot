@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Key, Smartphone, AlertTriangle, Eye } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Shield, Key, Smartphone, AlertTriangle, Eye, MessageSquare, Phone, QrCode, Settings } from "lucide-react";
 import { CommonSettingsProps } from "@/pages/Settings";
 
 interface SecuritySettingsProps extends CommonSettingsProps {
@@ -19,14 +20,18 @@ export function SecuritySettings({ role, onSettingChange }: SecuritySettingsProp
   const { toast } = useToast();
   const [security, setSecurity] = useState({
     twoFactorEnabled: false,
+    twoFactorMethod: "app", // "app", "sms", "whatsapp"
     passwordLastChanged: "30 days ago",
     loginNotifications: true,
+    smsNotifications: true,
+    whatsappNotifications: false,
+    phoneNumber: "",
     sessionTimeout: "24",
     ipWhitelist: "",
     apiKeyRotation: true
   });
   
-  const [sessions] = useState([
+  const [sessions, setSessions] = useState([
     { id: "1", device: "Chrome on Windows", location: "New York, US", lastActive: "Current session", current: true },
     { id: "2", device: "Safari on iPhone", location: "New York, US", lastActive: "2 hours ago", current: false },
     { id: "3", device: "Firefox on Mac", location: "Los Angeles, US", lastActive: "1 day ago", current: false }
@@ -54,16 +59,55 @@ export function SecuritySettings({ role, onSettingChange }: SecuritySettingsProp
   };
   
   const handleEnable2FA = () => {
+    if (security.twoFactorMethod === "app") {
+      toast({
+        title: "Authenticator App Setup",
+        description: "Scan the QR code with your authenticator app to complete setup.",
+      });
+    } else if (security.twoFactorMethod === "sms") {
+      toast({
+        title: "SMS 2FA Setup",
+        description: "A verification code has been sent to your phone number.",
+      });
+    } else if (security.twoFactorMethod === "whatsapp") {
+      toast({
+        title: "WhatsApp 2FA Setup",
+        description: "A verification code has been sent to your WhatsApp number.",
+      });
+    }
+    
+    setSecurity(prev => ({ ...prev, twoFactorEnabled: true }));
+  };
+  
+  const handleDisable2FA = () => {
+    setSecurity(prev => ({ ...prev, twoFactorEnabled: false }));
     toast({
-      title: "2FA Setup",
-      description: "Two-factor authentication setup initiated.",
+      title: "2FA Disabled",
+      description: "Two-factor authentication has been disabled for your account.",
     });
   };
   
   const handleTerminateSession = (sessionId: string) => {
+    setSessions(prev => prev.filter(session => session.id !== sessionId));
     toast({
       title: "Session terminated",
-      description: "The selected session has been ended.",
+      description: "The selected session has been ended successfully.",
+    });
+  };
+
+  const handleTestNotification = (type: "sms" | "whatsapp") => {
+    if (!security.phoneNumber) {
+      toast({
+        title: "Phone number required",
+        description: "Please enter a phone number to test notifications.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: `Test ${type.toUpperCase()} sent`,
+      description: `A test message has been sent to ${security.phoneNumber}`,
     });
   };
   
@@ -128,14 +172,14 @@ export function SecuritySettings({ role, onSettingChange }: SecuritySettingsProp
           <Card>
             <CardHeader>
               <CardTitle>Security Preferences</CardTitle>
-              <CardDescription>Configure additional security options</CardDescription>
+              <CardDescription>Configure additional security options and notifications</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="loginNotifications">Login Notifications</Label>
+                  <Label htmlFor="loginNotifications">Email Login Notifications</Label>
                   <p className="text-sm text-muted-foreground">
-                    Get notified when someone signs into your account
+                    Get email notifications when someone signs into your account
                   </p>
                 </div>
                 <Switch
@@ -143,6 +187,76 @@ export function SecuritySettings({ role, onSettingChange }: SecuritySettingsProp
                   checked={security.loginNotifications}
                   onCheckedChange={(checked) => handleInputChange("loginNotifications", checked)}
                 />
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="phoneNumber">Phone Number</Label>
+                  <Input
+                    id="phoneNumber"
+                    type="tel"
+                    placeholder="+1 (555) 123-4567"
+                    value={security.phoneNumber}
+                    onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Required for SMS and WhatsApp notifications
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="smsNotifications" className="flex items-center gap-2">
+                      <Phone className="h-4 w-4" />
+                      SMS Login Notifications
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Get SMS alerts when someone signs into your account
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleTestNotification("sms")}
+                      disabled={!security.phoneNumber}
+                    >
+                      Test
+                    </Button>
+                    <Switch
+                      id="smsNotifications"
+                      checked={security.smsNotifications}
+                      onCheckedChange={(checked) => handleInputChange("smsNotifications", checked)}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="whatsappNotifications" className="flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      WhatsApp Login Notifications
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Get WhatsApp messages when someone signs into your account
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleTestNotification("whatsapp")}
+                      disabled={!security.phoneNumber}
+                    >
+                      Test
+                    </Button>
+                    <Switch
+                      id="whatsappNotifications"
+                      checked={security.whatsappNotifications}
+                      onCheckedChange={(checked) => handleInputChange("whatsappNotifications", checked)}
+                    />
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -152,37 +266,118 @@ export function SecuritySettings({ role, onSettingChange }: SecuritySettingsProp
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Smartphone className="h-5 w-5" />
+                <Shield className="h-5 w-5" />
                 Two-Factor Authentication
               </CardTitle>
               <CardDescription>Add an extra layer of security to your account</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <Shield className="h-5 w-5 text-green-600" />
+            <CardContent className="space-y-6">
+              {!security.twoFactorEnabled ? (
+                <>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="twoFactorMethod">Choose 2FA Method</Label>
+                      <Select
+                        value={security.twoFactorMethod}
+                        onValueChange={(value) => handleInputChange("twoFactorMethod", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select 2FA method" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="app">
+                            <div className="flex items-center gap-2">
+                              <QrCode className="h-4 w-4" />
+                              Authenticator App
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="sms">
+                            <div className="flex items-center gap-2">
+                              <Phone className="h-4 w-4" />
+                              SMS
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="whatsapp">
+                            <div className="flex items-center gap-2">
+                              <MessageSquare className="h-4 w-4" />
+                              WhatsApp
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {security.twoFactorMethod === "app" && (
+                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h4 className="font-medium text-blue-900 mb-2">Authenticator App Setup</h4>
+                        <p className="text-sm text-blue-800 mb-3">
+                          1. Download an authenticator app like Google Authenticator or Authy
+                        </p>
+                        <p className="text-sm text-blue-800 mb-3">
+                          2. Scan the QR code that will be displayed after clicking setup
+                        </p>
+                        <p className="text-sm text-blue-800">
+                          3. Enter the verification code from your app
+                        </p>
+                      </div>
+                    )}
+
+                    {(security.twoFactorMethod === "sms" || security.twoFactorMethod === "whatsapp") && (
+                      <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <h4 className="font-medium text-green-900 mb-2">
+                          {security.twoFactorMethod === "sms" ? "SMS" : "WhatsApp"} 2FA Setup
+                        </h4>
+                        <p className="text-sm text-green-800 mb-2">
+                          Verification codes will be sent to: {security.phoneNumber || "No phone number set"}
+                        </p>
+                        {!security.phoneNumber && (
+                          <p className="text-sm text-red-600">
+                            Please set your phone number in Security Preferences first
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <p className="font-medium">Authenticator App</p>
-                    <p className="text-sm text-muted-foreground">
-                      {security.twoFactorEnabled ? "Enabled" : "Not configured"}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {security.twoFactorEnabled && (
-                    <Badge variant="default">Active</Badge>
-                  )}
+
                   <Button 
-                    variant={security.twoFactorEnabled ? "outline" : "default"}
                     onClick={handleEnable2FA}
+                    disabled={(security.twoFactorMethod === "sms" || security.twoFactorMethod === "whatsapp") && !security.phoneNumber}
+                    className="w-full"
                   >
-                    {security.twoFactorEnabled ? "Manage" : "Setup"}
+                    Setup {security.twoFactorMethod === "app" ? "Authenticator App" : 
+                           security.twoFactorMethod === "sms" ? "SMS 2FA" : "WhatsApp 2FA"}
                   </Button>
+                </>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 border rounded-lg bg-green-50">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <Shield className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Two-Factor Authentication Enabled</p>
+                        <p className="text-sm text-muted-foreground">
+                          Method: {security.twoFactorMethod === "app" ? "Authenticator App" : 
+                                   security.twoFactorMethod === "sms" ? "SMS" : "WhatsApp"}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="default">Active</Badge>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Manage
+                    </Button>
+                    <Button variant="destructive" onClick={handleDisable2FA} className="flex-1">
+                      Disable 2FA
+                    </Button>
+                  </div>
                 </div>
-              </div>
-              
+              )}
+
               {!security.twoFactorEnabled && (
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <h4 className="font-medium text-blue-900 mb-2">Why enable 2FA?</h4>
@@ -190,6 +385,7 @@ export function SecuritySettings({ role, onSettingChange }: SecuritySettingsProp
                     <li>• Protect your account from unauthorized access</li>
                     <li>• Required for accessing sensitive features</li>
                     <li>• Industry standard security practice</li>
+                    <li>• Multiple convenient options available</li>
                   </ul>
                 </div>
               )}
@@ -216,10 +412,11 @@ export function SecuritySettings({ role, onSettingChange }: SecuritySettingsProp
                       <p className="text-xs text-muted-foreground">{session.lastActive}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      {session.current && <Badge variant="default">Current</Badge>}
-                      {!session.current && (
+                      {session.current ? (
+                        <Badge variant="default">Current</Badge>
+                      ) : (
                         <Button 
-                          variant="outline" 
+                          variant="destructive" 
                           size="sm"
                           onClick={() => handleTerminateSession(session.id)}
                         >
@@ -230,6 +427,12 @@ export function SecuritySettings({ role, onSettingChange }: SecuritySettingsProp
                   </div>
                 ))}
               </div>
+              
+              {sessions.length === 1 && (
+                <div className="text-center py-4 text-muted-foreground">
+                  <p>Only your current session is active</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
