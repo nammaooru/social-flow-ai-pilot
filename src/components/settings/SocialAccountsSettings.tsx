@@ -12,8 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CommonSettingsProps } from "@/pages/Settings";
-import { Loader2, CheckCircle, AlertCircle, Link, Plus, Eye, EyeOff } from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle, Link, Plus, Eye, EyeOff, Trash2, MoreVertical } from "lucide-react";
 import { Instagram, Facebook, Linkedin, Youtube } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface SocialAccount {
   id: string;
@@ -57,6 +58,8 @@ export function SocialAccountsSettings({
   const { toast } = useToast();
   const [isConnectingAll, setIsConnectingAll] = useState(false);
   const [showAddNewAccount, setShowAddNewAccount] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isAddingAccount, setIsAddingAccount] = useState(false);
   const [newAccountForm, setNewAccountForm] = useState<NewAccountForm>({
@@ -630,6 +633,23 @@ export function SocialAccountsSettings({
                         >
                           {account.connected ? "Disconnect" : "Connect"}
                         </Button>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem 
+                              onClick={() => openDeleteConfirm(account.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete Account
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                   </div>
@@ -884,6 +904,57 @@ export function SocialAccountsSettings({
                   Add Account
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-red-600">
+              Delete Social Account
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this social media account? This action cannot be undone and will remove all associated data.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {accountToDelete && (
+            <div className="py-4">
+              <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <Avatar className="h-10 w-10">
+                  <AvatarFallback className={accounts.find(acc => acc.id === accountToDelete)?.color}>
+                    {accounts.find(acc => acc.id === accountToDelete)?.icon}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium">{accounts.find(acc => acc.id === accountToDelete)?.platform}</p>
+                  <p className="text-sm text-muted-foreground">{accounts.find(acc => acc.id === accountToDelete)?.username}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowDeleteConfirm(false);
+                setAccountToDelete(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => accountToDelete && handleDeleteAccount(accountToDelete)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Account
             </Button>
           </DialogFooter>
         </DialogContent>
