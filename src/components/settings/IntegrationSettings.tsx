@@ -41,6 +41,8 @@ interface SMSProvider {
   senderId?: string;
   accountSid?: string;
   authToken?: string;
+  webhookUrl?: string;
+  customFields?: Record<string, string>;
 }
 
 export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
@@ -48,6 +50,10 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
   const [isWebhookDialogOpen, setIsWebhookDialogOpen] = useState(false);
   const [isStorageDialogOpen, setIsStorageDialogOpen] = useState(false);
   const [isSMSDialogOpen, setIsSMSDialogOpen] = useState(false);
+  const [isStorageConfigureOpen, setIsStorageConfigureOpen] = useState(false);
+  const [isIntegrationSettingsOpen, setIsIntegrationSettingsOpen] = useState(false);
+  const [selectedStorage, setSelectedStorage] = useState<StorageConfig | null>(null);
+  const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
   const [webhookUrl, setWebhookUrl] = useState("");
   const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
   
@@ -94,26 +100,6 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
       icon: "📊"
     },
     {
-      id: "2",
-      name: "Slack",
-      description: "Get notifications in your Slack workspace",
-      category: "Communication",
-      connected: true,
-      status: "active",
-      lastSync: "5 minutes ago",
-      icon: "💬"
-    },
-    {
-      id: "3",
-      name: "Zapier",
-      description: "Connect to 5000+ apps with automation",
-      category: "Automation",
-      connected: false,
-      status: "inactive",
-      lastSync: "Never",
-      icon: "⚡"
-    },
-    {
       id: "4",
       name: "Mailchimp",
       description: "Sync subscribers and send email campaigns",
@@ -121,17 +107,12 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
       connected: true,
       status: "error",
       lastSync: "1 day ago",
-      icon: "📧"
-    },
-    {
-      id: "5",
-      name: "Canva",
-      description: "Create and edit designs directly",
-      category: "Design",
-      connected: false,
-      status: "inactive",
-      lastSync: "Never",
-      icon: "🎨"
+      icon: "📧",
+      settings: {
+        apiKey: "mc-**********************",
+        listId: "list_123456",
+        webhookUrl: "https://api.mailchimp.com/webhook"
+      }
     },
     {
       id: "6",
@@ -141,7 +122,12 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
       connected: false,
       status: "inactive",
       lastSync: "Never",
-      icon: "🛍️"
+      icon: "🛍️",
+      settings: {
+        shopDomain: "",
+        accessToken: "",
+        webhookSecret: ""
+      }
     }
   ]);
   
@@ -172,7 +158,8 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
     { value: "nexmo", label: "Vonage (Nexmo)", fields: ["apiKey", "apiSecret", "senderId"] },
     { value: "aws-sns", label: "AWS SNS", fields: ["apiKey", "apiSecret"] },
     { value: "textmagic", label: "TextMagic", fields: ["apiKey", "apiSecret"] },
-    { value: "clicksend", label: "ClickSend", fields: ["apiKey", "apiSecret"] }
+    { value: "clicksend", label: "ClickSend", fields: ["apiKey", "apiSecret"] },
+    { value: "custom", label: "Custom Provider", fields: ["apiKey", "apiSecret", "webhookUrl"] }
   ];
   
   const handleConnect = (integrationId: string) => {
@@ -188,6 +175,33 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
       description: `${integration?.name} has been ${integration?.connected ? "disconnected" : "connected"} successfully.`,
     });
     
+    if (onSettingChange) {
+      onSettingChange();
+    }
+  };
+
+  const handleConfigureIntegration = (integration: Integration) => {
+    setSelectedIntegration(integration);
+    setIsIntegrationSettingsOpen(true);
+  };
+
+  const handleUpdateIntegrationSettings = () => {
+    if (!selectedIntegration) return;
+
+    setIntegrations(prev => prev.map(integration => 
+      integration.id === selectedIntegration.id 
+        ? { ...integration, settings: selectedIntegration.settings }
+        : integration
+    ));
+
+    toast({
+      title: "Settings updated",
+      description: `${selectedIntegration.name} settings have been updated successfully.`,
+    });
+
+    setIsIntegrationSettingsOpen(false);
+    setSelectedIntegration(null);
+
     if (onSettingChange) {
       onSettingChange();
     }
@@ -238,6 +252,31 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
     
     setNewStorageConfig({ type: "localStorage", name: "" });
     setIsStorageDialogOpen(false);
+
+    if (onSettingChange) {
+      onSettingChange();
+    }
+  };
+
+  const handleConfigureStorage = (config: StorageConfig) => {
+    setSelectedStorage(config);
+    setIsStorageConfigureOpen(true);
+  };
+
+  const handleUpdateStorageConfig = () => {
+    if (!selectedStorage) return;
+
+    setStorageConfigs(prev => prev.map(config => 
+      config.name === selectedStorage.name ? selectedStorage : config
+    ));
+
+    toast({
+      title: "Storage configuration updated",
+      description: `${selectedStorage.name} has been updated successfully.`,
+    });
+
+    setIsStorageConfigureOpen(false);
+    setSelectedStorage(null);
 
     if (onSettingChange) {
       onSettingChange();
@@ -447,7 +486,11 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
                       </div>
                       
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleConfigureIntegration(integration)}
+                        >
                           Configure
                         </Button>
                         <Button 
@@ -710,7 +753,13 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="default">Active</Badge>
-                      <Button variant="outline" size="sm">Configure</Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleConfigureStorage(config)}
+                      >
+                        Configure
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -772,6 +821,21 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
                         </Select>
                       </div>
 
+                      {newSMSProvider.name === "Custom Provider" && (
+                        <div className="space-y-2">
+                          <Label htmlFor="customProviderName">Custom Provider Name</Label>
+                          <Input
+                            id="customProviderName"
+                            placeholder="Enter custom provider name"
+                            value={newSMSProvider.customFields?.providerName || ""}
+                            onChange={(e) => setNewSMSProvider(prev => ({ 
+                              ...prev, 
+                              customFields: { ...prev.customFields, providerName: e.target.value }
+                            }))}
+                          />
+                        </div>
+                      )}
+
                       {newSMSProvider.name === "Twilio" && (
                         <>
                           <div className="space-y-2">
@@ -797,7 +861,7 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
                         </>
                       )}
 
-                      {(newSMSProvider.name === "Vonage (Nexmo)" || newSMSProvider.name === "AWS SNS" || newSMSProvider.name === "TextMagic" || newSMSProvider.name === "ClickSend") && (
+                      {(newSMSProvider.name === "Vonage (Nexmo)" || newSMSProvider.name === "AWS SNS" || newSMSProvider.name === "TextMagic" || newSMSProvider.name === "ClickSend" || newSMSProvider.name === "Custom Provider") && (
                         <>
                           <div className="space-y-2">
                             <Label htmlFor="apiKey">API Key</Label>
@@ -820,6 +884,18 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
                             />
                           </div>
                         </>
+                      )}
+
+                      {newSMSProvider.name === "Custom Provider" && (
+                        <div className="space-y-2">
+                          <Label htmlFor="webhookUrl">Webhook URL</Label>
+                          <Input
+                            id="webhookUrl"
+                            placeholder="https://api.yourprovider.com/sms"
+                            value={newSMSProvider.webhookUrl || ""}
+                            onChange={(e) => setNewSMSProvider(prev => ({ ...prev, webhookUrl: e.target.value }))}
+                          />
+                        </div>
                       )}
 
                       <div className="space-y-2">
@@ -877,6 +953,186 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Storage Configuration Dialog */}
+      <Dialog open={isStorageConfigureOpen} onOpenChange={setIsStorageConfigureOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Configure Storage</DialogTitle>
+            <DialogDescription>
+              Update storage configuration settings
+            </DialogDescription>
+          </DialogHeader>
+          {selectedStorage && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="editStorageName">Configuration Name</Label>
+                <Input
+                  id="editStorageName"
+                  value={selectedStorage.name}
+                  onChange={(e) => setSelectedStorage(prev => prev ? { ...prev, name: e.target.value } : null)}
+                />
+              </div>
+              
+              {selectedStorage.type !== "localStorage" && (
+                <div className="space-y-2">
+                  <Label htmlFor="editConnectionString">Connection String</Label>
+                  <Input
+                    id="editConnectionString"
+                    type="password"
+                    value={selectedStorage.connectionString || ""}
+                    onChange={(e) => setSelectedStorage(prev => prev ? { ...prev, connectionString: e.target.value } : null)}
+                  />
+                </div>
+              )}
+
+              {selectedStorage.type === "mongodb" && (
+                <div className="space-y-2">
+                  <Label htmlFor="editCollection">Collection Name</Label>
+                  <Input
+                    id="editCollection"
+                    value={selectedStorage.collection || ""}
+                    onChange={(e) => setSelectedStorage(prev => prev ? { ...prev, collection: e.target.value } : null)}
+                  />
+                </div>
+              )}
+
+              {(selectedStorage.type === "postgresql" || selectedStorage.type === "mysql" || selectedStorage.type === "supabase") && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="editDatabase">Database Name</Label>
+                    <Input
+                      id="editDatabase"
+                      value={selectedStorage.database || ""}
+                      onChange={(e) => setSelectedStorage(prev => prev ? { ...prev, database: e.target.value } : null)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="editTable">Table Name</Label>
+                    <Input
+                      id="editTable"
+                      value={selectedStorage.table || ""}
+                      onChange={(e) => setSelectedStorage(prev => prev ? { ...prev, table: e.target.value } : null)}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsStorageConfigureOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateStorageConfig}>Update Configuration</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Integration Settings Dialog */}
+      <Dialog open={isIntegrationSettingsOpen} onOpenChange={setIsIntegrationSettingsOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Configure {selectedIntegration?.name}</DialogTitle>
+            <DialogDescription>
+              Update integration settings and credentials
+            </DialogDescription>
+          </DialogHeader>
+          {selectedIntegration && (
+            <div className="space-y-4">
+              {selectedIntegration.name === "Mailchimp" && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="mailchimpApiKey">API Key</Label>
+                    <Input
+                      id="mailchimpApiKey"
+                      type="password"
+                      placeholder="Enter Mailchimp API Key"
+                      value={selectedIntegration.settings?.apiKey || ""}
+                      onChange={(e) => setSelectedIntegration(prev => prev ? {
+                        ...prev,
+                        settings: { ...prev.settings, apiKey: e.target.value }
+                      } : null)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="mailchimpListId">List ID</Label>
+                    <Input
+                      id="mailchimpListId"
+                      placeholder="Enter List ID"
+                      value={selectedIntegration.settings?.listId || ""}
+                      onChange={(e) => setSelectedIntegration(prev => prev ? {
+                        ...prev,
+                        settings: { ...prev.settings, listId: e.target.value }
+                      } : null)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="mailchimpWebhook">Webhook URL</Label>
+                    <Input
+                      id="mailchimpWebhook"
+                      placeholder="Enter Webhook URL"
+                      value={selectedIntegration.settings?.webhookUrl || ""}
+                      onChange={(e) => setSelectedIntegration(prev => prev ? {
+                        ...prev,
+                        settings: { ...prev.settings, webhookUrl: e.target.value }
+                      } : null)}
+                    />
+                  </div>
+                </>
+              )}
+
+              {selectedIntegration.name === "Shopify" && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="shopifyDomain">Shop Domain</Label>
+                    <Input
+                      id="shopifyDomain"
+                      placeholder="your-shop.myshopify.com"
+                      value={selectedIntegration.settings?.shopDomain || ""}
+                      onChange={(e) => setSelectedIntegration(prev => prev ? {
+                        ...prev,
+                        settings: { ...prev.settings, shopDomain: e.target.value }
+                      } : null)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="shopifyAccessToken">Access Token</Label>
+                    <Input
+                      id="shopifyAccessToken"
+                      type="password"
+                      placeholder="Enter Access Token"
+                      value={selectedIntegration.settings?.accessToken || ""}
+                      onChange={(e) => setSelectedIntegration(prev => prev ? {
+                        ...prev,
+                        settings: { ...prev.settings, accessToken: e.target.value }
+                      } : null)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="shopifyWebhookSecret">Webhook Secret</Label>
+                    <Input
+                      id="shopifyWebhookSecret"
+                      type="password"
+                      placeholder="Enter Webhook Secret"
+                      value={selectedIntegration.settings?.webhookSecret || ""}
+                      onChange={(e) => setSelectedIntegration(prev => prev ? {
+                        ...prev,
+                        settings: { ...prev.settings, webhookSecret: e.target.value }
+                      } : null)}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsIntegrationSettingsOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateIntegrationSettings}>Save Settings</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
