@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Link, Plus, Settings, Zap } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Link, Plus, Settings, Zap, Database, MessageSquare } from "lucide-react";
 import { CommonSettingsProps } from "@/pages/Settings";
 
 interface Integration {
@@ -24,11 +24,63 @@ interface Integration {
   settings?: any;
 }
 
+interface StorageConfig {
+  type: "localStorage" | "supabase" | "mongodb" | "postgresql" | "mysql" | "redis";
+  name: string;
+  connectionString?: string;
+  database?: string;
+  collection?: string;
+  table?: string;
+}
+
+interface SMSProvider {
+  id: string;
+  name: string;
+  apiKey?: string;
+  apiSecret?: string;
+  senderId?: string;
+  accountSid?: string;
+  authToken?: string;
+}
+
 export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
   const { toast } = useToast();
   const [isWebhookDialogOpen, setIsWebhookDialogOpen] = useState(false);
+  const [isStorageDialogOpen, setIsStorageDialogOpen] = useState(false);
+  const [isSMSDialogOpen, setIsSMSDialogOpen] = useState(false);
   const [webhookUrl, setWebhookUrl] = useState("");
   const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
+  
+  const [storageConfigs, setStorageConfigs] = useState<StorageConfig[]>([
+    {
+      type: "localStorage",
+      name: "Browser Local Storage",
+    },
+    {
+      type: "supabase",
+      name: "Admin Supabase Database",
+      database: "admin_data"
+    }
+  ]);
+
+  const [smsProviders, setSmsProviders] = useState<SMSProvider[]>([
+    {
+      id: "1",
+      name: "Twilio",
+      accountSid: "AC*********************",
+      authToken: "*********************",
+      senderId: "+1234567890"
+    }
+  ]);
+
+  const [newStorageConfig, setNewStorageConfig] = useState<Partial<StorageConfig>>({
+    type: "localStorage",
+    name: ""
+  });
+
+  const [newSMSProvider, setNewSMSProvider] = useState<Partial<SMSProvider>>({
+    name: "Twilio"
+  });
   
   const [integrations, setIntegrations] = useState<Integration[]>([
     {
@@ -105,6 +157,23 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
     { id: "follower.gained", label: "New Follower", description: "When you gain a new follower" },
     { id: "mention.received", label: "Mention Received", description: "When you're mentioned in a post" }
   ];
+
+  const storageTypes = [
+    { value: "localStorage", label: "Local Storage", description: "Store data in browser local storage" },
+    { value: "supabase", label: "Supabase Database", description: "Store data in Supabase PostgreSQL" },
+    { value: "mongodb", label: "MongoDB", description: "Store data in MongoDB database" },
+    { value: "postgresql", label: "PostgreSQL", description: "Store data in PostgreSQL database" },
+    { value: "mysql", label: "MySQL", description: "Store data in MySQL database" },
+    { value: "redis", label: "Redis", description: "Store data in Redis cache" }
+  ];
+
+  const smsProviderTypes = [
+    { value: "twilio", label: "Twilio", fields: ["accountSid", "authToken", "senderId"] },
+    { value: "nexmo", label: "Vonage (Nexmo)", fields: ["apiKey", "apiSecret", "senderId"] },
+    { value: "aws-sns", label: "AWS SNS", fields: ["apiKey", "apiSecret"] },
+    { value: "textmagic", label: "TextMagic", fields: ["apiKey", "apiSecret"] },
+    { value: "clicksend", label: "ClickSend", fields: ["apiKey", "apiSecret"] }
+  ];
   
   const handleConnect = (integrationId: string) => {
     setIntegrations(prev => prev.map(integration => 
@@ -143,6 +212,68 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
     setWebhookEvents([]);
     setIsWebhookDialogOpen(false);
   };
+
+  const handleCreateStorageConfig = () => {
+    if (!newStorageConfig.name || !newStorageConfig.type) {
+      toast({
+        title: "Missing information",
+        description: "Please provide a name and select storage type.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const config: StorageConfig = {
+      type: newStorageConfig.type as StorageConfig['type'],
+      name: newStorageConfig.name,
+      ...newStorageConfig
+    };
+
+    setStorageConfigs(prev => [...prev, config]);
+    
+    toast({
+      title: "Storage configuration added",
+      description: `${newStorageConfig.name} has been configured successfully.`,
+    });
+    
+    setNewStorageConfig({ type: "localStorage", name: "" });
+    setIsStorageDialogOpen(false);
+
+    if (onSettingChange) {
+      onSettingChange();
+    }
+  };
+
+  const handleCreateSMSProvider = () => {
+    if (!newSMSProvider.name) {
+      toast({
+        title: "Missing information",
+        description: "Please provide provider details.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const provider: SMSProvider = {
+      id: Date.now().toString(),
+      name: newSMSProvider.name!,
+      ...newSMSProvider
+    };
+
+    setSmsProviders(prev => [...prev, provider]);
+    
+    toast({
+      title: "SMS provider added",
+      description: `${newSMSProvider.name} has been configured successfully.`,
+    });
+    
+    setNewSMSProvider({ name: "Twilio" });
+    setIsSMSDialogOpen(false);
+
+    if (onSettingChange) {
+      onSettingChange();
+    }
+  };
   
   const handleEventToggle = (eventId: string) => {
     setWebhookEvents(prev => 
@@ -164,7 +295,7 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
         </p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Connected</CardTitle>
@@ -194,13 +325,35 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
             <p className="text-xs text-muted-foreground">active webhooks</p>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Storage</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{storageConfigs.length}</div>
+            <p className="text-xs text-muted-foreground">storage configs</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">SMS Providers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{smsProviders.length}</div>
+            <p className="text-xs text-muted-foreground">SMS providers</p>
+          </CardContent>
+        </Card>
       </div>
       
       <Tabs defaultValue="available" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="available">Available</TabsTrigger>
           <TabsTrigger value="connected">Connected</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+          <TabsTrigger value="storage">Storage</TabsTrigger>
+          <TabsTrigger value="sms">SMS Marketing</TabsTrigger>
         </TabsList>
         
         <TabsContent value="available" className="space-y-4">
@@ -285,7 +438,7 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
                     
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <Badge variant={integration.status === "active" ? "default" : integration.status === "error" ? "destructive" : "secondary"}>
+                        <Badge variant={integration.status === "active" ? "default" : "secondary"}>
                           {integration.status}
                         </Badge>
                         <p className="text-xs text-muted-foreground mt-1">
@@ -414,6 +567,309 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
                     <Zap className="mx-auto h-12 w-12 mb-4" />
                     <p>No webhooks configured.</p>
                     <p className="text-sm">Add your first webhook to receive real-time notifications.</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="storage" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Database className="h-5 w-5" />
+                    Storage Configuration
+                  </CardTitle>
+                  <CardDescription>Configure where to store conversation messages and admin details</CardDescription>
+                </div>
+                <Dialog open={isStorageDialogOpen} onOpenChange={setIsStorageDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Add Storage
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Add Storage Configuration</DialogTitle>
+                      <DialogDescription>
+                        Configure a new storage option for your data
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="storageName">Configuration Name</Label>
+                        <Input
+                          id="storageName"
+                          placeholder="e.g., Main Database"
+                          value={newStorageConfig.name || ""}
+                          onChange={(e) => setNewStorageConfig(prev => ({ ...prev, name: e.target.value }))}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Storage Type</Label>
+                        <Select 
+                          value={newStorageConfig.type} 
+                          onValueChange={(value) => setNewStorageConfig(prev => ({ ...prev, type: value as StorageConfig['type'] }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select storage type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {storageTypes.map((type) => (
+                              <SelectItem key={type.value} value={type.value}>
+                                <div>
+                                  <div className="font-medium">{type.label}</div>
+                                  <div className="text-xs text-muted-foreground">{type.description}</div>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {newStorageConfig.type !== "localStorage" && (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="connectionString">Connection String</Label>
+                            <Input
+                              id="connectionString"
+                              type="password"
+                              placeholder="Connection string or URL"
+                              value={newStorageConfig.connectionString || ""}
+                              onChange={(e) => setNewStorageConfig(prev => ({ ...prev, connectionString: e.target.value }))}
+                            />
+                          </div>
+
+                          {newStorageConfig.type === "mongodb" && (
+                            <div className="space-y-2">
+                              <Label htmlFor="collection">Collection Name</Label>
+                              <Input
+                                id="collection"
+                                placeholder="e.g., conversations"
+                                value={newStorageConfig.collection || ""}
+                                onChange={(e) => setNewStorageConfig(prev => ({ ...prev, collection: e.target.value }))}
+                              />
+                            </div>
+                          )}
+
+                          {(newStorageConfig.type === "postgresql" || newStorageConfig.type === "mysql" || newStorageConfig.type === "supabase") && (
+                            <>
+                              <div className="space-y-2">
+                                <Label htmlFor="database">Database Name</Label>
+                                <Input
+                                  id="database"
+                                  placeholder="Database name"
+                                  value={newStorageConfig.database || ""}
+                                  onChange={(e) => setNewStorageConfig(prev => ({ ...prev, database: e.target.value }))}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="table">Table Name</Label>
+                                <Input
+                                  id="table"
+                                  placeholder="e.g., conversations"
+                                  value={newStorageConfig.table || ""}
+                                  onChange={(e) => setNewStorageConfig(prev => ({ ...prev, table: e.target.value }))}
+                                />
+                              </div>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setIsStorageDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleCreateStorageConfig}>Add Storage</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {storageConfigs.map((config, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Database className="h-5 w-5 text-blue-500" />
+                      <div>
+                        <p className="font-medium">{config.name}</p>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Badge variant="outline">{config.type}</Badge>
+                          {config.database && <span>DB: {config.database}</span>}
+                          {config.collection && <span>Collection: {config.collection}</span>}
+                          {config.table && <span>Table: {config.table}</span>}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="default">Active</Badge>
+                      <Button variant="outline" size="sm">Configure</Button>
+                    </div>
+                  </div>
+                ))}
+                
+                {storageConfigs.length === 0 && (
+                  <div className="text-center p-8 text-muted-foreground">
+                    <Database className="mx-auto h-12 w-12 mb-4" />
+                    <p>No storage configurations.</p>
+                    <p className="text-sm">Add your first storage configuration to get started.</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="sms" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5" />
+                    SMS Marketing Providers
+                  </CardTitle>
+                  <CardDescription>Configure SMS providers for marketing campaigns</CardDescription>
+                </div>
+                <Dialog open={isSMSDialogOpen} onOpenChange={setIsSMSDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Add SMS Provider
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Add SMS Provider</DialogTitle>
+                      <DialogDescription>
+                        Configure a new SMS provider for marketing campaigns
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>SMS Provider</Label>
+                        <Select 
+                          value={newSMSProvider.name} 
+                          onValueChange={(value) => setNewSMSProvider(prev => ({ ...prev, name: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select SMS provider" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {smsProviderTypes.map((provider) => (
+                              <SelectItem key={provider.value} value={provider.label}>
+                                {provider.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {newSMSProvider.name === "Twilio" && (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="accountSid">Account SID</Label>
+                            <Input
+                              id="accountSid"
+                              type="password"
+                              placeholder="Twilio Account SID"
+                              value={newSMSProvider.accountSid || ""}
+                              onChange={(e) => setNewSMSProvider(prev => ({ ...prev, accountSid: e.target.value }))}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="authToken">Auth Token</Label>
+                            <Input
+                              id="authToken"
+                              type="password"
+                              placeholder="Twilio Auth Token"
+                              value={newSMSProvider.authToken || ""}
+                              onChange={(e) => setNewSMSProvider(prev => ({ ...prev, authToken: e.target.value }))}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {(newSMSProvider.name === "Vonage (Nexmo)" || newSMSProvider.name === "AWS SNS" || newSMSProvider.name === "TextMagic" || newSMSProvider.name === "ClickSend") && (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="apiKey">API Key</Label>
+                            <Input
+                              id="apiKey"
+                              type="password"
+                              placeholder="API Key"
+                              value={newSMSProvider.apiKey || ""}
+                              onChange={(e) => setNewSMSProvider(prev => ({ ...prev, apiKey: e.target.value }))}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="apiSecret">API Secret</Label>
+                            <Input
+                              id="apiSecret"
+                              type="password"
+                              placeholder="API Secret"
+                              value={newSMSProvider.apiSecret || ""}
+                              onChange={(e) => setNewSMSProvider(prev => ({ ...prev, apiSecret: e.target.value }))}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      <div className="space-y-2">
+                        <Label htmlFor="senderId">Sender ID / Phone Number</Label>
+                        <Input
+                          id="senderId"
+                          placeholder="e.g., +1234567890 or BRAND"
+                          value={newSMSProvider.senderId || ""}
+                          onChange={(e) => setNewSMSProvider(prev => ({ ...prev, senderId: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setIsSMSDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleCreateSMSProvider}>Add Provider</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {smsProviders.map((provider) => (
+                  <div key={provider.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <MessageSquare className="h-5 w-5 text-green-500" />
+                      <div>
+                        <p className="font-medium">{provider.name}</p>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          {provider.senderId && <span>Sender: {provider.senderId}</span>}
+                          {provider.accountSid && <span>Account: {provider.accountSid.substring(0, 8)}...</span>}
+                          {provider.apiKey && <span>API Key: {provider.apiKey.substring(0, 8)}...</span>}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="default">Active</Badge>
+                      <Button variant="outline" size="sm">Configure</Button>
+                      <Button variant="outline" size="sm">Test</Button>
+                    </div>
+                  </div>
+                ))}
+                
+                {smsProviders.length === 0 && (
+                  <div className="text-center p-8 text-muted-foreground">
+                    <MessageSquare className="mx-auto h-12 w-12 mb-4" />
+                    <p>No SMS providers configured.</p>
+                    <p className="text-sm">Add your first SMS provider to get started with SMS marketing.</p>
                   </div>
                 )}
               </div>
