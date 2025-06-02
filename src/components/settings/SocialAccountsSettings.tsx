@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CommonSettingsProps } from "@/pages/Settings";
-import { Loader2, CheckCircle, AlertCircle, Link, Plus, ExternalLink, Settings, Zap } from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle, Link, Plus } from "lucide-react";
 import { Instagram, Facebook, Linkedin, Youtube } from "lucide-react";
 
 interface SocialAccount {
@@ -47,7 +46,6 @@ export function SocialAccountsSettings({ onSettingChange }: CommonSettingsProps)
   const { toast } = useToast();
   const [isConnectingAll, setIsConnectingAll] = useState(false);
   const [showAddNewAccount, setShowAddNewAccount] = useState(false);
-  const [connectingAccounts, setConnectingAccounts] = useState<Set<string>>(new Set());
   const [accounts, setAccounts] = useState<SocialAccount[]>([
     {
       id: "1",
@@ -134,86 +132,37 @@ export function SocialAccountsSettings({ onSettingChange }: CommonSettingsProps)
     syncErrors: true
   });
   
-  const handleAddNewAccount = () => {
-    setShowAddNewAccount(!showAddNewAccount);
-    
-    if (!showAddNewAccount) {
-      toast({
-        title: "Add New Account",
-        description: "Select a platform below to add your social media account.",
-      });
-    }
-  };
-  
-  const handleAddAccount = async (platform: string) => {
-    const accountId = `connecting-${platform}`;
-    setConnectingAccounts(prev => new Set(prev).add(accountId));
-    
+  const handleAddAccount = (platform: string) => {
     toast({
-      title: "Connecting to " + platform,
-      description: "You will be redirected to " + platform + " to authorize your account.",
+      title: "Redirecting to " + platform,
+      description: "You will be redirected to " + platform + " to connect your account.",
     });
     
-    try {
-      // Simulate OAuth flow
-      await new Promise(resolve => setTimeout(resolve, 2500));
+    setTimeout(() => {
+      const newAccount: SocialAccount = {
+        id: Date.now().toString(),
+        platform,
+        username: `@your${platform.toLowerCase()}`,
+        connected: true,
+        followers: Math.floor(Math.random() * 10000) + 1000,
+        posts: Math.floor(Math.random() * 100) + 10,
+        lastSync: "Just now",
+        color: getColorForPlatform(platform),
+        syncInProgress: false,
+        icon: platformIcons[platform as keyof typeof platformIcons]
+      };
       
-      // Check if account already exists
-      const existingAccount = accounts.find(acc => acc.platform === platform);
-      
-      if (existingAccount && !existingAccount.connected) {
-        // Update existing disconnected account
-        setAccounts(prev => prev.map(acc => 
-          acc.platform === platform 
-            ? {
-                ...acc,
-                connected: true,
-                username: `@your${platform.toLowerCase()}`,
-                followers: Math.floor(Math.random() * 10000) + 1000,
-                posts: Math.floor(Math.random() * 100) + 10,
-                lastSync: "Just now"
-              }
-            : acc
-        ));
-      } else if (!existingAccount) {
-        // Add new account
-        const newAccount: SocialAccount = {
-          id: Date.now().toString(),
-          platform,
-          username: `@your${platform.toLowerCase()}`,
-          connected: true,
-          followers: Math.floor(Math.random() * 10000) + 1000,
-          posts: Math.floor(Math.random() * 100) + 10,
-          lastSync: "Just now",
-          color: getColorForPlatform(platform),
-          syncInProgress: false,
-          icon: platformIcons[platform as keyof typeof platformIcons]
-        };
-        
-        setAccounts(prev => [...prev, newAccount]);
-      }
+      setAccounts(prev => [...prev, newAccount]);
       
       toast({
-        title: platform + " account connected!",
-        description: `Successfully connected your ${platform} account. You can now manage your content from here.`,
+        title: platform + " account added",
+        description: `Successfully connected your ${platform} account.`,
       });
       
       if (onSettingChange) {
         onSettingChange();
       }
-    } catch (error) {
-      toast({
-        title: "Connection failed",
-        description: `Failed to connect ${platform} account. Please try again or check your permissions.`,
-        variant: "destructive",
-      });
-    } finally {
-      setConnectingAccounts(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(accountId);
-        return newSet;
-      });
-    }
+    }, 2000);
   };
   
   const getColorForPlatform = (platform: string) => {
@@ -434,171 +383,114 @@ export function SocialAccountsSettings({ onSettingChange }: CommonSettingsProps)
   const availablePlatforms = ["Instagram", "X", "Facebook", "LinkedIn", "TikTok", "YouTube"];
   
   return (
-    <div className="space-y-8">
-      <div className="text-center">
-        <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Social Media Hub
-        </h3>
-        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
-          Connect, manage, and synchronize all your social media accounts from one powerful dashboard. 
-          Streamline your content strategy across platforms.
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-medium">Social Accounts</h3>
+        <p className="text-sm text-muted-foreground">
+          Connect and manage your social media accounts for seamless content management.
         </p>
       </div>
       
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-0 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Connected Accounts</p>
-                <p className="text-3xl font-bold text-blue-700 dark:text-blue-300">{connectedAccounts.length}</p>
-                <p className="text-xs text-blue-500 dark:text-blue-400">of {accounts.length} platforms</p>
-              </div>
-              <div className="h-12 w-12 bg-blue-500 rounded-full flex items-center justify-center">
-                <Link className="h-6 w-6 text-white" />
-              </div>
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Connected Accounts</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{connectedAccounts.length}</div>
+            <p className="text-xs text-muted-foreground">out of {accounts.length} platforms</p>
           </CardContent>
         </Card>
         
-        <Card className="border-0 bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-950 dark:to-green-900">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Total Reach</p>
-                <p className="text-3xl font-bold text-emerald-700 dark:text-emerald-300">{totalFollowers.toLocaleString()}</p>
-                <p className="text-xs text-emerald-500 dark:text-emerald-400">followers across platforms</p>
-              </div>
-              <div className="h-12 w-12 bg-emerald-500 rounded-full flex items-center justify-center">
-                <Zap className="h-6 w-6 text-white" />
-              </div>
-            </div>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Followers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalFollowers.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">across all platforms</p>
           </CardContent>
         </Card>
         
-        <Card className="border-0 bg-gradient-to-br from-amber-50 to-orange-100 dark:from-amber-950 dark:to-orange-900">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-amber-600 dark:text-amber-400">Content Created</p>
-                <p className="text-3xl font-bold text-amber-700 dark:text-amber-300">{totalPosts.toLocaleString()}</p>
-                <p className="text-xs text-amber-500 dark:text-amber-400">posts managed</p>
-              </div>
-              <div className="h-12 w-12 bg-amber-500 rounded-full flex items-center justify-center">
-                <Settings className="h-6 w-6 text-white" />
-              </div>
-            </div>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Posts</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalPosts.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">managed content</p>
           </CardContent>
         </Card>
       </div>
       
-      {/* Add New Account Section */}
-      <Card className="border-0 shadow-xl bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950 dark:to-purple-950">
+      <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-xl text-violet-700 dark:text-violet-300">Connect Your Accounts</CardTitle>
-              <CardDescription className="text-violet-600 dark:text-violet-400">
-                Add your personal social media accounts to start managing all your content in one place
-              </CardDescription>
+              <CardTitle>Add My Account</CardTitle>
+              <CardDescription>Connect your personal accounts to these platforms</CardDescription>
             </div>
             <Button
-              onClick={handleAddNewAccount}
-              className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white shadow-lg"
+              onClick={() => setShowAddNewAccount(!showAddNewAccount)}
+              variant="outline"
+              className="flex items-center gap-2"
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Add New Account
+              <Plus className="h-4 w-4" />
+              Add New Social Account
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {availablePlatforms.map((platform) => {
-              const isConnecting = connectingAccounts.has(`connecting-${platform}`);
-              const existingAccount = accounts.find(acc => acc.platform === platform);
-              const isConnected = existingAccount?.connected;
-              
-              return (
-                <div key={platform} className="group relative overflow-hidden rounded-xl border-2 border-transparent hover:border-violet-200 dark:hover:border-violet-800 bg-white dark:bg-gray-900 p-6 transition-all duration-300 hover:shadow-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12 ring-2 ring-violet-100 dark:ring-violet-900">
-                        <AvatarFallback className={getColorForPlatform(platform)}>
-                          {platformIcons[platform as keyof typeof platformIcons]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-semibold text-gray-900 dark:text-gray-100">{platform}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {isConnected ? "Connected" : "Not connected"}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    {isConnected && (
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                    )}
+            {availablePlatforms.map((platform) => (
+              <div key={platform} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className={getColorForPlatform(platform)}>
+                      {platformIcons[platform as keyof typeof platformIcons]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">{platform}</p>
+                    <p className="text-sm text-muted-foreground">Connect your account</p>
                   </div>
-                  
-                  <Button
-                    onClick={() => handleAddAccount(platform)}
-                    disabled={isConnecting || isConnected}
-                    variant={isConnected ? "outline" : "default"}
-                    size="sm"
-                    className={`w-full ${
-                      isConnected 
-                        ? "bg-green-50 text-green-700 border-green-200 hover:bg-green-100 dark:bg-green-950 dark:text-green-300 dark:border-green-800" 
-                        : "bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white"
-                    }`}
-                  >
-                    {isConnecting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Connecting...
-                      </>
-                    ) : isConnected ? (
-                      <>
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Connected
-                      </>
-                    ) : (
-                      <>
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Connect Account
-                      </>
-                    )}
-                  </Button>
                 </div>
-              );
-            })}
+                
+                <Button
+                  onClick={() => handleAddAccount(platform)}
+                  variant="default"
+                  size="sm"
+                >
+                  Add Account
+                </Button>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
       
-      {/* Connected Platforms */}
-      <Card className="border-0 shadow-xl">
+      <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-xl">Connected Platforms</CardTitle>
-              <CardDescription>Manage your connected social media accounts and their sync status</CardDescription>
+              <CardTitle>Connected Platforms</CardTitle>
+              <CardDescription>Manage your social media platform connections</CardDescription>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               {disconnectedAccounts.length > 0 && (
                 <Button
                   onClick={handleConnectAll}
                   disabled={isConnectingAll}
-                  className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white"
+                  className="flex items-center gap-2"
                 >
                   {isConnectingAll ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                       Connecting...
                     </>
                   ) : (
                     <>
-                      <Link className="h-4 w-4 mr-2" />
+                      <Link className="h-4 w-4" />
                       Connect All
                     </>
                   )}
@@ -608,9 +500,7 @@ export function SocialAccountsSettings({ onSettingChange }: CommonSettingsProps)
                 onClick={handleSyncAll}
                 variant="outline"
                 disabled={connectedAccounts.length === 0}
-                className="border-blue-200 text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300 dark:hover:bg-blue-950"
               >
-                <Zap className="h-4 w-4 mr-2" />
                 Sync All
               </Button>
             </div>
@@ -619,38 +509,29 @@ export function SocialAccountsSettings({ onSettingChange }: CommonSettingsProps)
         <CardContent>
           <div className="grid gap-4">
             {accounts.map((account) => (
-              <div key={account.id} className="group relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 p-6 transition-all duration-300 hover:shadow-md hover:border-violet-200 dark:hover:border-violet-800">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-14 w-14 ring-2 ring-gray-100 dark:ring-gray-800">
-                      <AvatarFallback className={account.color}>
-                        {account.icon}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-semibold text-lg">{account.platform}</p>
-                      <p className="text-sm text-muted-foreground">{account.username}</p>
-                      {account.connected && (
-                        <div className="flex items-center gap-4 mt-1">
-                          <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                            {account.followers.toLocaleString()} followers
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            Last sync: {account.lastSync}
-                          </span>
-                        </div>
-                      )}
-                    </div>
+              <div key={account.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className={account.color}>
+                      {account.icon}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">{account.platform}</p>
+                    <p className="text-sm text-muted-foreground">{account.username}</p>
                   </div>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  {account.connected && (
+                    <div className="text-right">
+                      <p className="text-sm font-medium">{account.followers.toLocaleString()} followers</p>
+                      <p className="text-xs text-muted-foreground">Last sync: {account.lastSync}</p>
+                    </div>
+                  )}
                   
-                  <div className="flex items-center gap-3">
-                    <Badge 
-                      variant={account.connected ? "default" : "outline"}
-                      className={account.connected 
-                        ? "bg-green-100 text-green-800 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800" 
-                        : "border-gray-300 text-gray-600 dark:border-gray-700 dark:text-gray-400"
-                      }
-                    >
+                  <div className="flex items-center gap-2">
+                    <Badge variant={account.connected ? "default" : "outline"}>
                       {account.connected ? "Connected" : "Disconnected"}
                     </Badge>
                     
@@ -660,18 +541,14 @@ export function SocialAccountsSettings({ onSettingChange }: CommonSettingsProps)
                         size="sm"
                         onClick={() => handleSync(account.id)}
                         disabled={account.syncInProgress}
-                        className="border-blue-200 text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300 dark:hover:bg-blue-950"
                       >
                         {account.syncInProgress ? (
                           <>
-                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                            <Loader2 className="h-3 w-3 animate-spin mr-1" />
                             Syncing
                           </>
                         ) : (
-                          <>
-                            <Zap className="h-3 w-3 mr-1" />
-                            Sync
-                          </>
+                          'Sync'
                         )}
                       </Button>
                     )}
@@ -680,10 +557,6 @@ export function SocialAccountsSettings({ onSettingChange }: CommonSettingsProps)
                       variant={account.connected ? "outline" : "default"}
                       size="sm"
                       onClick={() => handleConnect(account.id)}
-                      className={account.connected 
-                        ? "border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950" 
-                        : "bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white"
-                      }
                     >
                       {account.connected ? "Disconnect" : "Connect"}
                     </Button>
@@ -695,137 +568,138 @@ export function SocialAccountsSettings({ onSettingChange }: CommonSettingsProps)
         </CardContent>
       </Card>
       
-      {/* Sync Settings */}
-      <Card className="border-0 shadow-xl">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Sync Settings</CardTitle>
-          <CardDescription>Configure how your accounts sync and share data across platforms</CardDescription>
+          <CardTitle>Sync Settings</CardTitle>
+          <CardDescription>Configure how your accounts sync and share data</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between p-4 rounded-lg bg-blue-50 dark:bg-blue-950">
-                <div className="space-y-0.5">
-                  <label className="text-sm font-medium text-blue-700 dark:text-blue-300">Auto Sync</label>
-                  <p className="text-sm text-blue-600 dark:text-blue-400">
-                    Automatically sync account data at regular intervals
-                  </p>
-                </div>
-                <Switch
-                  checked={settings.autoSync}
-                  onCheckedChange={(checked) => handleSettingChange("autoSync", checked)}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between p-4 rounded-lg bg-green-50 dark:bg-green-950">
-                <div className="space-y-0.5">
-                  <label className="text-sm font-medium text-green-700 dark:text-green-300">Real-time Sync</label>
-                  <p className="text-sm text-green-600 dark:text-green-400">
-                    Sync data immediately when changes occur
-                  </p>
-                </div>
-                <Switch
-                  checked={settings.realTimeSync}
-                  onCheckedChange={(checked) => handleSettingChange("realTimeSync", checked)}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between p-4 rounded-lg bg-purple-50 dark:bg-purple-950">
-                <div className="space-y-0.5">
-                  <label className="text-sm font-medium text-purple-700 dark:text-purple-300">Cross-Platform Posting</label>
-                  <p className="text-sm text-purple-600 dark:text-purple-400">
-                    Enable posting to multiple platforms simultaneously
-                  </p>
-                </div>
-                <Switch
-                  checked={settings.crossPost}
-                  onCheckedChange={(checked) => handleSettingChange("crossPost", checked)}
-                />
-              </div>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <label className="text-sm font-medium">Auto Sync</label>
+              <p className="text-sm text-muted-foreground">
+                Automatically sync account data at regular intervals
+              </p>
             </div>
-            
-            <div className="space-y-6">
-              <div className="flex items-center justify-between p-4 rounded-lg bg-amber-50 dark:bg-amber-950">
-                <div className="space-y-0.5">
-                  <label className="text-sm font-medium text-amber-700 dark:text-amber-300">Analytics Collection</label>
-                  <p className="text-sm text-amber-600 dark:text-amber-400">
-                    Collect detailed analytics from connected platforms
-                  </p>
-                </div>
-                <Switch
-                  checked={settings.analytics}
-                  onCheckedChange={(checked) => handleSettingChange("analytics", checked)}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between p-4 rounded-lg bg-indigo-50 dark:bg-indigo-950">
-                <div className="space-y-0.5">
-                  <label className="text-sm font-medium text-indigo-700 dark:text-indigo-300">Sync Notifications</label>
-                  <p className="text-sm text-indigo-600 dark:text-indigo-400">
-                    Receive notifications when sync completes or fails
-                  </p>
-                </div>
-                <Switch
-                  checked={settings.syncNotifications}
-                  onCheckedChange={(checked) => handleSettingChange("syncNotifications", checked)}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between p-4 rounded-lg bg-red-50 dark:bg-red-950">
-                <div className="space-y-0.5">
-                  <label className="text-sm font-medium text-red-700 dark:text-red-300">Sync Error Alerts</label>
-                  <p className="text-sm text-red-600 dark:text-red-400">
-                    Get notified when sync errors occur
-                  </p>
-                </div>
-                <Switch
-                  checked={settings.syncErrors}
-                  onCheckedChange={(checked) => handleSettingChange("syncErrors", checked)}
-                />
-              </div>
-            </div>
+            <Switch
+              checked={settings.autoSync}
+              onCheckedChange={(checked) => handleSettingChange("autoSync", checked)}
+            />
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t">
-            <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
               <label className="text-sm font-medium">Sync Interval</label>
-              <Select
-                value={settings.syncInterval}
-                onValueChange={(value) => handleSettingChange("syncInterval", value)}
-                disabled={!settings.autoSync}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">Every 5 minutes</SelectItem>
-                  <SelectItem value="15">Every 15 minutes</SelectItem>
-                  <SelectItem value="30">Every 30 minutes</SelectItem>
-                  <SelectItem value="60">Every hour</SelectItem>
-                  <SelectItem value="360">Every 6 hours</SelectItem>
-                  <SelectItem value="1440">Daily</SelectItem>
-                </SelectContent>
-              </Select>
+              <p className="text-sm text-muted-foreground">
+                How often to automatically sync data
+              </p>
             </div>
-            
-            <div className="space-y-2">
+            <Select
+              value={settings.syncInterval}
+              onValueChange={(value) => handleSettingChange("syncInterval", value)}
+              disabled={!settings.autoSync}
+            >
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5 minutes</SelectItem>
+                <SelectItem value="15">15 minutes</SelectItem>
+                <SelectItem value="30">30 minutes</SelectItem>
+                <SelectItem value="60">1 hour</SelectItem>
+                <SelectItem value="360">6 hours</SelectItem>
+                <SelectItem value="1440">24 hours</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <label className="text-sm font-medium">Real-time Sync</label>
+              <p className="text-sm text-muted-foreground">
+                Sync data immediately when changes occur
+              </p>
+            </div>
+            <Switch
+              checked={settings.realTimeSync}
+              onCheckedChange={(checked) => handleSettingChange("realTimeSync", checked)}
+            />
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <label className="text-sm font-medium">Cross-Platform Posting</label>
+              <p className="text-sm text-muted-foreground">
+                Enable posting to multiple platforms simultaneously
+              </p>
+            </div>
+            <Switch
+              checked={settings.crossPost}
+              onCheckedChange={(checked) => handleSettingChange("crossPost", checked)}
+            />
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <label className="text-sm font-medium">Analytics Collection</label>
+              <p className="text-sm text-muted-foreground">
+                Collect detailed analytics from connected platforms
+              </p>
+            </div>
+            <Switch
+              checked={settings.analytics}
+              onCheckedChange={(checked) => handleSettingChange("analytics", checked)}
+            />
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <label className="text-sm font-medium">Sync Notifications</label>
+              <p className="text-sm text-muted-foreground">
+                Receive notifications when sync completes or fails
+              </p>
+            </div>
+            <Switch
+              checked={settings.syncNotifications}
+              onCheckedChange={(checked) => handleSettingChange("syncNotifications", checked)}
+            />
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
               <label className="text-sm font-medium">Data Retention</label>
-              <Select
-                value={settings.dataRetention}
-                onValueChange={(value) => handleSettingChange("dataRetention", value)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="30">30 days</SelectItem>
-                  <SelectItem value="90">90 days</SelectItem>
-                  <SelectItem value="180">6 months</SelectItem>
-                  <SelectItem value="365">1 year</SelectItem>
-                  <SelectItem value="forever">Forever</SelectItem>
-                </SelectContent>
-              </Select>
+              <p className="text-sm text-muted-foreground">
+                How long to keep synchronized data
+              </p>
             </div>
+            <Select
+              value={settings.dataRetention}
+              onValueChange={(value) => handleSettingChange("dataRetention", value)}
+            >
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="30">30 days</SelectItem>
+                <SelectItem value="90">90 days</SelectItem>
+                <SelectItem value="180">6 months</SelectItem>
+                <SelectItem value="365">1 year</SelectItem>
+                <SelectItem value="forever">Forever</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <label className="text-sm font-medium">Sync Error Alerts</label>
+              <p className="text-sm text-muted-foreground">
+                Get notified when sync errors occur
+              </p>
+            </div>
+            <Switch
+              checked={settings.syncErrors}
+              onCheckedChange={(checked) => handleSettingChange("syncErrors", checked)}
+            />
           </div>
         </CardContent>
       </Card>
