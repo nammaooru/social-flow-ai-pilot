@@ -205,6 +205,49 @@ export function SocialAccountsSettings({
     }
   };
 
+  const handleQuickConnect = async (platform: string) => {
+    try {
+      // Simulate OAuth flow
+      toast({
+        title: "Redirecting to " + platform,
+        description: "You will be redirected to authorize your account..."
+      });
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const newAccount: SocialAccount = {
+        id: Date.now().toString(),
+        platform: platform,
+        username: `@your${platform.toLowerCase()}`,
+        connected: true,
+        followers: Math.floor(Math.random() * 10000) + 1000,
+        posts: Math.floor(Math.random() * 100) + 10,
+        lastSync: "Just now",
+        color: getColorForPlatform(platform),
+        syncInProgress: false,
+        icon: platformIcons[platform as keyof typeof platformIcons]
+      };
+
+      setAccounts(prev => [...prev, newAccount]);
+
+      toast({
+        title: "Account connected successfully",
+        description: `${platform} account has been connected.`
+      });
+
+      if (onSettingChange) {
+        onSettingChange();
+      }
+    } catch (error) {
+      toast({
+        title: "Connection failed",
+        description: `Failed to connect ${platform} account. Please try again.`,
+        variant: "destructive"
+      });
+    }
+  };
+
   const getColorForPlatform = (platform: string) => {
     const colors: Record<string, string> = {
       Instagram: "bg-gradient-to-r from-purple-500 to-pink-500",
@@ -459,7 +502,7 @@ export function SocialAccountsSettings({
             {availablePlatforms.map(platform => (
               <Button
                 key={platform}
-                onClick={() => handleAddAccount(platform)}
+                onClick={() => handleQuickConnect(platform)}
                 variant="outline"
                 className="h-20 flex flex-col items-center gap-2 hover:scale-105 transition-transform border-2 hover:border-purple-300 hover:shadow-lg"
               >
@@ -604,7 +647,6 @@ export function SocialAccountsSettings({
           <CardDescription>Configure how your accounts sync and share data</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* ... keep existing code (sync settings) */}
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <label className="text-sm font-medium">Auto Sync</label>
