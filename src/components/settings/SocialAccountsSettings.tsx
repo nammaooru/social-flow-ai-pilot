@@ -7,9 +7,14 @@ import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { CommonSettingsProps } from "@/pages/Settings";
-import { Loader2, CheckCircle, AlertCircle, Link, Plus } from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle, Link, Plus, Eye, EyeOff } from "lucide-react";
 import { Instagram, Facebook, Linkedin, Youtube } from "lucide-react";
+
 interface SocialAccount {
   id: string;
   platform: string;
@@ -23,6 +28,16 @@ interface SocialAccount {
   syncInProgress?: boolean;
   icon: React.ReactNode;
 }
+
+interface NewAccountForm {
+  platform: string;
+  accountName: string;
+  username: string;
+  password: string;
+  email: string;
+  description: string;
+}
+
 const platformIcons = {
   Instagram: <Instagram className="h-5 w-5 text-white" />,
   X: <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor">
@@ -35,14 +50,24 @@ const platformIcons = {
     </svg>,
   YouTube: <Youtube className="h-5 w-5 text-white" />
 };
+
 export function SocialAccountsSettings({
   onSettingChange
 }: CommonSettingsProps) {
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const [isConnectingAll, setIsConnectingAll] = useState(false);
   const [showAddNewAccount, setShowAddNewAccount] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isAddingAccount, setIsAddingAccount] = useState(false);
+  const [newAccountForm, setNewAccountForm] = useState<NewAccountForm>({
+    platform: "",
+    accountName: "",
+    username: "",
+    password: "",
+    email: "",
+    description: ""
+  });
+
   const [accounts, setAccounts] = useState<SocialAccount[]>([{
     id: "1",
     platform: "Instagram",
@@ -120,34 +145,66 @@ export function SocialAccountsSettings({
     dataRetention: "90",
     syncErrors: true
   });
-  const handleAddAccount = (platform: string) => {
-    toast({
-      title: "Redirecting to " + platform,
-      description: "You will be redirected to " + platform + " to connect your account."
-    });
-    setTimeout(() => {
+
+  const handleAddNewAccount = async () => {
+    if (!newAccountForm.platform || !newAccountForm.accountName || !newAccountForm.username || !newAccountForm.password) {
+      toast({
+        title: "Missing required fields",
+        description: "Please fill in all required fields (Platform, Account Name, Username, and Password).",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsAddingAccount(true);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
       const newAccount: SocialAccount = {
         id: Date.now().toString(),
-        platform,
-        username: `@your${platform.toLowerCase()}`,
+        platform: newAccountForm.platform,
+        username: newAccountForm.username,
         connected: true,
         followers: Math.floor(Math.random() * 10000) + 1000,
         posts: Math.floor(Math.random() * 100) + 10,
         lastSync: "Just now",
-        color: getColorForPlatform(platform),
+        color: getColorForPlatform(newAccountForm.platform),
         syncInProgress: false,
-        icon: platformIcons[platform as keyof typeof platformIcons]
+        icon: platformIcons[newAccountForm.platform as keyof typeof platformIcons]
       };
+
       setAccounts(prev => [...prev, newAccount]);
-      toast({
-        title: platform + " account added",
-        description: `Successfully connected your ${platform} account.`
+      setShowAddNewAccount(false);
+      setNewAccountForm({
+        platform: "",
+        accountName: "",
+        username: "",
+        password: "",
+        email: "",
+        description: ""
       });
+
+      toast({
+        title: "Account added successfully",
+        description: `${newAccountForm.platform} account "${newAccountForm.accountName}" has been connected.`
+      });
+
       if (onSettingChange) {
         onSettingChange();
       }
-    }, 2000);
+    } catch (error) {
+      toast({
+        title: "Failed to add account",
+        description: "There was an error connecting your account. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsAddingAccount(false);
+    }
   };
+
   const getColorForPlatform = (platform: string) => {
     const colors: Record<string, string> = {
       Instagram: "bg-gradient-to-r from-purple-500 to-pink-500",
@@ -159,6 +216,7 @@ export function SocialAccountsSettings({
     };
     return colors[platform] || "bg-gray-500";
   };
+
   const handleConnectAll = async () => {
     setIsConnectingAll(true);
     try {
@@ -194,6 +252,7 @@ export function SocialAccountsSettings({
       }
     }
   };
+
   const handleConnect = async (accountId: string) => {
     const account = accounts.find(acc => acc.id === accountId);
     if (!account) return;
@@ -235,6 +294,7 @@ export function SocialAccountsSettings({
       });
     }
   };
+
   const handleSync = async (accountId: string) => {
     const account = accounts.find(acc => acc.id === accountId);
     if (!account || !account.connected) return;
@@ -267,6 +327,7 @@ export function SocialAccountsSettings({
       });
     }
   };
+
   const handleSyncAll = async () => {
     const connectedAccounts = accounts.filter(acc => acc.connected);
     if (connectedAccounts.length === 0) {
@@ -308,6 +369,7 @@ export function SocialAccountsSettings({
       });
     }
   };
+
   const handleSettingChange = (field: string, value: boolean | string) => {
     setSettings(prev => ({
       ...prev,
@@ -321,89 +383,130 @@ export function SocialAccountsSettings({
       onSettingChange();
     }
   };
+
   const connectedAccounts = accounts.filter(acc => acc.connected);
   const totalFollowers = connectedAccounts.reduce((sum, acc) => sum + acc.followers, 0);
   const totalPosts = connectedAccounts.reduce((sum, acc) => sum + acc.posts, 0);
   const disconnectedAccounts = accounts.filter(acc => !acc.connected);
   const availablePlatforms = ["Instagram", "X", "Facebook", "LinkedIn", "TikTok", "YouTube"];
-  return <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium">Social Accounts</h3>
-        <p className="text-sm text-muted-foreground">
-          Connect and manage your social media accounts for seamless content management.
+
+  return (
+    <div className="space-y-8">
+      <div className="text-center">
+        <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          Social Media Hub
+        </h3>
+        <p className="text-muted-foreground mt-2">
+          Connect and manage your social media presence from one powerful dashboard
         </p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Connected Accounts</CardTitle>
+      {/* Stats Cards with improved styling */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="border-0 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950/50 dark:to-indigo-900/50 shadow-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">Connected Accounts</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{connectedAccounts.length}</div>
-            <p className="text-xs text-muted-foreground">out of {accounts.length} platforms</p>
+            <div className="text-3xl font-bold text-blue-900 dark:text-blue-100">{connectedAccounts.length}</div>
+            <p className="text-xs text-blue-600 dark:text-blue-400">out of {accounts.length} platforms</p>
+            <Progress value={(connectedAccounts.length / accounts.length) * 100} className="mt-2 h-2" />
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Followers</CardTitle>
+        <Card className="border-0 bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-950/50 dark:to-green-900/50 shadow-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-emerald-700 dark:text-emerald-300">Total Followers</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalFollowers.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">across all platforms</p>
+            <div className="text-3xl font-bold text-emerald-900 dark:text-emerald-100">{totalFollowers.toLocaleString()}</div>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400">across all platforms</p>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Posts</CardTitle>
+        <Card className="border-0 bg-gradient-to-br from-orange-50 to-amber-100 dark:from-orange-950/50 dark:to-amber-900/50 shadow-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-300">Total Posts</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalPosts.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">managed content</p>
+            <div className="text-3xl font-bold text-orange-900 dark:text-orange-100">{totalPosts.toLocaleString()}</div>
+            <p className="text-xs text-orange-600 dark:text-orange-400">managed content</p>
           </CardContent>
         </Card>
       </div>
       
-      <Card>
+      {/* Add My Account Section */}
+      <Card className="border-0 shadow-xl bg-gradient-to-r from-purple-50 via-pink-50 to-rose-50 dark:from-purple-950/30 dark:via-pink-950/30 dark:to-rose-950/30">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Add My Account</CardTitle>
-              <CardDescription>Connect your personal accounts to these platforms</CardDescription>
+              <CardTitle className="text-xl font-bold text-purple-900 dark:text-purple-100">Quick Connect</CardTitle>
+              <CardDescription className="text-purple-600 dark:text-purple-300">
+                Connect your personal accounts to these platforms instantly
+              </CardDescription>
             </div>
-            <Button onClick={() => setShowAddNewAccount(!showAddNewAccount)} variant="outline" className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
+            <Button 
+              onClick={() => setShowAddNewAccount(true)} 
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg"
+            >
+              <Plus className="h-4 w-4 mr-2" />
               Add New Social Account
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {availablePlatforms.map(platform => {})}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {availablePlatforms.map(platform => (
+              <Button
+                key={platform}
+                onClick={() => handleAddAccount(platform)}
+                variant="outline"
+                className="h-20 flex flex-col items-center gap-2 hover:scale-105 transition-transform border-2 hover:border-purple-300 hover:shadow-lg"
+              >
+                <div className={`p-2 rounded-full ${getColorForPlatform(platform)}`}>
+                  {platformIcons[platform as keyof typeof platformIcons]}
+                </div>
+                <span className="text-xs font-medium">{platform}</span>
+              </Button>
+            ))}
           </div>
         </CardContent>
       </Card>
       
-      <Card>
+      {/* Connected Platforms Section */}
+      <Card className="border-0 shadow-xl">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Connected Platforms</CardTitle>
+              <CardTitle className="text-xl font-bold">Connected Platforms</CardTitle>
               <CardDescription>Manage your social media platform connections</CardDescription>
             </div>
-            <div className="flex gap-2">
-              {disconnectedAccounts.length > 0 && <Button onClick={handleConnectAll} disabled={isConnectingAll} className="flex items-center gap-2">
-                  {isConnectingAll ? <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
+            <div className="flex gap-3">
+              {disconnectedAccounts.length > 0 && (
+                <Button 
+                  onClick={handleConnectAll} 
+                  disabled={isConnectingAll} 
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
+                >
+                  {isConnectingAll ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
                       Connecting...
-                    </> : <>
-                      <Link className="h-4 w-4" />
+                    </>
+                  ) : (
+                    <>
+                      <Link className="h-4 w-4 mr-2" />
                       Connect All
-                    </>}
-                </Button>}
-              <Button onClick={handleSyncAll} variant="outline" disabled={connectedAccounts.length === 0}>
+                    </>
+                  )}
+                </Button>
+              )}
+              <Button 
+                onClick={handleSyncAll} 
+                variant="outline" 
+                disabled={connectedAccounts.length === 0}
+                className="border-2 hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
                 Sync All
               </Button>
             </div>
@@ -411,53 +514,97 @@ export function SocialAccountsSettings({
         </CardHeader>
         <CardContent>
           <div className="grid gap-4">
-            {accounts.map(account => <div key={account.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback className={account.color}>
-                      {account.icon}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">{account.platform}</p>
-                    <p className="text-sm text-muted-foreground">{account.username}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-4">
-                  {account.connected && <div className="text-right">
-                      <p className="text-sm font-medium">{account.followers.toLocaleString()} followers</p>
-                      <p className="text-xs text-muted-foreground">Last sync: {account.lastSync}</p>
-                    </div>}
-                  
-                  <div className="flex items-center gap-2">
-                    <Badge variant={account.connected ? "default" : "outline"}>
-                      {account.connected ? "Connected" : "Disconnected"}
-                    </Badge>
+            {accounts.map(account => (
+              <Card key={account.id} className="border-2 hover:shadow-lg transition-shadow bg-gradient-to-r from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-12 w-12 border-2 border-white shadow-lg">
+                        <AvatarFallback className={account.color}>
+                          {account.icon}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-bold text-lg">{account.platform}</p>
+                        <p className="text-sm text-muted-foreground">{account.username}</p>
+                      </div>
+                    </div>
                     
-                    {account.connected && <Button variant="outline" size="sm" onClick={() => handleSync(account.id)} disabled={account.syncInProgress}>
-                        {account.syncInProgress ? <>
-                            <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                            Syncing
-                          </> : 'Sync'}
-                      </Button>}
-                    
-                    <Button variant={account.connected ? "outline" : "default"} size="sm" onClick={() => handleConnect(account.id)}>
-                      {account.connected ? "Disconnect" : "Connect"}
-                    </Button>
+                    <div className="flex items-center gap-6">
+                      {account.connected && (
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-emerald-600">
+                            {account.followers.toLocaleString()} followers
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Last sync: {account.lastSync}
+                          </p>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center gap-3">
+                        <Badge 
+                          variant={account.connected ? "default" : "outline"}
+                          className={account.connected ? "bg-emerald-500 hover:bg-emerald-600" : ""}
+                        >
+                          {account.connected ? (
+                            <>
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Connected
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle className="h-3 w-3 mr-1" />
+                              Disconnected
+                            </>
+                          )}
+                        </Badge>
+                        
+                        {account.connected && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleSync(account.id)} 
+                            disabled={account.syncInProgress}
+                            className="border-2"
+                          >
+                            {account.syncInProgress ? (
+                              <>
+                                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                Syncing
+                              </>
+                            ) : (
+                              'Sync'
+                            )}
+                          </Button>
+                        )}
+                        
+                        <Button 
+                          variant={account.connected ? "outline" : "default"} 
+                          size="sm" 
+                          onClick={() => handleConnect(account.id)}
+                          className={account.connected ? "border-2" : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"}
+                        >
+                          {account.connected ? "Disconnect" : "Connect"}
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>)}
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </CardContent>
       </Card>
       
-      <Card>
+      {/* Sync Settings Section */}
+      <Card className="border-0 shadow-xl">
         <CardHeader>
-          <CardTitle>Sync Settings</CardTitle>
+          <CardTitle className="text-xl font-bold">Sync Settings</CardTitle>
           <CardDescription>Configure how your accounts sync and share data</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* ... keep existing code (sync settings) */}
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <label className="text-sm font-medium">Auto Sync</label>
@@ -562,5 +709,143 @@ export function SocialAccountsSettings({
           </div>
         </CardContent>
       </Card>
-    </div>;
+
+      {/* Add New Account Dialog */}
+      <Dialog open={showAddNewAccount} onOpenChange={setShowAddNewAccount}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Add New Social Account
+            </DialogTitle>
+            <DialogDescription>
+              Connect a new social media account by providing the required details.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="platform" className="text-sm font-medium">Platform *</Label>
+              <Select 
+                value={newAccountForm.platform} 
+                onValueChange={(value) => setNewAccountForm(prev => ({ ...prev, platform: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a platform" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availablePlatforms.map(platform => (
+                    <SelectItem key={platform} value={platform}>
+                      <div className="flex items-center gap-2">
+                        <div className={`p-1 rounded ${getColorForPlatform(platform)}`}>
+                          {platformIcons[platform as keyof typeof platformIcons]}
+                        </div>
+                        {platform}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="accountName" className="text-sm font-medium">Account Name *</Label>
+              <Input
+                id="accountName"
+                placeholder="e.g., My Business Account"
+                value={newAccountForm.accountName}
+                onChange={(e) => setNewAccountForm(prev => ({ ...prev, accountName: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="username" className="text-sm font-medium">Username/Handle *</Label>
+              <Input
+                id="username"
+                placeholder="e.g., @yourbrand"
+                value={newAccountForm.username}
+                onChange={(e) => setNewAccountForm(prev => ({ ...prev, username: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="account@example.com"
+                value={newAccountForm.email}
+                onChange={(e) => setNewAccountForm(prev => ({ ...prev, email: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium">Password *</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={newAccountForm.password}
+                  onChange={(e) => setNewAccountForm(prev => ({ ...prev, password: e.target.value }))}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description" className="text-sm font-medium">Description (Optional)</Label>
+              <Textarea
+                id="description"
+                placeholder="Add a description for this account..."
+                value={newAccountForm.description}
+                onChange={(e) => setNewAccountForm(prev => ({ ...prev, description: e.target.value }))}
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowAddNewAccount(false)}
+              disabled={isAddingAccount}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleAddNewAccount}
+              disabled={isAddingAccount}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+            >
+              {isAddingAccount ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Adding Account...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Account
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }
