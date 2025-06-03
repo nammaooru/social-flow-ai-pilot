@@ -544,7 +544,7 @@ export function IntegrationSettings({ onSettingChange, role }: CommonSettingsPro
       </div>
       
       <Tabs defaultValue="available" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="available">Available</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           <TabsTrigger value="storage">Storage</TabsTrigger>
@@ -882,7 +882,7 @@ export function IntegrationSettings({ onSettingChange, role }: CommonSettingsPro
 
         <TabsContent value="sms" className="space-y-4">
           {/* Credits Overview */}
-          {(role === "SMS Marketing" || role === "White Label" || role === "Admin" || role === "Super Admin") && (
+          {(role === "Super Admin" || role === "Admin" || role === "White Label") && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -902,7 +902,7 @@ export function IntegrationSettings({ onSettingChange, role }: CommonSettingsPro
                   ))}
                 </div>
                 
-                {(role === "SMS Marketing" || role === "White Label" || role === "Admin") && (
+                {(role === "Admin" || role === "White Label") && (
                   <div className="mt-4 flex justify-center">
                     <Button onClick={() => setIsCreditPurchaseOpen(true)} className="flex items-center gap-2">
                       <CreditCard className="h-4 w-4" />
