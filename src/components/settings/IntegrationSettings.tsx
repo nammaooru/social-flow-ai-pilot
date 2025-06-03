@@ -59,7 +59,7 @@ export const IntegrationSettings = ({ onSettingChange, role = "User" }: CommonSe
   const [smsPlans, setSmsPlans] = useState<SMSPlan[]>([]);
   const [isAddProviderOpen, setIsAddProviderOpen] = useState(false);
   const [isAddPlanOpen, setIsAddPlanOpen] = useState(false);
-  const [newProvider, setNewProvider] = useState({ name: '', type: 'custom' as const });
+  const [newProvider, setNewProvider] = useState<{ name: string; type: 'builtin' | 'custom' }>({ name: '', type: 'custom' });
   const [newPlan, setNewPlan] = useState({
     name: '',
     smsCredits: 0,
