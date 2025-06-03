@@ -149,6 +149,40 @@ export function SocialAccountsSettings({
     syncErrors: true
   });
 
+  const openDeleteConfirm = (accountId: string) => {
+    setAccountToDelete(accountId);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteAccount = async (accountId: string) => {
+    try {
+      const account = accounts.find(acc => acc.id === accountId);
+      if (!account) return;
+
+      // Remove the account from the list
+      setAccounts(prev => prev.filter(acc => acc.id !== accountId));
+      
+      // Close the dialog and reset state
+      setShowDeleteConfirm(false);
+      setAccountToDelete(null);
+
+      toast({
+        title: "Account deleted",
+        description: `${account.platform} account has been deleted successfully.`
+      });
+
+      if (onSettingChange) {
+        onSettingChange();
+      }
+    } catch (error) {
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete the account. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleAddNewAccount = async () => {
     if (!newAccountForm.platform || !newAccountForm.accountName || !newAccountForm.username || !newAccountForm.password) {
       toast({
