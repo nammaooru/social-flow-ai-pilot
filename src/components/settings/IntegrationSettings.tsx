@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,8 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Link, Plus, Settings, Zap, Database, MessageSquare } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Link, Plus, Settings, Zap, Database, MessageSquare, CreditCard, Package } from "lucide-react";
 import { CommonSettingsProps } from "@/pages/Settings";
 
 interface Integration {
@@ -36,13 +38,39 @@ interface StorageConfig {
 interface SMSProvider {
   id: string;
   name: string;
-  apiKey?: string;
-  apiSecret?: string;
+  type: string;
+  apiConfigs: {
+    singleSMS?: { endpoint: string; apiKey: string; };
+    bulkSMS?: { endpoint: string; apiKey: string; };
+    internationalSMS?: { endpoint: string; apiKey: string; };
+    balanceCheck?: { endpoint: string; apiKey: string; };
+    dlrStatus?: { endpoint: string; apiKey: string; };
+    statusErrorCodes?: { endpoint: string; apiKey: string; };
+    embeddingCodes?: { endpoint: string; apiKey: string; };
+    xmlAPI?: { endpoint: string; apiKey: string; };
+    longcodeAPI?: { endpoint: string; apiKey: string; };
+    missedcallAPI?: { endpoint: string; apiKey: string; };
+    simpleVoiceAPI?: { endpoint: string; apiKey: string; };
+    multipleVoiceAPI?: { endpoint: string; apiKey: string; };
+    fullFeaturedVoiceAPI?: { endpoint: string; apiKey: string; };
+    deliveryReports?: { endpoint: string; apiKey: string; };
+    voiceMessageLogs?: { endpoint: string; apiKey: string; };
+    getVoices?: { endpoint: string; apiKey: string; };
+    voiceScheduleInfo?: { endpoint: string; apiKey: string; };
+  };
   senderId?: string;
-  accountSid?: string;
-  authToken?: string;
-  webhookUrl?: string;
   customFields?: Record<string, string>;
+}
+
+interface CreditPlan {
+  id: string;
+  name: string;
+  type: "SMS" | "Voice SMS" | "Missed call" | "Long code";
+  credits: number;
+  price: number;
+  description?: string;
+  validity?: string;
+  features?: string[];
 }
 
 export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
@@ -52,10 +80,14 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
   const [isSMSDialogOpen, setIsSMSDialogOpen] = useState(false);
   const [isStorageConfigureOpen, setIsStorageConfigureOpen] = useState(false);
   const [isIntegrationSettingsOpen, setIsIntegrationSettingsOpen] = useState(false);
+  const [isPlanDialogOpen, setIsPlanDialogOpen] = useState(false);
   const [selectedStorage, setSelectedStorage] = useState<StorageConfig | null>(null);
   const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
   const [webhookUrl, setWebhookUrl] = useState("");
   const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
+  
+  // Current user role (this would come from your auth context)
+  const currentUserRole = "Super Admin"; // This should be dynamic based on actual user role
   
   const [storageConfigs, setStorageConfigs] = useState<StorageConfig[]>([
     {
@@ -73,9 +105,24 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
     {
       id: "1",
       name: "Twilio",
-      accountSid: "AC*********************",
-      authToken: "*********************",
+      type: "twilio",
+      apiConfigs: {
+        singleSMS: { endpoint: "https://api.twilio.com/2010-04-01/Accounts/{AccountSid}/Messages.json", apiKey: "AC*********************" }
+      },
       senderId: "+1234567890"
+    }
+  ]);
+
+  const [creditPlans, setCreditPlans] = useState<CreditPlan[]>([
+    {
+      id: "1",
+      name: "Basic SMS Plan",
+      type: "SMS",
+      credits: 1000,
+      price: 10,
+      description: "1000 SMS credits",
+      validity: "30 days",
+      features: ["Single SMS", "Bulk SMS", "DLR Status"]
     }
   ]);
 
@@ -85,7 +132,15 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
   });
 
   const [newSMSProvider, setNewSMSProvider] = useState<Partial<SMSProvider>>({
-    name: "Twilio"
+    name: "Twilio",
+    type: "twilio",
+    apiConfigs: {}
+  });
+
+  const [newCreditPlan, setNewCreditPlan] = useState<Partial<CreditPlan>>({
+    type: "SMS",
+    credits: 0,
+    price: 0
   });
   
   const [integrations, setIntegrations] = useState<Integration[]>([
@@ -154,12 +209,68 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
   ];
 
   const smsProviderTypes = [
-    { value: "twilio", label: "Twilio", fields: ["accountSid", "authToken", "senderId"] },
-    { value: "nexmo", label: "Vonage (Nexmo)", fields: ["apiKey", "apiSecret", "senderId"] },
-    { value: "aws-sns", label: "AWS SNS", fields: ["apiKey", "apiSecret"] },
-    { value: "textmagic", label: "TextMagic", fields: ["apiKey", "apiSecret"] },
-    { value: "clicksend", label: "ClickSend", fields: ["apiKey", "apiSecret"] },
-    { value: "custom", label: "Custom Provider", fields: ["apiKey", "apiSecret", "webhookUrl"] }
+    { 
+      value: "twilio", 
+      label: "Twilio", 
+      apis: ["singleSMS", "bulkSMS", "voiceAPI", "deliveryReports"] 
+    },
+    { 
+      value: "nexmo", 
+      label: "Vonage (Nexmo)", 
+      apis: ["singleSMS", "bulkSMS", "internationalSMS", "deliveryReports"] 
+    },
+    { 
+      value: "aws-sns", 
+      label: "AWS SNS", 
+      apis: ["singleSMS", "bulkSMS"] 
+    },
+    { 
+      value: "textmagic", 
+      label: "TextMagic", 
+      apis: ["singleSMS", "bulkSMS", "deliveryReports"] 
+    },
+    { 
+      value: "clicksend", 
+      label: "ClickSend", 
+      apis: ["singleSMS", "bulkSMS", "voiceAPI", "deliveryReports"] 
+    },
+    {
+      value: "smsgatewayhub",
+      label: "SMSGatewayHub",
+      apis: ["singleSMS", "bulkSMS", "internationalSMS", "balanceCheck", "dlrStatus", "statusErrorCodes", "embeddingCodes", "xmlAPI", "longcodeAPI", "missedcallAPI", "simpleVoiceAPI", "multipleVoiceAPI", "fullFeaturedVoiceAPI", "deliveryReports", "voiceMessageLogs", "getVoices", "voiceScheduleInfo"]
+    },
+    { 
+      value: "custom", 
+      label: "Custom Provider", 
+      apis: ["singleSMS", "bulkSMS", "internationalSMS", "balanceCheck", "dlrStatus", "statusErrorCodes", "embeddingCodes", "xmlAPI", "longcodeAPI", "missedcallAPI", "simpleVoiceAPI", "multipleVoiceAPI", "fullFeaturedVoiceAPI", "deliveryReports", "voiceMessageLogs", "getVoices", "voiceScheduleInfo"] 
+    }
+  ];
+
+  const apiOptions = [
+    { key: "singleSMS", label: "Single SMS API", description: "Send individual SMS messages" },
+    { key: "bulkSMS", label: "Bulk SMS API", description: "Send SMS to multiple recipients" },
+    { key: "internationalSMS", label: "International SMS API", description: "Send SMS internationally" },
+    { key: "balanceCheck", label: "Balance Check API", description: "Check account balance" },
+    { key: "dlrStatus", label: "DLR Status API", description: "Delivery receipt status" },
+    { key: "statusErrorCodes", label: "Status/Error Codes API", description: "Get status and error codes" },
+    { key: "embeddingCodes", label: "Embedding Codes API", description: "Embedding codes functionality" },
+    { key: "xmlAPI", label: "XML API", description: "XML-based API access" },
+    { key: "longcodeAPI", label: "Long code API", description: "Long code SMS functionality" },
+    { key: "missedcallAPI", label: "Missed call API", description: "Missed call services" },
+    { key: "simpleVoiceAPI", label: "Simple Voice API", description: "Basic voice messaging" },
+    { key: "multipleVoiceAPI", label: "Multiple Voice API", description: "Multiple voice messaging" },
+    { key: "fullFeaturedVoiceAPI", label: "Fully Featured Voice API", description: "Complete voice functionality" },
+    { key: "deliveryReports", label: "Delivery Reports API", description: "SMS delivery reports" },
+    { key: "voiceMessageLogs", label: "Voice Message Logs API", description: "Voice message logging" },
+    { key: "getVoices", label: "Get Voices API", description: "Available voice options" },
+    { key: "voiceScheduleInfo", label: "Voice Schedule Info API", description: "Voice message scheduling" }
+  ];
+
+  const creditTypes = [
+    { value: "SMS", label: "SMS Credits" },
+    { value: "Voice SMS", label: "Voice SMS Credits" },
+    { value: "Missed call", label: "Missed call Credits" },
+    { value: "Long code", label: "Long code Credits" }
   ];
   
   const handleConnect = (integrationId: string) => {
@@ -284,7 +395,7 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
   };
 
   const handleCreateSMSProvider = () => {
-    if (!newSMSProvider.name) {
+    if (!newSMSProvider.name || !newSMSProvider.type) {
       toast({
         title: "Missing information",
         description: "Please provide provider details.",
@@ -296,6 +407,8 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
     const provider: SMSProvider = {
       id: Date.now().toString(),
       name: newSMSProvider.name!,
+      type: newSMSProvider.type!,
+      apiConfigs: newSMSProvider.apiConfigs || {},
       ...newSMSProvider
     };
 
@@ -306,12 +419,56 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
       description: `${newSMSProvider.name} has been configured successfully.`,
     });
     
-    setNewSMSProvider({ name: "Twilio" });
+    setNewSMSProvider({ name: "Twilio", type: "twilio", apiConfigs: {} });
     setIsSMSDialogOpen(false);
 
     if (onSettingChange) {
       onSettingChange();
     }
+  };
+
+  const handleCreateCreditPlan = () => {
+    if (!newCreditPlan.name || !newCreditPlan.type || !newCreditPlan.credits || !newCreditPlan.price) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const plan: CreditPlan = {
+      id: Date.now().toString(),
+      name: newCreditPlan.name!,
+      type: newCreditPlan.type!,
+      credits: newCreditPlan.credits!,
+      price: newCreditPlan.price!,
+      ...newCreditPlan
+    };
+
+    setCreditPlans(prev => [...prev, plan]);
+    
+    toast({
+      title: "Credit plan created",
+      description: `${newCreditPlan.name} has been created successfully.`,
+    });
+    
+    setNewCreditPlan({ type: "SMS", credits: 0, price: 0 });
+    setIsPlanDialogOpen(false);
+
+    if (onSettingChange) {
+      onSettingChange();
+    }
+  };
+
+  const updateAPIConfig = (apiKey: string, endpoint: string, apiKeyValue: string) => {
+    setNewSMSProvider(prev => ({
+      ...prev,
+      apiConfigs: {
+        ...prev.apiConfigs,
+        [apiKey]: { endpoint, apiKey: apiKeyValue }
+      }
+    }));
   };
   
   const handleEventToggle = (eventId: string) => {
@@ -334,24 +491,14 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
         </p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Connected</CardTitle>
+            <CardTitle className="text-sm font-medium">Available</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{connectedCount}</div>
-            <p className="text-xs text-muted-foreground">out of {integrations.length} available</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Categories</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{categories.length}</div>
-            <p className="text-xs text-muted-foreground">integration categories</p>
+            <div className="text-2xl font-bold">{integrations.length}</div>
+            <p className="text-xs text-muted-foreground">integrations available</p>
           </CardContent>
         </Card>
         
@@ -387,9 +534,8 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
       </div>
       
       <Tabs defaultValue="available" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="available">Available</TabsTrigger>
-          <TabsTrigger value="connected">Connected</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           <TabsTrigger value="storage">Storage</TabsTrigger>
           <TabsTrigger value="sms">SMS Marketing</TabsTrigger>
@@ -436,82 +582,30 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
                                 </div>
                               )}
                               
-                              <Button
-                                variant={integration.connected ? "outline" : "default"}
-                                size="sm"
-                                onClick={() => handleConnect(integration.id)}
-                              >
-                                {integration.connected ? "Disconnect" : "Connect"}
-                              </Button>
+                              <div className="flex gap-2">
+                                {integration.connected && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleConfigureIntegration(integration)}
+                                  >
+                                    Configure
+                                  </Button>
+                                )}
+                                <Button
+                                  variant={integration.connected ? "outline" : "default"}
+                                  size="sm"
+                                  onClick={() => handleConnect(integration.id)}
+                                >
+                                  {integration.connected ? "Disconnect" : "Connect"}
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         ))}
                     </div>
                   </div>
                 ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="connected" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                Connected Integrations
-              </CardTitle>
-              <CardDescription>Manage your active integrations and their settings</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {integrations.filter(int => int.connected).map((integration) => (
-                  <div key={integration.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="text-2xl">{integration.icon}</div>
-                      <div>
-                        <p className="font-medium">{integration.name}</p>
-                        <p className="text-sm text-muted-foreground">{integration.description}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <Badge variant={integration.status === "active" ? "default" : "secondary"}>
-                          {integration.status}
-                        </Badge>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Last sync: {integration.lastSync}
-                        </p>
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleConfigureIntegration(integration)}
-                        >
-                          Configure
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleConnect(integration.id)}
-                        >
-                          Disconnect
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                
-                {integrations.filter(int => int.connected).length === 0 && (
-                  <div className="text-center p-8 text-muted-foreground">
-                    <Link className="mx-auto h-12 w-12 mb-4" />
-                    <p>No integrations connected yet.</p>
-                    <p className="text-sm">Connect your first integration from the Available tab.</p>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
@@ -777,180 +871,318 @@ export function IntegrationSettings({ onSettingChange }: CommonSettingsProps) {
         </TabsContent>
 
         <TabsContent value="sms" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <MessageSquare className="h-5 w-5" />
-                    SMS Marketing Providers
-                  </CardTitle>
-                  <CardDescription>Configure SMS providers for marketing campaigns</CardDescription>
-                </div>
-                <Dialog open={isSMSDialogOpen} onOpenChange={setIsSMSDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="flex items-center gap-2">
-                      <Plus className="h-4 w-4" />
-                      Add SMS Provider
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Add SMS Provider</DialogTitle>
-                      <DialogDescription>
-                        Configure a new SMS provider for marketing campaigns
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>SMS Provider</Label>
-                        <Select 
-                          value={newSMSProvider.name} 
-                          onValueChange={(value) => setNewSMSProvider(prev => ({ ...prev, name: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select SMS provider" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {smsProviderTypes.map((provider) => (
-                              <SelectItem key={provider.value} value={provider.label}>
-                                {provider.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+          <Tabs defaultValue="providers" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="providers">SMS Providers</TabsTrigger>
+              {currentUserRole === "Super Admin" && (
+                <TabsTrigger value="plans">Credit Plans</TabsTrigger>
+              )}
+            </TabsList>
 
-                      {newSMSProvider.name === "Custom Provider" && (
-                        <div className="space-y-2">
-                          <Label htmlFor="customProviderName">Custom Provider Name</Label>
-                          <Input
-                            id="customProviderName"
-                            placeholder="Enter custom provider name"
-                            value={newSMSProvider.customFields?.providerName || ""}
-                            onChange={(e) => setNewSMSProvider(prev => ({ 
-                              ...prev, 
-                              customFields: { ...prev.customFields, providerName: e.target.value }
-                            }))}
-                          />
-                        </div>
-                      )}
-
-                      {newSMSProvider.name === "Twilio" && (
-                        <>
-                          <div className="space-y-2">
-                            <Label htmlFor="accountSid">Account SID</Label>
-                            <Input
-                              id="accountSid"
-                              type="password"
-                              placeholder="Twilio Account SID"
-                              value={newSMSProvider.accountSid || ""}
-                              onChange={(e) => setNewSMSProvider(prev => ({ ...prev, accountSid: e.target.value }))}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="authToken">Auth Token</Label>
-                            <Input
-                              id="authToken"
-                              type="password"
-                              placeholder="Twilio Auth Token"
-                              value={newSMSProvider.authToken || ""}
-                              onChange={(e) => setNewSMSProvider(prev => ({ ...prev, authToken: e.target.value }))}
-                            />
-                          </div>
-                        </>
-                      )}
-
-                      {(newSMSProvider.name === "Vonage (Nexmo)" || newSMSProvider.name === "AWS SNS" || newSMSProvider.name === "TextMagic" || newSMSProvider.name === "ClickSend" || newSMSProvider.name === "Custom Provider") && (
-                        <>
-                          <div className="space-y-2">
-                            <Label htmlFor="apiKey">API Key</Label>
-                            <Input
-                              id="apiKey"
-                              type="password"
-                              placeholder="API Key"
-                              value={newSMSProvider.apiKey || ""}
-                              onChange={(e) => setNewSMSProvider(prev => ({ ...prev, apiKey: e.target.value }))}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="apiSecret">API Secret</Label>
-                            <Input
-                              id="apiSecret"
-                              type="password"
-                              placeholder="API Secret"
-                              value={newSMSProvider.apiSecret || ""}
-                              onChange={(e) => setNewSMSProvider(prev => ({ ...prev, apiSecret: e.target.value }))}
-                            />
-                          </div>
-                        </>
-                      )}
-
-                      {newSMSProvider.name === "Custom Provider" && (
-                        <div className="space-y-2">
-                          <Label htmlFor="webhookUrl">Webhook URL</Label>
-                          <Input
-                            id="webhookUrl"
-                            placeholder="https://api.yourprovider.com/sms"
-                            value={newSMSProvider.webhookUrl || ""}
-                            onChange={(e) => setNewSMSProvider(prev => ({ ...prev, webhookUrl: e.target.value }))}
-                          />
-                        </div>
-                      )}
-
-                      <div className="space-y-2">
-                        <Label htmlFor="senderId">Sender ID / Phone Number</Label>
-                        <Input
-                          id="senderId"
-                          placeholder="e.g., +1234567890 or BRAND"
-                          value={newSMSProvider.senderId || ""}
-                          onChange={(e) => setNewSMSProvider(prev => ({ ...prev, senderId: e.target.value }))}
-                        />
-                      </div>
+            <TabsContent value="providers" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <MessageSquare className="h-5 w-5" />
+                        SMS Marketing Providers
+                      </CardTitle>
+                      <CardDescription>Configure SMS providers for marketing campaigns</CardDescription>
                     </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setIsSMSDialogOpen(false)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={handleCreateSMSProvider}>Add Provider</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {smsProviders.map((provider) => (
-                  <div key={provider.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <MessageSquare className="h-5 w-5 text-green-500" />
+                    {currentUserRole === "Super Admin" && (
+                      <Dialog open={isSMSDialogOpen} onOpenChange={setIsSMSDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button className="flex items-center gap-2">
+                            <Plus className="h-4 w-4" />
+                            Add SMS Provider
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle>Add SMS Provider</DialogTitle>
+                            <DialogDescription>
+                              Configure a new SMS provider for marketing campaigns
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label>SMS Provider</Label>
+                              <Select 
+                                value={newSMSProvider.type} 
+                                onValueChange={(value) => setNewSMSProvider(prev => ({ ...prev, type: value, name: smsProviderTypes.find(p => p.value === value)?.label }))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select SMS provider" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {smsProviderTypes.map((provider) => (
+                                    <SelectItem key={provider.value} value={provider.value}>
+                                      {provider.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {newSMSProvider.type === "custom" && (
+                              <div className="space-y-2">
+                                <Label htmlFor="customProviderName">Custom Provider Name</Label>
+                                <Input
+                                  id="customProviderName"
+                                  placeholder="Enter custom provider name"
+                                  value={newSMSProvider.name || ""}
+                                  onChange={(e) => setNewSMSProvider(prev => ({ ...prev, name: e.target.value }))}
+                                />
+                              </div>
+                            )}
+
+                            <div className="space-y-2">
+                              <Label htmlFor="senderId">Sender ID / Phone Number</Label>
+                              <Input
+                                id="senderId"
+                                placeholder="e.g., +1234567890 or BRAND"
+                                value={newSMSProvider.senderId || ""}
+                                onChange={(e) => setNewSMSProvider(prev => ({ ...prev, senderId: e.target.value }))}
+                              />
+                            </div>
+
+                            <div className="space-y-4">
+                              <Label className="text-base font-medium">API Configuration</Label>
+                              <div className="grid gap-4">
+                                {apiOptions.map((api) => {
+                                  const selectedProvider = smsProviderTypes.find(p => p.value === newSMSProvider.type);
+                                  if (!selectedProvider?.apis.includes(api.key)) return null;
+
+                                  return (
+                                    <div key={api.key} className="p-4 border rounded-lg space-y-3">
+                                      <div>
+                                        <h4 className="font-medium">{api.label}</h4>
+                                        <p className="text-sm text-muted-foreground">{api.description}</p>
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-3">
+                                        <div className="space-y-2">
+                                          <Label htmlFor={`${api.key}-endpoint`}>API Endpoint</Label>
+                                          <Input
+                                            id={`${api.key}-endpoint`}
+                                            placeholder="https://api.provider.com/endpoint"
+                                            value={newSMSProvider.apiConfigs?.[api.key]?.endpoint || ""}
+                                            onChange={(e) => updateAPIConfig(api.key, e.target.value, newSMSProvider.apiConfigs?.[api.key]?.apiKey || "")}
+                                          />
+                                        </div>
+                                        <div className="space-y-2">
+                                          <Label htmlFor={`${api.key}-key`}>API Key</Label>
+                                          <Input
+                                            id={`${api.key}-key`}
+                                            type="password"
+                                            placeholder="API Key"
+                                            value={newSMSProvider.apiConfigs?.[api.key]?.apiKey || ""}
+                                            onChange={(e) => updateAPIConfig(api.key, newSMSProvider.apiConfigs?.[api.key]?.endpoint || "", e.target.value)}
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsSMSDialogOpen(false)}>
+                              Cancel
+                            </Button>
+                            <Button onClick={handleCreateSMSProvider}>Add Provider</Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {smsProviders.map((provider) => (
+                      <div key={provider.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <MessageSquare className="h-5 w-5 text-green-500" />
+                          <div>
+                            <p className="font-medium">{provider.name}</p>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Badge variant="outline">{provider.type}</Badge>
+                              {provider.senderId && <span>Sender: {provider.senderId}</span>}
+                              <span>APIs: {Object.keys(provider.apiConfigs).length}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="default">Active</Badge>
+                          <Button variant="outline" size="sm">Configure</Button>
+                          <Button variant="outline" size="sm">Test</Button>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {smsProviders.length === 0 && (
+                      <div className="text-center p-8 text-muted-foreground">
+                        <MessageSquare className="mx-auto h-12 w-12 mb-4" />
+                        <p>No SMS providers configured.</p>
+                        <p className="text-sm">Add your first SMS provider to get started with SMS marketing.</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {currentUserRole === "Super Admin" && (
+              <TabsContent value="plans" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium">{provider.name}</p>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          {provider.senderId && <span>Sender: {provider.senderId}</span>}
-                          {provider.accountSid && <span>Account: {provider.accountSid.substring(0, 8)}...</span>}
-                          {provider.apiKey && <span>API Key: {provider.apiKey.substring(0, 8)}...</span>}
-                        </div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Package className="h-5 w-5" />
+                          Credit Plans Management
+                        </CardTitle>
+                        <CardDescription>Create and manage credit plans for SMS, Voice, Missed call, and Long code services</CardDescription>
                       </div>
+                      <Dialog open={isPlanDialogOpen} onOpenChange={setIsPlanDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button className="flex items-center gap-2">
+                            <Plus className="h-4 w-4" />
+                            Create Plan
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Create Credit Plan</DialogTitle>
+                            <DialogDescription>
+                              Create a new credit plan for users to purchase
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="planName">Plan Name</Label>
+                              <Input
+                                id="planName"
+                                placeholder="e.g., Premium SMS Plan"
+                                value={newCreditPlan.name || ""}
+                                onChange={(e) => setNewCreditPlan(prev => ({ ...prev, name: e.target.value }))}
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label>Credit Type</Label>
+                              <Select 
+                                value={newCreditPlan.type} 
+                                onValueChange={(value) => setNewCreditPlan(prev => ({ ...prev, type: value as CreditPlan['type'] }))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select credit type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {creditTypes.map((type) => (
+                                    <SelectItem key={type.value} value={type.value}>
+                                      {type.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-2">
+                                <Label htmlFor="credits">Credits</Label>
+                                <Input
+                                  id="credits"
+                                  type="number"
+                                  placeholder="1000"
+                                  value={newCreditPlan.credits || ""}
+                                  onChange={(e) => setNewCreditPlan(prev => ({ ...prev, credits: parseInt(e.target.value) || 0 }))}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="price">Price ($)</Label>
+                                <Input
+                                  id="price"
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="10.00"
+                                  value={newCreditPlan.price || ""}
+                                  onChange={(e) => setNewCreditPlan(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="planDescription">Description</Label>
+                              <Textarea
+                                id="planDescription"
+                                placeholder="Plan description..."
+                                value={newCreditPlan.description || ""}
+                                onChange={(e) => setNewCreditPlan(prev => ({ ...prev, description: e.target.value }))}
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="validity">Validity Period</Label>
+                              <Input
+                                id="validity"
+                                placeholder="e.g., 30 days, 1 year"
+                                value={newCreditPlan.validity || ""}
+                                onChange={(e) => setNewCreditPlan(prev => ({ ...prev, validity: e.target.value }))}
+                              />
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsPlanDialogOpen(false)}>
+                              Cancel
+                            </Button>
+                            <Button onClick={handleCreateCreditPlan}>Create Plan</Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="default">Active</Badge>
-                      <Button variant="outline" size="sm">Configure</Button>
-                      <Button variant="outline" size="sm">Test</Button>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {creditPlans.map((plan) => (
+                        <div key={plan.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <CreditCard className="h-5 w-5 text-blue-500" />
+                            <div>
+                              <p className="font-medium">{plan.name}</p>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Badge variant="outline">{plan.type}</Badge>
+                                <span>{plan.credits} credits</span>
+                                <span>${plan.price}</span>
+                                {plan.validity && <span>Valid: {plan.validity}</span>}
+                              </div>
+                              {plan.description && (
+                                <p className="text-xs text-muted-foreground mt-1">{plan.description}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="default">Active</Badge>
+                            <Button variant="outline" size="sm">Edit</Button>
+                            <Button variant="outline" size="sm">Disable</Button>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {creditPlans.length === 0 && (
+                        <div className="text-center p-8 text-muted-foreground">
+                          <Package className="mx-auto h-12 w-12 mb-4" />
+                          <p>No credit plans created.</p>
+                          <p className="text-sm">Create your first credit plan to get started.</p>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
-                
-                {smsProviders.length === 0 && (
-                  <div className="text-center p-8 text-muted-foreground">
-                    <MessageSquare className="mx-auto h-12 w-12 mb-4" />
-                    <p>No SMS providers configured.</p>
-                    <p className="text-sm">Add your first SMS provider to get started with SMS marketing.</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            )}
+          </Tabs>
         </TabsContent>
       </Tabs>
 
