@@ -1,802 +1,623 @@
-
 import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { CommonSettingsProps } from "@/pages/Settings";
 import { 
-  MessageSquare, Plus, Settings, TestTube, Trash2, Edit, 
-  Phone, Mic, PhoneCall, Hash, Star, 
-  CreditCard, CheckCircle, XCircle
+  Facebook, 
+  Instagram, 
+  Twitter, 
+  Linkedin, 
+  Youtube, 
+  MessageCircle,
+  Mail,
+  Phone,
+  Globe,
+  Settings,
+  Plus,
+  Trash2,
+  Edit,
+  Check,
+  X
 } from "lucide-react";
 
 interface SMSProvider {
   id: string;
   name: string;
   type: 'builtin' | 'custom';
-  status: 'active' | 'inactive';
-  apiKey?: string;
-  apiSecret?: string;
-  senderId?: string;
-  baseUrl?: string;
-  username?: string;
-  password?: string;
+  enabled: boolean;
+  apiKeys?: Record<string, string>;
 }
 
 interface SMSPlan {
   id: string;
   name: string;
-  description: string;
   smsCredits: number;
   voiceSmsCredits: number;
   missedCallCredits: number;
   longCodeCredits: number;
   price: number;
-  currency: string;
   features: string[];
-  validity: number; // days
-  isActive: boolean;
 }
 
-const IntegrationSettings = ({ onSettingChange, role = "User" }: CommonSettingsProps) => {
-  const { toast } = useToast();
+export const IntegrationSettings = ({ onSettingChange, role = "User" }: CommonSettingsProps) => {
+  const [activeSection, setActiveSection] = useState("social");
   const [smsProviders, setSmsProviders] = useState<SMSProvider[]>([
-    { id: '1', name: 'Twilio', type: 'builtin', status: 'active' },
-    { id: '2', name: 'AWS SNS', type: 'builtin', status: 'inactive' },
+    { id: '1', name: 'Twilio', type: 'builtin', enabled: true },
+    { id: '2', name: 'AWS SNS', type: 'builtin', enabled: false },
+    { id: '3', name: 'MessageBird', type: 'builtin', enabled: false },
+    { id: '4', name: 'SMSGatewayHub', type: 'builtin', enabled: false }
   ]);
   const [smsPlans, setSmsPlans] = useState<SMSPlan[]>([]);
-  const [showAddProvider, setShowAddProvider] = useState(false);
-  const [showAddPlan, setShowAddPlan] = useState(false);
-  const [editingProvider, setEditingProvider] = useState<SMSProvider | null>(null);
-  const [editingPlan, setEditingPlan] = useState<SMSPlan | null>(null);
-
-  const [newProvider, setNewProvider] = useState<Partial<SMSProvider>>({
+  const [isAddProviderOpen, setIsAddProviderOpen] = useState(false);
+  const [isAddPlanOpen, setIsAddPlanOpen] = useState(false);
+  const [newProvider, setNewProvider] = useState<{ name: string; type: 'builtin' | 'custom' }>({ name: '', type: 'custom' });
+  const [newPlan, setNewPlan] = useState({
     name: '',
-    type: 'custom',
-    status: 'active'
-  });
-
-  const [newPlan, setNewPlan] = useState<Partial<SMSPlan>>({
-    name: '',
-    description: '',
     smsCredits: 0,
     voiceSmsCredits: 0,
     missedCallCredits: 0,
     longCodeCredits: 0,
     price: 0,
-    currency: 'USD',
-    features: [],
-    validity: 30,
-    isActive: true
+    features: [] as string[]
   });
+  
+  const { toast } = useToast();
 
-  const builtinProviders = [
-    'Twilio', 'AWS SNS', 'MessageBird', 'Nexmo/Vonage', 
-    'ClickSend', 'Bulk SMS', 'smsgatewayhub'
+  const socialMediaIntegrations = [
+    { id: "facebook", label: "Facebook", icon: <Facebook className="h-4 w-4" />, enabled: true },
+    { id: "instagram", label: "Instagram", icon: <Instagram className="h-4 w-4" />, enabled: false },
+    { id: "twitter", label: "Twitter", icon: <Twitter className="h-4 w-4" />, enabled: false },
+    { id: "linkedin", label: "LinkedIn", icon: <Linkedin className="h-4 w-4" />, enabled: false },
+    { id: "youtube", label: "YouTube", icon: <Youtube className="h-4 w-4" />, enabled: false },
   ];
 
-  const handleAddProvider = () => {
-    if (!newProvider.name) {
-      toast({
-        title: "Error",
-        description: "Provider name is required",
-        variant: "destructive"
-      });
-      return;
-    }
+  const emailMarketingIntegrations = [
+    { id: "mailchimp", label: "Mailchimp", icon: <Mail className="h-4 w-4" />, enabled: true },
+    { id: "sendgrid", label: "SendGrid", icon: <Mail className="h-4 w-4" />, enabled: false },
+    { id: "activecampaign", label: "ActiveCampaign", icon: <Mail className="h-4 w-4" />, enabled: false },
+  ];
 
+  const automationIntegrations = [
+    { id: "zapier", label: "Zapier", icon: <Settings className="h-4 w-4" />, enabled: true },
+    { id: "ifttt", label: "IFTTT", icon: <Settings className="h-4 w-4" />, enabled: false },
+  ];
+
+  const [socialIntegrations, setSocialIntegrations] = useState(socialMediaIntegrations);
+  const [emailIntegrations, setEmailIntegrations] = useState(emailMarketingIntegrations);
+  const [automation, setAutomation] = useState(automationIntegrations);
+
+  const handleIntegrationToggle = (id: string, type: 'social' | 'email' | 'automation') => {
+    let updatedIntegrations;
+    switch (type) {
+      case 'social':
+        updatedIntegrations = socialIntegrations.map(integration =>
+          integration.id === id ? { ...integration, enabled: !integration.enabled } : integration
+        );
+        setSocialIntegrations(updatedIntegrations);
+        break;
+      case 'email':
+        updatedIntegrations = emailIntegrations.map(integration =>
+          integration.id === id ? { ...integration, enabled: !integration.enabled } : integration
+        );
+        setEmailIntegrations(updatedIntegrations);
+        break;
+      case 'automation':
+        updatedIntegrations = automation.map(integration =>
+          integration.id === id ? { ...integration, enabled: !integration.enabled } : integration
+        );
+        setAutomation(updatedIntegrations);
+        break;
+      default:
+        return;
+    }
+    onSettingChange?.();
+    toast({
+      title: "Integration Updated",
+      description: "Integration status has been updated successfully.",
+    });
+  };
+
+  const handleSMSProviderToggle = (providerId: string) => {
+    setSmsProviders(prev => prev.map(provider => 
+      provider.id === providerId 
+        ? { ...provider, enabled: !provider.enabled }
+        : provider
+    ));
+    onSettingChange?.();
+    toast({
+      title: "SMS Provider Updated",
+      description: "SMS provider status has been updated successfully.",
+    });
+  };
+
+  const handleAddSMSProvider = () => {
+    if (!newProvider.name.trim()) return;
+    
     const provider: SMSProvider = {
       id: Date.now().toString(),
       name: newProvider.name,
-      type: newProvider.type || 'custom',
-      status: newProvider.status || 'active',
-      apiKey: newProvider.apiKey,
-      apiSecret: newProvider.apiSecret,
-      senderId: newProvider.senderId,
-      baseUrl: newProvider.baseUrl,
-      username: newProvider.username,
-      password: newProvider.password
+      type: newProvider.type,
+      enabled: false,
+      apiKeys: {}
     };
-
-    setSmsProviders([...smsProviders, provider]);
-    setNewProvider({ name: '', type: 'custom', status: 'active' });
-    setShowAddProvider(false);
+    
+    setSmsProviders(prev => [...prev, provider]);
+    setNewProvider({ name: '', type: 'custom' });
+    setIsAddProviderOpen(false);
     onSettingChange?.();
-
+    
     toast({
-      title: "Provider Added",
-      description: `${provider.name} has been added successfully`,
+      title: "SMS Provider Added",
+      description: `${provider.name} has been added successfully.`,
     });
   };
 
-  const handleAddPlan = () => {
-    if (!newPlan.name || !newPlan.price) {
-      toast({
-        title: "Error",
-        description: "Plan name and price are required",
-        variant: "destructive"
-      });
-      return;
-    }
+  const handleRemoveSMSProvider = (providerId: string) => {
+    setSmsProviders(prev => prev.filter(provider => provider.id !== providerId));
+    onSettingChange?.();
+    toast({
+      title: "SMS Provider Removed",
+      description: "SMS provider has been removed successfully.",
+    });
+  };
 
+  const handleAddSMSPlan = () => {
+    if (!newPlan.name.trim()) return;
+    
     const plan: SMSPlan = {
       id: Date.now().toString(),
-      name: newPlan.name!,
-      description: newPlan.description || '',
-      smsCredits: newPlan.smsCredits || 0,
-      voiceSmsCredits: newPlan.voiceSmsCredits || 0,
-      missedCallCredits: newPlan.missedCallCredits || 0,
-      longCodeCredits: newPlan.longCodeCredits || 0,
-      price: newPlan.price!,
-      currency: newPlan.currency || 'USD',
-      features: newPlan.features || [],
-      validity: newPlan.validity || 30,
-      isActive: newPlan.isActive !== false
+      ...newPlan
     };
-
-    setSmsPlans([...smsPlans, plan]);
-    setNewPlan({
-      name: '', description: '', smsCredits: 0, voiceSmsCredits: 0,
-      missedCallCredits: 0, longCodeCredits: 0, price: 0, currency: 'USD',
-      features: [], validity: 30, isActive: true
-    });
-    setShowAddPlan(false);
-    onSettingChange?.();
-
-    toast({
-      title: "Plan Created",
-      description: `${plan.name} plan has been created successfully`,
-    });
-  };
-
-  const handleTestProvider = (provider: SMSProvider) => {
-    toast({
-      title: "Testing Provider",
-      description: `Testing connection to ${provider.name}...`,
-    });
     
-    // Simulate test
-    setTimeout(() => {
-      toast({
-        title: "Test Successful",
-        description: `${provider.name} is working correctly`,
-      });
-    }, 2000);
+    setSmsPlans(prev => [...prev, plan]);
+    setNewPlan({
+      name: '',
+      smsCredits: 0,
+      voiceSmsCredits: 0,
+      missedCallCredits: 0,
+      longCodeCredits: 0,
+      price: 0,
+      features: []
+    });
+    setIsAddPlanOpen(false);
+    onSettingChange?.();
+    
+    toast({
+      title: "SMS Plan Created",
+      description: `${plan.name} plan has been created successfully.`,
+    });
   };
 
-  const handleConfigureProvider = (provider: SMSProvider) => {
-    setEditingProvider(provider);
+  const handleRemoveSMSPlan = (planId: string) => {
+    setSmsPlans(prev => prev.filter(plan => plan.id !== planId));
+    onSettingChange?.();
+    toast({
+      title: "SMS Plan Removed",
+      description: "SMS plan has been removed successfully.",
+    });
   };
 
-  const renderProviderForm = (provider: Partial<SMSProvider>, isEdit = false) => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="provider-name">Provider Name</Label>
-          {provider.type === 'builtin' ? (
-            <Select 
-              value={provider.name} 
-              onValueChange={(value) => 
-                isEdit ? setEditingProvider({...editingProvider!, name: value}) : 
-                setNewProvider({...newProvider, name: value})
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select provider" />
-              </SelectTrigger>
-              <SelectContent>
-                {builtinProviders.map(name => (
-                  <SelectItem key={name} value={name}>{name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <Input
-              id="provider-name"
-              value={provider.name || ''}
-              onChange={(e) => 
-                isEdit ? setEditingProvider({...editingProvider!, name: e.target.value}) :
-                setNewProvider({...newProvider, name: e.target.value})
-              }
-              placeholder="Enter provider name"
-            />
-          )}
-        </div>
-        <div>
-          <Label htmlFor="provider-type">Type</Label>
-          <Select 
-            value={provider.type} 
-            onValueChange={(value: 'builtin' | 'custom') => 
-              isEdit ? setEditingProvider({...editingProvider!, type: value}) :
-              setNewProvider({...newProvider, type: value})
-            }
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="builtin">Built-in</SelectItem>
-              <SelectItem value="custom">Custom</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+  const builtinSMSProviders = [
+    'Twilio', 'AWS SNS', 'MessageBird', 'SMSGatewayHub', 'Vonage', 'Plivo', 'ClickSend'
+  ];
 
-      {provider.name === 'smsgatewayhub' || provider.type === 'custom' ? (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="api-key">API Key</Label>
-              <Input
-                id="api-key"
-                type="password"
-                value={provider.apiKey || ''}
-                onChange={(e) => 
-                  isEdit ? setEditingProvider({...editingProvider!, apiKey: e.target.value}) :
-                  setNewProvider({...newProvider, apiKey: e.target.value})
-                }
-                placeholder="Enter API key"
-              />
-            </div>
-            <div>
-              <Label htmlFor="api-secret">API Secret</Label>
-              <Input
-                id="api-secret"
-                type="password"
-                value={provider.apiSecret || ''}
-                onChange={(e) => 
-                  isEdit ? setEditingProvider({...editingProvider!, apiSecret: e.target.value}) :
-                  setNewProvider({...newProvider, apiSecret: e.target.value})
-                }
-                placeholder="Enter API secret"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="sender-id">Sender ID</Label>
-              <Input
-                id="sender-id"
-                value={provider.senderId || ''}
-                onChange={(e) => 
-                  isEdit ? setEditingProvider({...editingProvider!, senderId: e.target.value}) :
-                  setNewProvider({...newProvider, senderId: e.target.value})
-                }
-                placeholder="Enter sender ID"
-              />
-            </div>
-            <div>
-              <Label htmlFor="base-url">Base URL</Label>
-              <Input
-                id="base-url"
-                value={provider.baseUrl || ''}
-                onChange={(e) => 
-                  isEdit ? setEditingProvider({...editingProvider!, baseUrl: e.target.value}) :
-                  setNewProvider({...newProvider, baseUrl: e.target.value})
-                }
-                placeholder="https://api.provider.com"
-              />
-            </div>
-          </div>
-          {provider.name === 'smsgatewayhub' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  value={provider.username || ''}
-                  onChange={(e) => 
-                    isEdit ? setEditingProvider({...editingProvider!, username: e.target.value}) :
-                    setNewProvider({...newProvider, username: e.target.value})
-                  }
-                  placeholder="Enter username"
-                />
-              </div>
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={provider.password || ''}
-                  onChange={(e) => 
-                    isEdit ? setEditingProvider({...editingProvider!, password: e.target.value}) :
-                    setNewProvider({...newProvider, password: e.target.value})
-                  }
-                  placeholder="Enter password"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      ) : null}
-    </div>
-  );
+  const renderSMSMarketing = () => {
+    if (role !== "Super Admin") return null;
 
-  const renderPlanForm = (plan: Partial<SMSPlan>, isEdit = false) => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="plan-name">Plan Name</Label>
-          <Input
-            id="plan-name"
-            value={plan.name || ''}
-            onChange={(e) => 
-              isEdit ? setEditingPlan({...editingPlan!, name: e.target.value}) :
-              setNewPlan({...newPlan, name: e.target.value})
-            }
-            placeholder="Enter plan name"
-          />
-        </div>
-        <div>
-          <Label htmlFor="plan-price">Price</Label>
-          <div className="flex gap-2">
-            <Input
-              id="plan-price"
-              type="number"
-              value={plan.price || ''}
-              onChange={(e) => 
-                isEdit ? setEditingPlan({...editingPlan!, price: Number(e.target.value)}) :
-                setNewPlan({...newPlan, price: Number(e.target.value)})
-              }
-              placeholder="0.00"
-            />
-            <Select 
-              value={plan.currency} 
-              onValueChange={(value) => 
-                isEdit ? setEditingPlan({...editingPlan!, currency: value}) :
-                setNewPlan({...newPlan, currency: value})
-              }
-            >
-              <SelectTrigger className="w-20">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="USD">USD</SelectItem>
-                <SelectItem value="EUR">EUR</SelectItem>
-                <SelectItem value="INR">INR</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <Label htmlFor="plan-description">Description</Label>
-        <Textarea
-          id="plan-description"
-          value={plan.description || ''}
-          onChange={(e) => 
-            isEdit ? setEditingPlan({...editingPlan!, description: e.target.value}) :
-            setNewPlan({...newPlan, description: e.target.value})
-          }
-          placeholder="Describe this plan..."
-          rows={3}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="sms-credits">SMS Credits</Label>
-          <Input
-            id="sms-credits"
-            type="number"
-            value={plan.smsCredits || ''}
-            onChange={(e) => 
-              isEdit ? setEditingPlan({...editingPlan!, smsCredits: Number(e.target.value)}) :
-              setNewPlan({...newPlan, smsCredits: Number(e.target.value)})
-            }
-            placeholder="0"
-          />
-        </div>
-        <div>
-          <Label htmlFor="voice-sms-credits">Voice SMS Credits</Label>
-          <Input
-            id="voice-sms-credits"
-            type="number"
-            value={plan.voiceSmsCredits || ''}
-            onChange={(e) => 
-              isEdit ? setEditingPlan({...editingPlan!, voiceSmsCredits: Number(e.target.value)}) :
-              setNewPlan({...newPlan, voiceSmsCredits: Number(e.target.value)})
-            }
-            placeholder="0"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="missed-call-credits">Missed Call Credits</Label>
-          <Input
-            id="missed-call-credits"
-            type="number"
-            value={plan.missedCallCredits || ''}
-            onChange={(e) => 
-              isEdit ? setEditingPlan({...editingPlan!, missedCallCredits: Number(e.target.value)}) :
-              setNewPlan({...newPlan, missedCallCredits: Number(e.target.value)})
-            }
-            placeholder="0"
-          />
-        </div>
-        <div>
-          <Label htmlFor="long-code-credits">Long Code Credits</Label>
-          <Input
-            id="long-code-credits"
-            type="number"
-            value={plan.longCodeCredits || ''}
-            onChange={(e) => 
-              isEdit ? setEditingPlan({...editingPlan!, longCodeCredits: Number(e.target.value)}) :
-              setNewPlan({...newPlan, longCodeCredits: Number(e.target.value)})
-            }
-            placeholder="0"
-          />
-        </div>
-      </div>
-
-      <div>
-        <Label htmlFor="validity">Validity (Days)</Label>
-        <Input
-          id="validity"
-          type="number"
-          value={plan.validity || ''}
-          onChange={(e) => 
-            isEdit ? setEditingPlan({...editingPlan!, validity: Number(e.target.value)}) :
-            setNewPlan({...newPlan, validity: Number(e.target.value)})
-          }
-          placeholder="30"
-        />
-      </div>
-
-      <div>
-        <Label htmlFor="features">Features (one per line)</Label>
-        <Textarea
-          id="features"
-          value={plan.features?.join('\n') || ''}
-          onChange={(e) => 
-            isEdit ? setEditingPlan({...editingPlan!, features: e.target.value.split('\n').filter(f => f.trim())}) :
-            setNewPlan({...newPlan, features: e.target.value.split('\n').filter(f => f.trim())})
-          }
-          placeholder="Feature 1&#10;Feature 2&#10;Feature 3"
-          rows={4}
-        />
-      </div>
-    </div>
-  );
-
-  if (role !== "Super Admin") {
     return (
       <div className="space-y-6">
-        <div>
-          <h3 className="text-lg font-medium">Integrations</h3>
-          <p className="text-sm text-muted-foreground">
-            Connect and manage third-party integrations.
-          </p>
-        </div>
-        
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              SMS Marketing
+              <Phone className="h-5 w-5" />
+              SMS Providers Management
             </CardTitle>
-            <CardDescription>
-              SMS marketing integrations and settings
-            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              SMS marketing features are only available to Super Admin users.
-            </p>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-medium">SMS Providers</h3>
+              <Dialog open={isAddProviderOpen} onOpenChange={setIsAddProviderOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add SMS Provider
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add SMS Provider</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="provider-type">Provider Type</Label>
+                      <Select 
+                        value={newProvider.type} 
+                        onValueChange={(value: 'builtin' | 'custom') => 
+                          setNewProvider(prev => ({ ...prev, type: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="builtin">Built-in Provider</SelectItem>
+                          <SelectItem value="custom">Custom Provider</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="provider-name">Provider Name</Label>
+                      {newProvider.type === 'builtin' ? (
+                        <Select 
+                          value={newProvider.name} 
+                          onValueChange={(value) => 
+                            setNewProvider(prev => ({ ...prev, name: value }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a provider" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {builtinSMSProviders.map(provider => (
+                              <SelectItem key={provider} value={provider}>
+                                {provider}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          id="provider-name"
+                          value={newProvider.name}
+                          onChange={(e) => setNewProvider(prev => ({ ...prev, name: e.target.value }))}
+                          placeholder="Enter custom provider name"
+                        />
+                      )}
+                    </div>
+                    
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setIsAddProviderOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleAddSMSProvider}>
+                        Add Provider
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+            
+            <div className="grid gap-4">
+              {smsProviders.map((provider) => (
+                <div key={provider.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Phone className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <h4 className="font-medium">{provider.name}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {provider.type === 'builtin' ? 'Built-in Provider' : 'Custom Provider'}
+                      </p>
+                    </div>
+                    <Badge variant={provider.enabled ? "default" : "secondary"}>
+                      {provider.enabled ? "Enabled" : "Disabled"}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm">
+                      <Settings className="h-4 w-4 mr-1" />
+                      Configure
+                    </Button>
+                    <Switch
+                      checked={provider.enabled}
+                      onCheckedChange={() => handleSMSProviderToggle(provider.id)}
+                    />
+                    {provider.type === 'custom' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveSMSProvider(provider.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5" />
+              SMS Plans Management
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-medium">SMS Credit Plans</h3>
+              <Dialog open={isAddPlanOpen} onOpenChange={setIsAddPlanOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Plan
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Create SMS Credit Plan</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="plan-name">Plan Name</Label>
+                      <Input
+                        id="plan-name"
+                        value={newPlan.name}
+                        onChange={(e) => setNewPlan(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="Enter plan name"
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="sms-credits">SMS Credits</Label>
+                        <Input
+                          id="sms-credits"
+                          type="number"
+                          value={newPlan.smsCredits}
+                          onChange={(e) => setNewPlan(prev => ({ ...prev, smsCredits: parseInt(e.target.value) || 0 }))}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="voice-sms-credits">Voice SMS Credits</Label>
+                        <Input
+                          id="voice-sms-credits"
+                          type="number"
+                          value={newPlan.voiceSmsCredits}
+                          onChange={(e) => setNewPlan(prev => ({ ...prev, voiceSmsCredits: parseInt(e.target.value) || 0 }))}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="missed-call-credits">Missed Call Credits</Label>
+                        <Input
+                          id="missed-call-credits"
+                          type="number"
+                          value={newPlan.missedCallCredits}
+                          onChange={(e) => setNewPlan(prev => ({ ...prev, missedCallCredits: parseInt(e.target.value) || 0 }))}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="long-code-credits">Long Code Credits</Label>
+                        <Input
+                          id="long-code-credits"
+                          type="number"
+                          value={newPlan.longCodeCredits}
+                          onChange={(e) => setNewPlan(prev => ({ ...prev, longCodeCredits: parseInt(e.target.value) || 0 }))}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="plan-price">Price ($)</Label>
+                      <Input
+                        id="plan-price"
+                        type="number"
+                        step="0.01"
+                        value={newPlan.price}
+                        onChange={(e) => setNewPlan(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="plan-features">Features (one per line)</Label>
+                      <Textarea
+                        id="plan-features"
+                        value={newPlan.features.join('\n')}
+                        onChange={(e) => setNewPlan(prev => ({ 
+                          ...prev, 
+                          features: e.target.value.split('\n').filter(f => f.trim()) 
+                        }))}
+                        placeholder="Enter plan features, one per line"
+                        rows={4}
+                      />
+                    </div>
+                    
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setIsAddPlanOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleAddSMSPlan}>
+                        Create Plan
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+            
+            <div className="grid gap-4">
+              {smsPlans.map((plan) => (
+                <div key={plan.id} className="p-4 border rounded-lg">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h4 className="font-medium">{plan.name}</h4>
+                      <p className="text-2xl font-bold text-green-600">${plan.price}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveSMSPlan(plan.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 mb-3">
+                    <div className="text-sm">
+                      <span className="font-medium">SMS Credits:</span> {plan.smsCredits.toLocaleString()}
+                    </div>
+                    <div className="text-sm">
+                      <span className="font-medium">Voice SMS:</span> {plan.voiceSmsCredits.toLocaleString()}
+                    </div>
+                    <div className="text-sm">
+                      <span className="font-medium">Missed Call:</span> {plan.missedCallCredits.toLocaleString()}
+                    </div>
+                    <div className="text-sm">
+                      <span className="font-medium">Long Code:</span> {plan.longCodeCredits.toLocaleString()}
+                    </div>
+                  </div>
+                  
+                  {plan.features.length > 0 && (
+                    <div className="mt-3">
+                      <h5 className="font-medium text-sm mb-2">Features:</h5>
+                      <ul className="text-sm text-muted-foreground space-y-1">
+                        {plan.features.map((feature, index) => (
+                          <li key={index} className="flex items-center gap-2">
+                            <Check className="h-3 w-3 text-green-500" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ))}
+              
+              {smsPlans.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No SMS plans created yet. Create your first plan to get started.
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
     );
-  }
+  };
+
+  const sections = [
+    { id: "social", label: "Social Media", icon: <Globe className="h-4 w-4" /> },
+    { id: "email", label: "Email Marketing", icon: <Mail className="h-4 w-4" /> },
+    ...(role === "Super Admin" ? [{ id: "sms", label: "SMS Marketing", icon: <Phone className="h-4 w-4" /> }] : []),
+    { id: "automation", label: "Automation", icon: <Settings className="h-4 w-4" /> },
+  ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium">Integrations</h3>
-        <p className="text-sm text-muted-foreground">
-          Connect and manage third-party integrations.
+        <h2 className="text-2xl font-bold tracking-tight">Integrations</h2>
+        <p className="text-muted-foreground">
+          Connect and manage your third-party integrations and services.
         </p>
       </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            SMS Marketing
-          </CardTitle>
-          <CardDescription>
-            Manage SMS providers and create plans for SMS credits
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="providers" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="providers">SMS Providers</TabsTrigger>
-              <TabsTrigger value="plans">Plans & Credits</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="providers" className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h4 className="text-sm font-medium">SMS Providers</h4>
-                <Dialog open={showAddProvider} onOpenChange={setShowAddProvider}>
-                  <DialogTrigger asChild>
-                    <Button size="sm" className="gap-2">
-                      <Plus className="h-4 w-4" />
-                      Add Provider
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>Add SMS Provider</DialogTitle>
-                      <DialogDescription>
-                        Configure a new SMS provider for your account
-                      </DialogDescription>
-                    </DialogHeader>
-                    {renderProviderForm(newProvider)}
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => setShowAddProvider(false)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={handleAddProvider}>Add Provider</Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
 
-              <div className="grid gap-4">
-                {smsProviders.map((provider) => (
-                  <Card key={provider.id}>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div>
-                            <h5 className="font-medium">{provider.name}</h5>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge variant={provider.type === 'builtin' ? 'default' : 'secondary'}>
-                                {provider.type}
-                              </Badge>
-                              <Badge variant={provider.status === 'active' ? 'default' : 'secondary'}>
-                                {provider.status}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleTestProvider(provider)}
-                            className="gap-2"
-                          >
-                            <TestTube className="h-4 w-4" />
-                            Test
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleConfigureProvider(provider)}
-                            className="gap-2"
-                          >
-                            <Settings className="h-4 w-4" />
-                            Configure
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => {
-                              setSmsProviders(smsProviders.filter(p => p.id !== provider.id));
-                              onSettingChange?.();
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
+      <div className="flex gap-4 border-b">
+        {sections.map((section) => (
+          <Button
+            key={section.id}
+            variant={activeSection === section.id ? "default" : "ghost"}
+            onClick={() => setActiveSection(section.id)}
+            className="flex items-center gap-2"
+          >
+            {section.icon}
+            {section.label}
+          </Button>
+        ))}
+      </div>
 
-            <TabsContent value="plans" className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h4 className="text-sm font-medium">SMS Credit Plans</h4>
-                <Dialog open={showAddPlan} onOpenChange={setShowAddPlan}>
-                  <DialogTrigger asChild>
-                    <Button size="sm" className="gap-2">
-                      <Plus className="h-4 w-4" />
-                      Create Plan
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Create SMS Credit Plan</DialogTitle>
-                      <DialogDescription>
-                        Define a new plan with various credit types and features
-                      </DialogDescription>
-                    </DialogHeader>
-                    {renderPlanForm(newPlan)}
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => setShowAddPlan(false)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={handleAddPlan}>Create Plan</Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-
-              <div className="grid gap-4">
-                {smsPlans.map((plan) => (
-                  <Card key={plan.id}>
-                    <CardContent className="pt-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h5 className="font-medium">{plan.name}</h5>
-                            <Badge variant={plan.isActive ? 'default' : 'secondary'}>
-                              {plan.isActive ? 'Active' : 'Inactive'}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-3">{plan.description}</p>
-                          
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
-                            <div className="flex items-center gap-2">
-                              <MessageSquare className="h-4 w-4 text-blue-500" />
-                              <span className="text-sm">{plan.smsCredits} SMS</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Mic className="h-4 w-4 text-green-500" />
-                              <span className="text-sm">{plan.voiceSmsCredits} Voice</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <PhoneCall className="h-4 w-4 text-orange-500" />
-                              <span className="text-sm">{plan.missedCallCredits} Missed</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Hash className="h-4 w-4 text-purple-500" />
-                              <span className="text-sm">{plan.longCodeCredits} Long Code</span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span className="font-medium text-lg">{plan.currency} {plan.price}</span>
-                            <span>Valid for {plan.validity} days</span>
-                          </div>
-
-                          {plan.features.length > 0 && (
-                            <div className="mt-3">
-                              <h6 className="text-sm font-medium mb-1">Features:</h6>
-                              <ul className="text-xs text-muted-foreground space-y-1">
-                                {plan.features.map((feature, index) => (
-                                  <li key={index} className="flex items-center gap-2">
-                                    <CheckCircle className="h-3 w-3 text-green-500" />
-                                    {feature}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEditingPlan(plan)}
-                            className="gap-2"
-                          >
-                            <Edit className="h-4 w-4" />
-                            Edit
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => {
-                              setSmsPlans(smsPlans.filter(p => p.id !== plan.id));
-                              onSettingChange?.();
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              {smsPlans.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No SMS plans created yet</p>
-                  <p className="text-sm">Create your first plan to get started</p>
+      {activeSection === "social" && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Social Media Integrations</h3>
+          <p className="text-muted-foreground">
+            Connect your social media accounts to automate posting and engagement.
+          </p>
+          <div className="grid gap-4">
+            {socialIntegrations.map((integration) => (
+              <div key={integration.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  {integration.icon}
+                  <h4 className="font-medium">{integration.label}</h4>
                 </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-
-      {/* Edit Provider Dialog */}
-      <Dialog open={!!editingProvider} onOpenChange={() => setEditingProvider(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Configure {editingProvider?.name}</DialogTitle>
-            <DialogDescription>
-              Update provider settings and credentials
-            </DialogDescription>
-          </DialogHeader>
-          {editingProvider && renderProviderForm(editingProvider, true)}
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setEditingProvider(null)}>
-              Cancel
-            </Button>
-            <Button onClick={() => {
-              if (editingProvider) {
-                setSmsProviders(smsProviders.map(p => 
-                  p.id === editingProvider.id ? editingProvider : p
-                ));
-                setEditingProvider(null);
-                onSettingChange?.();
-                toast({
-                  title: "Provider Updated",
-                  description: `${editingProvider.name} has been updated successfully`,
-                });
-              }
-            }}>
-              Save Changes
-            </Button>
+                <Switch
+                  checked={integration.enabled}
+                  onCheckedChange={() => handleIntegrationToggle(integration.id, 'social')}
+                />
+              </div>
+            ))}
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
-      {/* Edit Plan Dialog */}
-      <Dialog open={!!editingPlan} onOpenChange={() => setEditingPlan(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit {editingPlan?.name}</DialogTitle>
-            <DialogDescription>
-              Update plan details and credit allocations
-            </DialogDescription>
-          </DialogHeader>
-          {editingPlan && renderPlanForm(editingPlan, true)}
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setEditingPlan(null)}>
-              Cancel
-            </Button>
-            <Button onClick={() => {
-              if (editingPlan) {
-                setSmsPlans(smsPlans.map(p => 
-                  p.id === editingPlan.id ? editingPlan : p
-                ));
-                setEditingPlan(null);
-                onSettingChange?.();
-                toast({
-                  title: "Plan Updated",
-                  description: `${editingPlan.name} has been updated successfully`,
-                });
-              }
-            }}>
-              Save Changes
-            </Button>
+      {activeSection === "email" && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Email Marketing Integrations</h3>
+          <p className="text-muted-foreground">
+            Connect your email marketing tools to manage campaigns and subscribers.
+          </p>
+          <div className="grid gap-4">
+            {emailIntegrations.map((integration) => (
+              <div key={integration.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  {integration.icon}
+                  <h4 className="font-medium">{integration.label}</h4>
+                </div>
+                <Switch
+                  checked={integration.enabled}
+                  onCheckedChange={() => handleIntegrationToggle(integration.id, 'email')}
+                />
+              </div>
+            ))}
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
+
+      {activeSection === "sms" && renderSMSMarketing()}
+
+      {activeSection === "automation" && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Automation Integrations</h3>
+          <p className="text-muted-foreground">
+            Connect your automation tools to streamline workflows and tasks.
+          </p>
+          <div className="grid gap-4">
+            {automation.map((integration) => (
+              <div key={integration.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  {integration.icon}
+                  <h4 className="font-medium">{integration.label}</h4>
+                </div>
+                <Switch
+                  checked={integration.enabled}
+                  onCheckedChange={() => handleIntegrationToggle(integration.id, 'automation')}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
-export default IntegrationSettings;
