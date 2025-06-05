@@ -1,10 +1,11 @@
+
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileSettings } from "@/components/settings/ProfileSettings";
 import { AccountSettings } from "@/components/settings/AccountSettings";
 import { NotificationSettings } from "@/components/settings/NotificationSettings";
 import { AppearanceSettings } from "@/components/settings/AppearanceSettings";
-import { IntegrationSettings } from "@/components/settings/IntegrationSettings";
+import IntegrationSettings from "@/components/settings/IntegrationSettings";
 import { WhiteLabelSettings } from "@/components/settings/WhiteLabelSettings";
 import { BillingSettings } from "@/components/settings/BillingSettings";
 import { AnalyticsSettings } from "@/components/settings/AnalyticsSettings";

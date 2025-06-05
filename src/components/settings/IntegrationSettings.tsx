@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CommonSettingsProps } from "@/pages/Settings";
 import { 
   MessageSquare, Plus, Settings, TestTube, Trash2, Edit, 
-  Phone, VoiceIcon as Voice, PhoneCall, Hash, Star, 
+  Phone, Mic, PhoneCall, Hash, Star, 
   CreditCard, CheckCircle, XCircle
 } from "lucide-react";
 
@@ -658,7 +658,7 @@ const IntegrationSettings = ({ onSettingChange, role = "User" }: CommonSettingsP
                               <span className="text-sm">{plan.smsCredits} SMS</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Voice className="h-4 w-4 text-green-500" />
+                              <Mic className="h-4 w-4 text-green-500" />
                               <span className="text-sm">{plan.voiceSmsCredits} Voice</span>
                             </div>
                             <div className="flex items-center gap-2">
