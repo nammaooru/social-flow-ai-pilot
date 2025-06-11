@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { MoreHorizontal, Plus, Search, Users as UsersIcon, Edit, Trash2, UserPlus, Shield, Crown, Upload, X } from "lucide-react";
+import { MoreHorizontal, Plus, Search, Users as UsersIcon, Edit, Trash2, UserPlus, Shield, Crown, Upload, X, Eye, EyeOff, Share, Copy } from "lucide-react";
 import { CommonSettingsProps } from "@/pages/Settings";
 
 interface User {
@@ -26,7 +25,9 @@ interface User {
   lastActive: string;
   createdAt: string;
   permissions?: string[];
-  parentWhiteLabel?: string; // For Admin users to track which White Label they belong to
+  parentWhiteLabel?: string;
+  username?: string;
+  password?: string;
 }
 
 interface UsersSettingsProps extends CommonSettingsProps {
@@ -39,9 +40,12 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
   const [isDeleteUserDialogOpen, setIsDeleteUserDialogOpen] = useState(false);
+  const [isShareCredentialsDialogOpen, setIsShareCredentialsDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showEditPassword, setShowEditPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
   const [editAvatarFile, setEditAvatarFile] = useState<File | null>(null);
@@ -55,7 +59,9 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
     address: "",
     phone: "",
     avatar: "",
-    parentWhiteLabel: ""
+    parentWhiteLabel: "",
+    username: "",
+    password: ""
   });
   
   const [users, setUsers] = useState<User[]>([
@@ -70,7 +76,9 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
       phone: "+1 (555) 123-4567",
       lastActive: "2 hours ago",
       createdAt: "2024-01-01",
-      permissions: ["all"]
+      permissions: ["all"],
+      username: "sysadmin",
+      password: "Admin123!"
     },
     {
       id: "2",
@@ -83,7 +91,9 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
       phone: "+1 (555) 987-6543",
       lastActive: "1 day ago",
       createdAt: "2024-01-15",
-      permissions: ["branding", "users", "settings"]
+      permissions: ["branding", "users", "settings"],
+      username: "brandmgr",
+      password: "Brand456@"
     },
     {
       id: "3",
@@ -97,7 +107,9 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
       lastActive: "3 hours ago",
       createdAt: "2024-02-01",
       permissions: ["content", "analytics", "support"],
-      parentWhiteLabel: "2"
+      parentWhiteLabel: "2",
+      username: "contentadmin",
+      password: "Content789#"
     },
     {
       id: "4",
@@ -111,7 +123,9 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
       lastActive: "1 week ago",
       createdAt: "2024-01-20",
       permissions: ["content", "analytics"],
-      parentWhiteLabel: "2"
+      parentWhiteLabel: "2",
+      username: "marketingadmin",
+      password: "Market321$"
     }
   ]);
   
@@ -214,11 +228,44 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
     return users.filter(user => user.role === "User"); // Other roles see only regular users
   };
   
+  // Generate random password
+  const generatePassword = () => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+    let password = "";
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setNewUser(prev => ({ ...prev, password }));
+  };
+
+  // Generate username from name
+  const generateUsername = (name: string) => {
+    const username = name.toLowerCase().replace(/\s+/g, '').slice(0, 10);
+    setNewUser(prev => ({ ...prev, username }));
+  };
+
+  // Copy to clipboard
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "Copied to clipboard",
+        description: `${label} has been copied to your clipboard.`,
+      });
+    } catch (err) {
+      toast({
+        title: "Failed to copy",
+        description: "Please copy the text manually.",
+        variant: "destructive"
+      });
+    }
+  };
+  
   const handleAddUser = () => {
-    if (!newUser.name || !newUser.email) {
+    if (!newUser.name || !newUser.email || !newUser.username || !newUser.password) {
       toast({
         title: "Missing information",
-        description: "Please fill in all required fields.",
+        description: "Please fill in all required fields including username and password.",
         variant: "destructive"
       });
       return;
@@ -249,7 +296,7 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
       name: newUser.name,
       email: newUser.email,
       role: newUser.role,
-      status: "Active", // Default to Active instead of Pending
+      status: "Active",
       company: newUser.company,
       address: newUser.address,
       phone: newUser.phone,
@@ -257,18 +304,20 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
       lastActive: "Never",
       createdAt: new Date().toISOString().split('T')[0],
       permissions: [],
-      parentWhiteLabel: newUser.role === "Admin" ? newUser.parentWhiteLabel : undefined
+      parentWhiteLabel: newUser.role === "Admin" ? newUser.parentWhiteLabel : undefined,
+      username: newUser.username,
+      password: newUser.password
     };
     
     setUsers(prev => [...prev, createdUser]);
-    setNewUser({ name: "", email: "", role: "Admin", company: "", address: "", phone: "", avatar: "", parentWhiteLabel: "" });
+    setNewUser({ name: "", email: "", role: "Admin", company: "", address: "", phone: "", avatar: "", parentWhiteLabel: "", username: "", password: "" });
     setAvatarFile(null);
     setAvatarPreview("");
     setIsAddUserDialogOpen(false);
     
     toast({
       title: "User created",
-      description: `${createdUser.name} has been added successfully.`,
+      description: `${createdUser.name} has been added with credentials.`,
     });
     
     if (onSettingChange) {
@@ -416,6 +465,16 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
   const canManageUsers = manageableRoles.length > 0;
   const showAddUserButton = role === "Super Admin"; // Only Super Admin can add users
   
+  const canShareCredentials = (user: User) => {
+    const manageableRoles = getManageableRoles();
+    return manageableRoles.includes(user.role) && user.username && user.password;
+  };
+  
+  const openShareCredentialsDialog = (user: User) => {
+    setSelectedUser(user);
+    setIsShareCredentialsDialogOpen(true);
+  };
+  
   return (
     <div className="space-y-6">
       <div>
@@ -502,7 +561,7 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
                   <DialogHeader>
                     <DialogTitle>Add New User</DialogTitle>
                     <DialogDescription>
-                      Create a new user account with detailed information
+                      Create a new user account with login credentials
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid grid-cols-2 gap-4">
@@ -616,6 +675,57 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
                         </SelectContent>
                       </Select>
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="newUserUsername">Username *</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="newUserUsername"
+                          placeholder="username"
+                          value={newUser.username}
+                          onChange={(e) => setNewUser(prev => ({ ...prev, username: e.target.value }))}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => generateUsername(newUser.name)}
+                          disabled={!newUser.name}
+                        >
+                          Generate
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="newUserPassword">Password *</Label>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <Input
+                            id="newUserPassword"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Password"
+                            value={newUser.password}
+                            onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={generatePassword}
+                        >
+                          Generate
+                        </Button>
+                      </div>
+                    </div>
+                    
                     {newUser.role === "Admin" && (
                       <div className="space-y-2 col-span-2">
                         <Label htmlFor="newUserWhiteLabel">White Label *</Label>
@@ -968,6 +1078,80 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
             </Button>
             <Button variant="destructive" onClick={handleDeleteUser}>
               Delete User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Share Credentials Dialog */}
+      <Dialog open={isShareCredentialsDialogOpen} onOpenChange={setIsShareCredentialsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share User Credentials</DialogTitle>
+            <DialogDescription>
+              Copy the login credentials for this user to share with them securely.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50">
+                <Avatar>
+                  <AvatarImage src={selectedUser.avatar} />
+                  <AvatarFallback>{selectedUser.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium">{selectedUser.name}</p>
+                  <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
+                  <Badge variant={getRoleBadgeVariant(selectedUser.role)} className="mt-1">
+                    {selectedUser.role}
+                  </Badge>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label>Username</Label>
+                  <div className="flex gap-2">
+                    <Input value={selectedUser.username || ""} readOnly />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(selectedUser.username || "", "Username")}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Password</Label>
+                  <div className="flex gap-2">
+                    <Input 
+                      type="password" 
+                      value={selectedUser.password || ""} 
+                      readOnly 
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(selectedUser.password || "", "Password")}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  <strong>Security Note:</strong> Share these credentials securely and advise the user to change their password after first login.
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsShareCredentialsDialogOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
