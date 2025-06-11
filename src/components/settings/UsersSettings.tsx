@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -833,6 +834,16 @@ export function UsersSettings({ role, onSettingChange }: UsersSettingsProps) {
                               onCheckedChange={() => handleToggleUserStatus(user)}
                             />
                           </div>
+                          {canShareCredentials(user) && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => openShareCredentialsDialog(user)}
+                              title="Share credentials"
+                            >
+                              <Share className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button 
                             variant="ghost" 
                             size="sm"
